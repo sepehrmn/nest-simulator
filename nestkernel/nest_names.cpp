@@ -60,7 +60,9 @@ const Name coeff_ex( "coeff_ex" );
 const Name coeff_in( "coeff_in" );
 const Name coeff_m( "coeff_m" );
 const Name connection_count( "connection_count" );
+const Name connection_type( "connection_type" );
 const Name consistent_integration( "consistent_integration" );
+const Name contextual_field( "contextual_field" );
 const Name continuous( "continuous" );
 const Name count_covariance( "count_covariance" );
 const Name count_histogram( "count_histogram" );
@@ -225,6 +227,7 @@ const Name q_sfa( "q_sfa" );
 const Name q_stc( "q_stc" );
 
 const Name rate( "rate" );
+const Name receptive_field( "receptive_field" );
 const Name receptor_type( "receptor_type" );
 const Name receptor_types( "receptor_types" );
 const Name record_from( "record_from" );

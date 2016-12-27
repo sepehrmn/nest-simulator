@@ -48,6 +48,7 @@
 #include "aeif_psc_alpha.h"
 #include "aeif_psc_exp.h"
 #include "amat2_psc_exp.h"
+#include "binary_kp_1994.h"
 #include "ginzburg_neuron.h"
 #include "hh_cond_exp_traub.h"
 #include "hh_psc_alpha.h"
@@ -108,6 +109,7 @@
 #include "cont_delay_connection_impl.h"
 #include "gap_junction.h"
 #include "ht_connection.h"
+#include "kp_1994_connection.h"
 #include "quantal_stp_connection.h"
 #include "quantal_stp_connection_impl.h"
 #include "spike_dilutor.h"
@@ -173,6 +175,7 @@ ModelsModule::commandstring( void ) const
 void
 ModelsModule::init( SLIInterpreter* )
 {
+  kernel().model_manager.register_node_model< binary_kp_1994 >( "binary_kp_1994" );
   kernel().model_manager.register_node_model< iaf_neuron >( "iaf_neuron" );
   kernel().model_manager.register_node_model< iaf_chs_2007 >( "iaf_chs_2007" );
   kernel().model_manager.register_node_model< iaf_psc_alpha >(
@@ -609,6 +612,20 @@ ModelsModule::init( SLIInterpreter* )
     .model_manager
     .register_connection_model< VogelsSprekelerConnection< TargetIdentifierIndex > >(
       "vogels_sprekeler_synapse_hpc" );
+
+  /* BeginDocumentation
+   Name: kp_1994_synapse - Variant of kp_1994_synapse with low memory
+   consumption.
+   SeeAlso: synapsedict
+*/
+  kernel()
+          .model_manager
+          .register_connection_model< KP1994Connection< TargetIdentifierPtrRport > >(
+                  "kp_1994_synapse" );
+  kernel()
+          .model_manager
+          .register_connection_model< KP1994Connection< TargetIdentifierIndex > >(
+                  "kp_1994_synapse" );
 }
 
 } // namespace nest

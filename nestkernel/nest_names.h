@@ -78,7 +78,9 @@ extern const Name
 extern const Name
   coeff_m; //!< tau_lcm=coeff_m*tau_m (precise timing neurons (Brette 2007))
 extern const Name connection_count;       //!< Parameters for MUSIC devices
+extern const Name connection_type;        //!< Type of connection
 extern const Name consistent_integration; //!< Specific to Izhikevich 2003
+extern const Name contextual_field;       //!< Exclusive to kay_phillips models
 extern const Name continuous;             //!< Parameter for MSP dynamics
 extern const Name count_covariance; //!< Specific to correlomatrix_detector
 extern const Name count_histogram;  //!< Specific to correlation_detector
@@ -269,6 +271,7 @@ extern const Name q_stc; //!< Specific to gif models
 
 extern const Name
   rate; //!< Specific to ppd_sup_generator and gamma_sup_generator
+extern const Name receptive_field;   //!< Exclusive to kay_phillips models
 extern const Name receptor_type;  //!< Connection parameter
 extern const Name receptor_types; //!< Publishing available types
 extern const Name record_from;    //!< Recorder parameter
