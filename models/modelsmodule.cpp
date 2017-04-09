@@ -36,6 +36,9 @@
 
 #include "modelsmodule.h"
 
+// Includes from nestkernel
+#include "genericmodel_impl.h"
+
 // Generated includes:
 #include "config.h"
 
@@ -175,8 +178,14 @@ ModelsModule::commandstring( void ) const
 void
 ModelsModule::init( SLIInterpreter* )
 {
+<<<<<<< HEAD
   kernel().model_manager.register_node_model< binary_kp_1994 >( "binary_kp_1994" );
   kernel().model_manager.register_node_model< iaf_neuron >( "iaf_neuron" );
+=======
+  kernel().model_manager.register_node_model< iaf_neuron >( "iaf_neuron",
+    /* private_model */ false,
+    /* deprecation_info */ "NEST 3.0" );
+>>>>>>> master
   kernel().model_manager.register_node_model< iaf_chs_2007 >( "iaf_chs_2007" );
   kernel().model_manager.register_node_model< iaf_psc_alpha >(
     "iaf_psc_alpha" );
@@ -339,9 +348,7 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< gif_cond_exp >( "gif_cond_exp" );
   kernel().model_manager.register_node_model< gif_cond_exp_multisynapse >(
     "gif_cond_exp_multisynapse" );
-#endif
 
-#ifdef HAVE_GSL
   kernel().model_manager.register_node_model< aeif_cond_alpha >(
     "aeif_cond_alpha" );
   kernel().model_manager.register_node_model< aeif_cond_exp >(
@@ -352,13 +359,15 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< ht_neuron >( "ht_neuron" );
   kernel().model_manager.register_node_model< aeif_cond_beta_multisynapse >(
     "aeif_cond_beta_multisynapse" );
-
-#endif
-  // This version of the AdEx model does not depend on GSL.
-  kernel().model_manager.register_node_model< aeif_cond_alpha_RK5 >(
-    "aeif_cond_alpha_RK5" );
   kernel().model_manager.register_node_model< aeif_cond_alpha_multisynapse >(
     "aeif_cond_alpha_multisynapse" );
+#endif
+
+  // This version of the AdEx model does not depend on GSL.
+  kernel().model_manager.register_node_model< aeif_cond_alpha_RK5 >(
+    "aeif_cond_alpha_RK5",
+    /*private_model*/ false,
+    /*deprecation_info*/ "NEST 3.0" );
 
 #ifdef HAVE_MUSIC
   //// proxies for inter-application communication using MUSIC
