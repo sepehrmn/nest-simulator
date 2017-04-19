@@ -32,25 +32,46 @@
   Author: Sepehr Mahmoudian
   SeeAlso: kp_1994_connections
 */
+#include "archiving_node.h"
+#include "connection.h"
+#include "event.h"
+#include "nest_types.h"
+#include "recordables_map.h"
+//#include "universal_data_logger.h"
 
 #ifndef BINARY_KP_1994_H
 #define BINARY_KP_1994_H
 
 namespace nest
 {
-    class binary_kp_1994 : public Node
+    class binary_kp_1994 : public Archiving_Node
     {
-        //using Node::handle;
+
+    public:
+        iaf_psc_exp();
+        iaf_psc_exp( const iaf_psc_exp& );
+
+        /**
+         * Import sets of overloaded virtual functions.
+         * @see Technical Issues / Virtual Functions: Overriding, Overloading, and
+         * Hiding
+         */
+        using Node::handle;
         using Node::handles_test_event;
+        port handles_test_event( SpikeEvent&, rport );
 
         void get( DictionaryDatum& ) const; //!< Store current values in dictionary
         void set( const DictionaryDatum& ); //!< Set values from dicitonary
+
+        //! Mapping of recordables names to access functions
+        static RecordablesMap< binary_kp_1994 > recordablesMap_;
     };
 
 inline port
 binary_kp_1994::handles_test_event(SpikeEvent &e, rport receptor_type)
 {
-    if (receptor_type != 0) {
+    if (receptor_type != 0)
+    {
         throw UnknownReceptorType(receptor_type, get_name());
     }
 
