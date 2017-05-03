@@ -470,8 +470,10 @@ extern const Name
   val_eta; //!< Specific to population point process model (pp_pop_psc_delta)
 extern const Name voltage_clamp; //!< Enforce voltage clamp
 extern const Name vp;            //!< Node parameter
+extern const Name v_0;           //!< Exclusive to kay_phillips models
 
 extern const Name w;      //!< Specific to Brette & Gerstner 2005 (aeif_cond-*)
+extern const Name w_0;    //!< Exclusive to kay_phillips models
 extern const Name weight; //!< Connection parameters
 extern const Name weight_std; //!< Standard deviation/mean of noisy synapse.
 extern const Name weighted_spikes_ex; //!< Weighted incoming excitatory spikes

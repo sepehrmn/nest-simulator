@@ -371,24 +371,7 @@ nest::iaf_psc_exp::handle( CurrentEvent& e )
 {
   assert( e.get_delay() > 0 );
 
-  const double c = e.get_current();
-  const double w = e.get_weight();
-
-  // add weighted current; HEP 2002-10-04
-  if ( 0 == e.get_rport() )
-  {
-    B_.currents_[ 0 ].add_value(
-      e.get_rel_delivery_steps(
-        kernel().simulation_manager.get_slice_origin() ),
-      w * c );
-  }
-  if ( 1 == e.get_rport() )
-  {
-    B_.currents_[ 1 ].add_value(
-      e.get_rel_delivery_steps(
-        kernel().simulation_manager.get_slice_origin() ),
-      w * c );
-  }
+  // Do nothing
 }
 
 void

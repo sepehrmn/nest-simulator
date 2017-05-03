@@ -23,15 +23,17 @@
 /* BeginDocumentation
   Name: binary_kp_1994 - binary stochastic neuron introduced in [1].
   Description:
-  The neuron model described in [1]. In [2] the modulatory attributes of this
+  The neuron model described in [1][2]. In [3] the modulatory attributes of this
   model are highlighted.
   References:
-   [1] J Kay and WA Phillips (1994). Technical Report CCCN-15.
-   [2] D Smyth, J Kay, WA Phillips (1996). Network: Computation in Neural Systems.
-  FirstVersion: April 2017
+   [1] J Kay (1994) Technical Report, Biomathematics and Statistics Scotland
+   [2] J Kay and WA Phillips (1994). Technical Report CCCN-15.
+   [3] D Smyth, J Kay, WA Phillips (1996). Network: Computation in Neural Systems.
+  FirstVersion: May 2017
   Author: Sepehr Mahmoudian
-  SeeAlso: kp_1994_connections
+  SeeAlso: kp_1994_connection
 */
+
 #include "archiving_node.h"
 #include "connection.h"
 #include "event.h"
@@ -48,37 +50,127 @@ namespace nest
     {
 
     public:
-        iaf_psc_exp();
-        iaf_psc_exp( const iaf_psc_exp& );
+        binary_kp_1994();
+        binary_kp_1994( const binary_kp_1994& );
 
         /**
          * Import sets of overloaded virtual functions.
-         * @see Technical Issues / Virtual Functions: Overriding, Overloading, and
-         * Hiding
+         * @see Technical Issues / Virtual Functions: Overriding, Overloading,
+         * and Hiding
          */
         using Node::handle;
         using Node::handles_test_event;
+
+        port send_test_event( Node&, rport, synindex, bool );
+
+        void handle( SpikeEvent& );
+        void handle( DataLoggingRequest& );
+
         port handles_test_event( SpikeEvent&, rport );
+        port handles_test_event( DataLoggingRequest&, rport );
 
-        void get( DictionaryDatum& ) const; //!< Store current values in dictionary
-        void set( const DictionaryDatum& ); //!< Set values from dicitonary
+        void get_status( DictionaryDatum& ) const;
+        void set_status( const DictionaryDatum& );
 
-        //! Mapping of recordables names to access functions
-        static RecordablesMap< binary_kp_1994 > recordablesMap_;
+    private:
+
+      enum SynapseTypes
+      {
+        SPIKE_RECEPTOR = 0,
+        RF,
+        CF
+      };
+
+      void init_state_( const Node& proto );
+      void init_buffers_();
+      void calibrate();
+      void update( const Time&, const long, const long );
+
+      // The next two classes need to be friends to access the State_ class/member
+      friend class RecordablesMap< iaf_psc_exp >;
+      friend class UniversalDataLogger< iaf_psc_exp >;
+
+      // Mapping of recordables names to access functions
+      static RecordablesMap< binary_kp_1994 > recordablesMap_;
+
     };
 
-inline port
-binary_kp_1994::handles_test_event(SpikeEvent &e, rport receptor_type)
-{
-    if (receptor_type != 0)
+    struct Parameters_
     {
-        throw UnknownReceptorType(receptor_type, get_name());
+
+      // k1 parameter of the activation function
+      double k1_;
+      // k2 parameter of the activation function
+      double k2_;
+
+      Parameters_();
+    };
+
+    struct State_
+    {
+      // Output probability
+      double Theta_;
+
+      // Integrated receptive field bias
+      double w_0;
+      // Integrated contextual field bias
+      double v_0;
+
+      // Default initialization
+      State_();
+    };
+
+    struct Buffers_
+    {
+      // Buffers for storing RF and CF spikes
+      RingBuffer spikes_rf_;
+      RingBuffer spikes_cf_;
+
+      // Logger for all analog data
+      UniversalDataLogger< iaf_psc_exp > logger_;
+
+      Buffers_( binary_kp_1994& );
+      Buffers_( const Buffers_&, binary_kp_1994& );
+    };
+
+    struct Variables_
+    {
+      // integrated receptive field. B_.spikes_rf_ - w_0
+      double receptive_field_;
+      // integrated contextual field. B_.spikes_cf_ - v_0
+      double contextual_field_;
+
+    };
+
+    // Access functions for UniversalDataLogger -------------------------------
+
+    inline double
+    get_weighted_spikes_ex_() const
+    {
+      return V_.weighted_spikes_ex_;
     }
 
-    S_.node_gids_.push_back(e.get_sender().get_gid());
-    return S_.node_gids_.size() - 1; // -1 because we want rports to start from 0
-}
+    inline double
+    get_weighted_spikes_in_() const
+    {
+      return V_.weighted_spikes_in_;
+    }
+   }
 
+   inline port
+   binary_kp_1994::handles_test_event( SpikeEvent&, rport receptor_type )
+   {
+     if ( !( receptor_type == SPIKE_RECEPTOR
+          || receptor_type == RF
+          || receptor_type == CF ) )
+     {
+       throw UnknownReceptorType( receptor_type, get_name() );
+     }
+     else
+       return receptor_type;
+   }
+
+   
 } //namespace
 
 #endif //BINARY_KP_1994_H

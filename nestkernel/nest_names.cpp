@@ -404,8 +404,10 @@ const Name V_th_v( "V_th_v" );
 const Name val_eta( "val_eta" );
 const Name voltage_clamp( "voltage_clamp" );
 const Name vp( "vp" );
+const Name v_0("v_0");
 
 const Name w( "w" );
+const Name w_0( "w_0" );
 const Name weight( "weight" );
 const Name weight_std( "weight_std" );
 const Name weighted_spikes_ex( "weighted_spikes_ex" );
