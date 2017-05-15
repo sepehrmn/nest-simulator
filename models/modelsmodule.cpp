@@ -630,7 +630,7 @@ ModelsModule::init( SLIInterpreter* )
   kernel()
           .model_manager
           .register_connection_model< KP1994Connection< TargetIdentifierIndex > >(
-                  "kp_1994_synapse" );
+                  "kp_1994_synapse_hpc" );
 }
 
 } // namespace nest

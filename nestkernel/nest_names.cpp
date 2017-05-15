@@ -110,6 +110,9 @@ const Name E_rev_KNa( "E_rev_KNa" );
 const Name E_rev_NaP( "E_rev_NaP" );
 const Name E_rev_NMDA( "E_rev_NMDA" );
 const Name E_rev_T( "E_rev_T" );
+const Name E_rc("E_rc"); // Average output probability for joint r and c - specific to kp neurons
+const Name E_c("E_c");  // Average output probability conditioned on c - specific to kp neurons
+const Name E_r("E_r");  // Average output probability conditioned on r - r specific to kp neurons
 
 const Name E_rr( "E_rr" );
 const Name E_sfa( "E_sfa" );
@@ -204,6 +207,10 @@ const Name instant_unblock_NMDA( "instant_unblock_NMDA" );
 const Name Interpol_Order( "Interpol_Order" );
 const Name interval( "interval" );
 const Name is_refractory( "is_refractory" );
+
+const Name k1( "k1" );
+const Name k2( "k2" );
+const Name k3( "k3" );
 
 const Name label( "label" );
 const Name lambda_0( "lambda_0" );

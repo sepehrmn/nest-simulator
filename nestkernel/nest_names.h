@@ -81,7 +81,7 @@ extern const Name
 extern const Name connection_count;       //!< Parameters for MUSIC devices
 extern const Name connection_type;        //!< Type of connection
 extern const Name consistent_integration; //!< Specific to Izhikevich 2003
-extern const Name contextual_field;       //!< Exclusive to kay_phillips models
+extern const Name contextual_field;       //!< Exclusive to kp neuron
 extern const Name continuous;             //!< Parameter for MSP dynamics
 extern const Name count_covariance; //!< Specific to correlomatrix_detector
 extern const Name count_histogram;  //!< Specific to correlation_detector
@@ -145,6 +145,9 @@ extern const Name eta;         //!< MSP growth curve parameter
 extern const Name events;      //!< Recorder parameter
 extern const Name
   ex_spikes; //!< Number of arriving excitatory spikes (sli_neuron)
+extern const Name E_rc; // Average output probability for joint r and c - specific to kp neuron
+extern const Name E_c;  // Average output probability conditioned on c - specific to kp neuron
+extern const Name E_r;  // Average output probability conditioned on r - r specific to kp neuron
 
 extern const Name F_lower;
 extern const Name F_mean;
@@ -242,6 +245,10 @@ extern const Name
 extern const Name interval; //!< Recorder parameter
 extern const Name is_refractory; //!< Neuron is in refractory period (debugging)
 
+extern const Name k1;     //!< Exclusive to kp neuron
+extern const Name k2;     //!< Exclusive to kp neuron
+extern const Name k3;     //!< Exclusive to kp neuron
+
 extern const Name label;      //!< Miscellaneous parameters
 extern const Name lambda_0;   //!< Specific to gif models
 extern const Name len_kernel; //!< Specific to population point process model
@@ -314,7 +321,7 @@ extern const Name q_stc; //!< Specific to gif models
 
 extern const Name
   rate; //!< Specific to ppd_sup_generator and gamma_sup_generator
-extern const Name receptive_field;   //!< Exclusive to kay_phillips models
+extern const Name receptive_field;   //!< Exclusive to kp neuron
 extern const Name receptor_type;  //!< Connection parameter
 extern const Name receptor_types; //!< Publishing available types
 extern const Name record_from;    //!< Recorder parameter
@@ -470,10 +477,10 @@ extern const Name
   val_eta; //!< Specific to population point process model (pp_pop_psc_delta)
 extern const Name voltage_clamp; //!< Enforce voltage clamp
 extern const Name vp;            //!< Node parameter
-extern const Name v_0;           //!< Exclusive to kay_phillips models
+extern const Name v_0;           //!< Exclusive to kp models
 
 extern const Name w;      //!< Specific to Brette & Gerstner 2005 (aeif_cond-*)
-extern const Name w_0;    //!< Exclusive to kay_phillips models
+extern const Name w_0;    //!< Exclusive to kp models
 extern const Name weight; //!< Connection parameters
 extern const Name weight_std; //!< Standard deviation/mean of noisy synapse.
 extern const Name weighted_spikes_ex; //!< Weighted incoming excitatory spikes

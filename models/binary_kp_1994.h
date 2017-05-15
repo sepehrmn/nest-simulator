@@ -76,24 +76,22 @@ namespace nest
 
       enum SynapseTypes
       {
-        SPIKE_RECEPTOR = 0,
+        SPIKE_RECEPTOR = 0, // for spike_detector
         RF,
         CF
       };
 
-      void init_state_( const Node& proto );
-      void init_buffers_();
-      void calibrate();
-      void update( const Time&, const long, const long );
+    void init_state_( const Node& proto );
+    void init_buffers_();
+    void calibrate();
+    void update( const Time&, const long, const long );
 
-      // The next two classes need to be friends to access the State_ class/member
-      friend class RecordablesMap< iaf_psc_exp >;
-      friend class UniversalDataLogger< iaf_psc_exp >;
+    // The next two classes need to be friends to access the State_ class/member
+    friend class RecordablesMap< binary_kp_1994 >;
+    friend class UniversalDataLogger< binary_kp_1994 >;
 
-      // Mapping of recordables names to access functions
-      static RecordablesMap< binary_kp_1994 > recordablesMap_;
-
-    };
+    // Mapping of recordables names to access functions
+    static RecordablesMap< binary_kp_1994 > recordablesMap_;
 
     struct Parameters_
     {
@@ -102,6 +100,8 @@ namespace nest
       double k1_;
       // k2 parameter of the activation function
       double k2_;
+      // k3 parameter of the activation function
+      double k3_;
 
       Parameters_();
     };
@@ -109,12 +109,20 @@ namespace nest
     struct State_
     {
       // Output probability
-      double Theta_;
+      double theta_; // Output probability
+      // double E_rc_;  // Average output probability for joint r and c
+      // double E_c_;  // Average output probability conditioned on c
+      // double E_r_;  // Average output probability conditioned on r
+      //
+      // // Integrated receptive field bias
+      // double w_0;
+      // // Integrated contextual field bias
+      // double v_0;
 
-      // Integrated receptive field bias
-      double w_0;
-      // Integrated contextual field bias
-      double v_0;
+      // integrated receptive field. B_.spikes_rf_ - w_0
+      double receptive_field_;
+      // integrated contextual field. B_.spikes_cf_ - v_0
+      double contextual_field_;
 
       // Default initialization
       State_();
@@ -127,35 +135,39 @@ namespace nest
       RingBuffer spikes_cf_;
 
       // Logger for all analog data
-      UniversalDataLogger< iaf_psc_exp > logger_;
+      UniversalDataLogger< binary_kp_1994 > logger_;
 
       Buffers_( binary_kp_1994& );
       Buffers_( const Buffers_&, binary_kp_1994& );
     };
 
-    struct Variables_
-    {
-      // integrated receptive field. B_.spikes_rf_ - w_0
-      double receptive_field_;
-      // integrated contextual field. B_.spikes_cf_ - v_0
-      double contextual_field_;
-
-    };
-
     // Access functions for UniversalDataLogger -------------------------------
 
-    inline double
-    get_weighted_spikes_ex_() const
+    double
+    get_receptive_field_() const
     {
-      return V_.weighted_spikes_ex_;
+      return S_.receptive_field_;
     }
 
-    inline double
-    get_weighted_spikes_in_() const
+    double
+    get_contextual_field_() const
     {
-      return V_.weighted_spikes_in_;
+      return S_.contextual_field_;
     }
-   }
+
+    double
+    get_theta_() const
+    {
+      return S_.theta_;
+    }
+
+    // ----------------------------------------------------------------
+
+    Parameters_ P_;
+    State_ S_;
+    Buffers_ B_;
+
+};
 
    inline port
    binary_kp_1994::handles_test_event( SpikeEvent&, rport receptor_type )
@@ -170,7 +182,7 @@ namespace nest
        return receptor_type;
    }
 
-   
+
 } //namespace
 
 #endif //BINARY_KP_1994_H
