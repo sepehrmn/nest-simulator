@@ -60,9 +60,9 @@ namespace nest
         * Default Constructor.
         * Sets default values for all parameters. Needed by GenericConnectorModel.
         */
-       KP1994Connection():
-       ConnectionBase(),
-       weight_(0);
+       KP1994Connection()
+       : ConnectionBase()
+       , weight_(0)
        {
        }
 
@@ -70,7 +70,11 @@ namespace nest
         * Copy constructor.
         * Needs to be defined properly in order for GenericConnector to work.
         */
-       kay_phillips_connection( const kay_phillips_connection& );
+        KP1994Connection( const KP1994Connection& rhs )
+        : ConnectionBase( rhs )
+        , weight_( rhs.weight_ )
+        {
+        }
 
        // Explicitly declare all methods inherited from the dependent base
        // ConnectionBase. This avoids explicit name prefixes in all places these
@@ -81,33 +85,13 @@ namespace nest
        using ConnectionBase::get_rport;
        using ConnectionBase::get_target;
 
-       /**
-        * Default Destructor.
-        */
-       virtual ~kay_phillips_connection()
-       {
-       }
+      //  /**
+      //   * Default Destructor.
+      //   */
+      //  virtual ~kay_phillips_connection()
+      //  {
+      //  }
 
-       /**
-        * Get all properties of this connection and put them into a dictionary.
-        */
-       void get_status( DictionaryDatum& d ) const;
-
-       /**
-        * Set properties of this connection from the values given in dictionary.
-        */
-       void set_status( const DictionaryDatum& d, ConnectorModel& cm );
-
-       /**
-        * Send an event to the receiver of this connection.
-        * \param e The event to send
-        * \param t_lastspike Point in time of last spike sent.
-        * \param cp Common properties to all synapses (empty).
-        */
-       void send( Event& e,
-                  thread t,
-                  double t_lastspike,
-                  const CommonSynapseProperties& cp );
 
        class ConnTestDummyNode : public ConnTestDummyNodeBase
        {
@@ -159,6 +143,16 @@ namespace nest
          e();
        }
 
+       /**
+        * Get all properties of this connection and put them into a dictionary.
+        */
+       void get_status( DictionaryDatum& d ) const;
+
+       /**
+        * Set properties of this connection from the values given in dictionary.
+        */
+       void set_status( const DictionaryDatum& d, ConnectorModel& cm );
+
        //! allows efficient initialization from ConnectorModel::add_connection()
        void
        set_weight( double w )
@@ -170,15 +164,6 @@ namespace nest
        double weight_; //!< synpatic weight
 
    };
-
-
-
-   template < typename targetidentifierT >
-   KP1994Connection< targetidentifierT >::KP1994Connection()
-           : ConnectionBase()
-           , weight_( 1.0 )
-   {
-   }
 
    template < typename targetidentifierT >
    void
@@ -204,15 +189,6 @@ namespace nest
    * \param p The port under which this connection is stored in the Connector.
    * \param t_lastspike Time point of last spike emitted
    */
-   void
-   send( Event& e, thread t, double, const CommonSynapseProperties& )
-   {
-     e.set_weight( weight_ );
-     e.set_delay( get_delay_steps() );
-     e.set_receiver( *get_target( t ) );
-     e.set_rport( get_rport() );
-     e();
-   }
 
 } // namespace
 
