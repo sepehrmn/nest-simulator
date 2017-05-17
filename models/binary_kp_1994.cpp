@@ -23,6 +23,18 @@
 
 #include "binary_kp_1994.h"
 
+// Includes from libnestutil:
+#include "numerics.h"
+
+// Includes from nestkernel:
+#include "exceptions.h"
+#include "kernel_manager.h"
+#include "universal_data_logger_impl.h"
+
+// Includes from sli:
+#include "dict.h"
+#include "dictutils.h"
+
 /* ----------------------------------------------------------------
  * Recordables map
  * ---------------------------------------------------------------- */
@@ -41,36 +53,15 @@ namespace nest
    */
   template <>
   void
-  RecordablesMap< iaf_psc_exp >::create()
+  RecordablesMap< binary_kp_1994 >::create()
   {
     // use standard names whereever you can for consistency!
     insert_( names::receptive_field, &binary_kp_1994::get_receptive_field_ );
     insert_( names::contextual_field, &binary_kp_1994::get_contextual_field_ );
-    insert_( names::contextual_field, &binary_kp_1994::get_theta_ );
+    insert_( names::theta, &binary_kp_1994::get_theta_ );
   }
 } //namespace
 
-/* ----------------------------------------------------------------
- * Default constructors defining default parameters and state
- * ---------------------------------------------------------------- */
-
-nest::binary_kp_1994::Parameters_::Parameters_()
-  : k1_( 0.5 ),
-    k2_( 2.0 ),
-    k3_( 0.0 )
-{
-}
-
-nest::binary_kp_1994::State_::State_()
-  : theta_( 0.0 ),
-    w_0 ( 0.0 ),
-    v_0 ( 0.0 )
-{
-}
-
-/* ----------------------------------------------------------------
- * Parameter and state extractions and manipulation functions
- * ---------------------------------------------------------------- */
 
   /* ----------------------------------------------------------------
    * Default and copy constructor for node
@@ -94,6 +85,24 @@ nest::binary_kp_1994::State_::State_()
 
    }
 
+   /* ----------------------------------------------------------------
+    * Default constructors defining default parameters and state
+    * ---------------------------------------------------------------- */
+
+   nest::binary_kp_1994::Parameters_::Parameters_()
+     : k1_( 0.5 )
+     , k2_( 2.0 )
+     , k3_( 0.0 )
+   {
+   }
+
+   nest::binary_kp_1994::State_::State_()
+     : theta_( 0.0 )
+     ,  w_0_ ( 0.0 )
+     ,  v_0_ ( 0.0 )
+   {
+   }
+
  /* ----------------------------------------------------------------
   * Parameter and state extractions and manipulation functions
   * ---------------------------------------------------------------- */
@@ -114,21 +123,69 @@ nest::binary_kp_1994::get_status( DictionaryDatum& d ) const
 
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 
-  ( *d )[ names::receptive_field ] = V_.receptive_field_;
-  ( *d )[ names::contextual_field ] = V_.contextual_field_;
+  ( *d )[ names::receptive_field ] = S_.receptive_field_;
+  ( *d )[ names::contextual_field ] = S_.contextual_field_;
+
+  ( *d )[ names::recordables ] = recordablesMap_.get_list();
 }
 
 void
-nest::binary_kp_1994::update( Time const& origin,
-  const long from,
-  const long to )
+nest::binary_kp_1994::set_status( const DictionaryDatum& d )
 {
-assert(
-  to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
-assert( from < to );
+  P_.set( d);
+  P_.set( d);
+}
 
-  // log state data
-  B_.logger_.record_data( origin.get_steps() + lag );
+// Parameters
+
+void
+nest::binary_kp_1994::Parameters_::get( DictionaryDatum& d ) const
+{
+  def< double >( d, names::k1, k1_ );
+  def< double >( d, names::k2, k2_ );
+  def< double >( d, names::k3, k3_ );
+}
+
+void
+nest::binary_kp_1994::Parameters_::set( const DictionaryDatum& d )
+{
+  updateValue< double >( d, names::k1, k1_ );
+  updateValue< double >( d, names::k2, k2_ );
+  updateValue< double >( d, names::k3, k3_ );
+}
+
+// State
+
+void
+nest::binary_kp_1994::State_::get( DictionaryDatum& d) const
+{
+  def< double >( d, names::theta, theta_);
+  def< double >( d, names::w_0, w_0_ );
+  def< double >( d, names::v_0, v_0_ );
+  def< double >( d, names::receptive_field, receptive_field_ );
+  def< double >( d, names::contextual_field, contextual_field_ );
+}
+
+void
+nest::binary_kp_1994::State_::set( const DictionaryDatum& d )
+{
+  updateValue< double >( d, names::theta, theta_ );
+  updateValue< double >( d, names::w_0, w_0_ );
+  updateValue< double >( d, names::v_0, v_0_ );
+  updateValue< double >( d, names::receptive_field, receptive_field_ );
+  updateValue< double >( d, names::contextual_field, contextual_field_ );
+}
+
+// Buffers
+
+nest::binary_kp_1994::Buffers_::Buffers_( binary_kp_1994& n )
+  : logger_( n )
+{
+}
+
+nest::binary_kp_1994::Buffers_::Buffers_( const Buffers_&, binary_kp_1994& n )
+  : logger_( n )
+{
 }
 
 /* ----------------------------------------------------------------
@@ -138,16 +195,15 @@ assert( from < to );
 void
 nest::binary_kp_1994::init_state_( const Node& proto )
 {
-  const iaf_psc_exp& pr = downcast< iaf_psc_exp >( proto );
+  const binary_kp_1994& pr = downcast< binary_kp_1994 >( proto );
   S_ = pr.S_;
 }
 
 void
 nest::binary_kp_1994::init_buffers_()
 {
-  B_.spikes_ex_.clear(); // includes resize
-  B_.spikes_in_.clear(); // includes resize
-  B_.currents_.clear();  // includes resize
+  B_.spikes_rf_.clear(); // includes resize
+  B_.spikes_cf_.clear(); // includes resize
   B_.logger_.reset();
   Archiving_Node::clear_history();
 }
@@ -158,6 +214,10 @@ nest::binary_kp_1994::calibrate()
   B_.logger_.init();
 }
 
+/* ----------------------------------------------------------------
+ * Update and spike handling functions
+ * ---------------------------------------------------------------- */
+
 void
 nest::binary_kp_1994::update( const Time& origin, const long from, const long to )
 {
@@ -165,8 +225,11 @@ nest::binary_kp_1994::update( const Time& origin, const long from, const long to
     to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
   assert( from < to );
 
-  // log state data
-  B_.logger_.record_data( origin.get_steps() + lag );
+  for ( long lag = from; lag < to; ++lag )
+  {
+    // log state data
+    B_.logger_.record_data( origin.get_steps() + lag );
+  }
 }
 
 void

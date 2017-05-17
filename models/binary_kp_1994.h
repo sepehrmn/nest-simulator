@@ -39,6 +39,8 @@
 #include "event.h"
 #include "nest_types.h"
 #include "recordables_map.h"
+#include "ring_buffer.h"
+#include "universal_data_logger.h"
 //#include "universal_data_logger.h"
 
 #ifndef BINARY_KP_1994_H
@@ -104,6 +106,8 @@ namespace nest
       double k3_;
 
       Parameters_();
+      void get( DictionaryDatum& ) const;
+      void set( const DictionaryDatum& );
     };
 
     struct State_
@@ -114,10 +118,10 @@ namespace nest
       // double E_c_;  // Average output probability conditioned on c
       // double E_r_;  // Average output probability conditioned on r
       //
-      // // Integrated receptive field bias
-      // double w_0;
-      // // Integrated contextual field bias
-      // double v_0;
+      // Integrated receptive field bias
+      double w_0_;
+      // Integrated contextual field bias
+      double v_0_;
 
       // integrated receptive field. B_.spikes_rf_ - w_0
       double receptive_field_;
@@ -126,6 +130,8 @@ namespace nest
 
       // Default initialization
       State_();
+      void get( DictionaryDatum& ) const;
+      void set( const DictionaryDatum& );
     };
 
     struct Buffers_
@@ -191,6 +197,16 @@ namespace nest
      SpikeEvent e;
      e.set_sender( *this );
      return target.handles_test_event( e, receptor_type );
+   }
+
+   inline port
+   binary_kp_1994::handles_test_event( DataLoggingRequest& dlr, rport receptor_type )
+   {
+     if ( receptor_type != 0 )
+     {
+       throw UnknownReceptorType( receptor_type, get_name() );
+     }
+     return B_.logger_.connect_logging_device( dlr, recordablesMap_ );
    }
 
 
