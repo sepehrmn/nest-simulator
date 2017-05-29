@@ -211,7 +211,9 @@ nest::binary_kp_1994::init_buffers_()
 void
 nest::binary_kp_1994::calibrate()
 {
+  // ensures initialization in case mm connected after Simulate
   B_.logger_.init();
+  V_.rng_ = kernel().rng_manager.get_rng( get_thread() );
 }
 
 /* ----------------------------------------------------------------
@@ -227,6 +229,30 @@ nest::binary_kp_1994::update( const Time& origin, const long from, const long to
 
   for ( long lag = from; lag < to; ++lag )
   {
+
+    // update the input current
+    // the buffer for incoming spikes for every time step contains the
+    // difference
+    // of the total input h with respect to the previous step, so sum them up
+    S_.receptive_field_ += B_.spikes_rf_.get_value( lag );
+
+    // update the input current
+    // the buffer for incoming spikes for every time step contains the
+    // difference
+    // of the total input h with respect to the previous step, so sum them up
+    S_.contextual_field_ += B_.spikes_cf_.get_value( lag );
+
+    S_.theta_ = S_.receptive_field_ *
+              ( P_.k1_ + ( 1 - P_.k1_ ) * exp( P_.k2_ * S_.receptive_field_ * S_.contextual_field_ ) )
+               + P_.k3_ *  S_.contextual_field_;
+
+    // threshold crossing
+    if ( V_.rng_->drand() >= S_.theta_ )
+    {
+      SpikeEvent se;
+      kernel().event_delivery_manager.send( *this, se, lag );
+    }
+
     // log state data
     B_.logger_.record_data( origin.get_steps() + lag );
   }

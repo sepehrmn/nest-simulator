@@ -34,6 +34,14 @@
   SeeAlso: kp_1994_connection
 */
 
+// Includes from libnestutil:
+#include "logging.h"
+
+// Includes from nestkernel:
+#include "conn_parameter.h"
+#include "exceptions.h"
+#include "kernel_manager.h"
+
 #include "archiving_node.h"
 #include "connection.h"
 #include "event.h"
@@ -147,6 +155,11 @@ namespace nest
       Buffers_( const Buffers_&, binary_kp_1994& );
     };
 
+    struct Variables_
+    {
+      librandom::RngPtr rng_; // pointer to thread specific random generator
+    };
+
     // Access functions for UniversalDataLogger -------------------------------
 
     double
@@ -172,6 +185,7 @@ namespace nest
     Parameters_ P_;
     State_ S_;
     Buffers_ B_;
+    Variables_ V_;
 
 };
 
