@@ -100,6 +100,8 @@ namespace nest
      : theta_( 0.0 )
      ,  w_0_ ( 0.0 )
      ,  v_0_ ( 0.0 )
+     , receptive_field_ ( 0.0 )
+     , contextual_field_ ( 0.0 )
    {
    }
 
@@ -125,15 +127,13 @@ nest::binary_kp_1994::get_status( DictionaryDatum& d ) const
 
   ( *d )[ names::receptive_field ] = S_.receptive_field_;
   ( *d )[ names::contextual_field ] = S_.contextual_field_;
-
-  ( *d )[ names::recordables ] = recordablesMap_.get_list();
 }
 
 void
 nest::binary_kp_1994::set_status( const DictionaryDatum& d )
 {
-  P_.set( d);
-  P_.set( d);
+  P_.set( d );
+  S_.set( d );
 }
 
 // Parameters
@@ -242,12 +242,14 @@ nest::binary_kp_1994::update( const Time& origin, const long from, const long to
     // of the total input h with respect to the previous step, so sum them up
     S_.contextual_field_ += B_.spikes_cf_.get_value( lag );
 
-    S_.theta_ = S_.receptive_field_ *
+    double activ_val = S_.receptive_field_ *
               ( P_.k1_ + ( 1 - P_.k1_ ) * exp( P_.k2_ * S_.receptive_field_ * S_.contextual_field_ ) )
                + P_.k3_ *  S_.contextual_field_;
 
+    S_.theta_ = 1 / (1 + exp(-activ_val));
+
     // threshold crossing
-    if ( V_.rng_->drand() >= S_.theta_ )
+    if ( V_.rng_->drand() > S_.theta_ )
     {
       SpikeEvent se;
       kernel().event_delivery_manager.send( *this, se, lag );

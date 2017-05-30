@@ -125,7 +125,7 @@ namespace nest
       // double E_rc_;  // Average output probability for joint r and c
       // double E_c_;  // Average output probability conditioned on c
       // double E_r_;  // Average output probability conditioned on r
-      //
+
       // Integrated receptive field bias
       double w_0_;
       // Integrated contextual field bias
