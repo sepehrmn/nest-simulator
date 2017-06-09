@@ -34,6 +34,13 @@
   SeeAlso: kp_1994_connection
 */
 
+// TODO: interval not implemented. implemen
+// TODO: make no firing "-x" instead of 0
+// TODO: check if exponential dist sampling better. it makes the firing statistics poissonian. tau detemines the mean inter-pike interval and incoming spikes the output rate.
+
+// Includes from librandom:
+#include "exp_randomdev.h"
+
 // Includes from libnestutil:
 #include "logging.h"
 
@@ -49,7 +56,6 @@
 #include "recordables_map.h"
 #include "ring_buffer.h"
 #include "universal_data_logger.h"
-//#include "universal_data_logger.h"
 
 #ifndef BINARY_KP_1994_H
 #define BINARY_KP_1994_H
@@ -112,6 +118,9 @@ namespace nest
       double k2_;
       // k3 parameter of the activation function
       double k3_;
+
+      // Update interval
+      double interval_;
 
       Parameters_();
       void get( DictionaryDatum& ) const;

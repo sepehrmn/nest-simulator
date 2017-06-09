@@ -93,6 +93,7 @@ namespace nest
      : k1_( 0.5 )
      , k2_( 2.0 )
      , k3_( 0.0 )
+     , interval_( 1.0 ) // ms
    {
    }
 
@@ -144,6 +145,7 @@ nest::binary_kp_1994::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::k1, k1_ );
   def< double >( d, names::k2, k2_ );
   def< double >( d, names::k3, k3_ );
+  def< double >( d, names::interval, interval_ );
 }
 
 void
@@ -152,6 +154,7 @@ nest::binary_kp_1994::Parameters_::set( const DictionaryDatum& d )
   updateValue< double >( d, names::k1, k1_ );
   updateValue< double >( d, names::k2, k2_ );
   updateValue< double >( d, names::k3, k3_ );
+  updateValue< double >( d, names::interval, interval_ );
 }
 
 // State
@@ -234,13 +237,13 @@ nest::binary_kp_1994::update( const Time& origin, const long from, const long to
     // the buffer for incoming spikes for every time step contains the
     // difference
     // of the total input h with respect to the previous step, so sum them up
-    S_.receptive_field_ += B_.spikes_rf_.get_value( lag );
+    S_.receptive_field_ = B_.spikes_rf_.get_value( lag );
 
     // update the input current
     // the buffer for incoming spikes for every time step contains the
     // difference
     // of the total input h with respect to the previous step, so sum them up
-    S_.contextual_field_ += B_.spikes_cf_.get_value( lag );
+    S_.contextual_field_ = B_.spikes_cf_.get_value( lag );
 
     double activ_val = S_.receptive_field_ *
               ( P_.k1_ + ( 1 - P_.k1_ ) * exp( P_.k2_ * S_.receptive_field_ * S_.contextual_field_ ) )
@@ -248,12 +251,17 @@ nest::binary_kp_1994::update( const Time& origin, const long from, const long to
 
     S_.theta_ = 1 / (1 + exp(-activ_val));
 
-    // threshold crossing
-    if ( V_.rng_->drand() > S_.theta_ )
+    // check, if the update needs to be done
+    if ( from == 0 && lag == to-1 ) // TODO: check if exponential dist sampling better
     {
-      SpikeEvent se;
-      kernel().event_delivery_manager.send( *this, se, lag );
-    }
+      // threshold crossing
+      if ( V_.rng_->drand() < S_.theta_ )
+      {
+        SpikeEvent se;
+        kernel().event_delivery_manager.send( *this, se, lag );
+      }
+
+    } // of if (update now)
 
     // log state data
     B_.logger_.record_data( origin.get_steps() + lag );
