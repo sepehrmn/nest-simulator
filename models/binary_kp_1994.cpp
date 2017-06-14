@@ -251,8 +251,9 @@ nest::binary_kp_1994::update( const Time& origin, const long from, const long to
 
     S_.theta_ = 1 / (1 + exp(-activ_val));
 
-    // check, if the update needs to be done
-    if ( from == 0 && lag == to-1 ) // TODO: check if exponential dist sampling better
+    // The if statement below makes sure that the neuron only fires once in a
+    // discrete timestep (defined by the network min_delay)
+    if ( from == 0 && lag == to-1 )
     {
       // threshold crossing
       if ( V_.rng_->drand() < S_.theta_ )
