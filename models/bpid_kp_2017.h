@@ -1,5 +1,5 @@
 /*
- *  binary_kp_1994.h
+ *  bpid_kp_2017.h
  *
  *  This file is part of NEST.
  *
@@ -21,7 +21,7 @@
  */
 
 /* BeginDocumentation
-  Name: binary_kp_1994 - binary stochastic neuron introduced in [1].
+  Name: bpid_kp_2017 - binary stochastic neuron introduced in [1].
   Description:
   The neuron model described in [1][2]. In [3] the modulatory attributes of this
   model are highlighted.
@@ -29,14 +29,17 @@
    [1] J Kay (1994) Technical Report, Biomathematics and Statistics Scotland
    [2] J Kay and WA Phillips (1994). Technical Report CCCN-15.
    [3] D Smyth, J Kay, WA Phillips (1996). Network: Computation in Neural Systems.
+   [4] Partial information decomposition as a unified approach to the specification of neural goal functions
+Michael Wibrala, Viola Priesemannb, Jim W. Kayc, Joseph T. Lizierd, William A. Phillipse
   FirstVersion: May 2017
   Author: Sepehr Mahmoudian
-  SeeAlso: kp_1994_connection
+  SeeAlso: bpid_kp_connection
 */
 
 // TODO: interval not implemented. implemen
-// TODO: make no firing "-x" instead of 0
+// TODO: Create 4 output types. -1, not firing buy carrying information, 0 not firing and no information content, 1, firing, 2 firing with burst(possibly specify degree of burst)
 // TODO: check if exponential dist sampling better. it makes the firing statistics poissonian. tau detemines the mean inter-pike interval and incoming spikes the output rate.
+// TODO: Add freeze feature for assessing performance in batches/
 
 // Includes from librandom:
 #include "exp_randomdev.h"
@@ -57,17 +60,17 @@
 #include "ring_buffer.h"
 #include "universal_data_logger.h"
 
-#ifndef BINARY_KP_1994_H
-#define BINARY_KP_1994_H
+#ifndef bpid_kp_2017_H
+#define bpid_kp_2017_H
 
 namespace nest
 {
-    class binary_kp_1994 : public Archiving_Node
+    class bpid_kp_2017 : public Archiving_Node
     {
 
     public:
-        binary_kp_1994();
-        binary_kp_1994( const binary_kp_1994& );
+        bpid_kp_2017();
+        bpid_kp_2017( const bpid_kp_2017& );
 
         /**
          * Import sets of overloaded virtual functions.
@@ -103,11 +106,11 @@ namespace nest
     void update( const Time&, const long, const long );
 
     // The next two classes need to be friends to access the State_ class/member
-    friend class RecordablesMap< binary_kp_1994 >;
-    friend class UniversalDataLogger< binary_kp_1994 >;
+    friend class RecordablesMap< bpid_kp_2017 >;
+    friend class UniversalDataLogger< bpid_kp_2017 >;
 
     // Mapping of recordables names to access functions
-    static RecordablesMap< binary_kp_1994 > recordablesMap_;
+    static RecordablesMap< bpid_kp_2017 > recordablesMap_;
 
     struct Parameters_
     {
@@ -158,10 +161,10 @@ namespace nest
       RingBuffer spikes_cf_;
 
       // Logger for all analog data
-      UniversalDataLogger< binary_kp_1994 > logger_;
+      UniversalDataLogger< bpid_kp_2017 > logger_;
 
-      Buffers_( binary_kp_1994& );
-      Buffers_( const Buffers_&, binary_kp_1994& );
+      Buffers_( bpid_kp_2017& );
+      Buffers_( const Buffers_&, bpid_kp_2017& );
     };
 
     struct Variables_
@@ -199,7 +202,7 @@ namespace nest
 };
 
    inline port
-   binary_kp_1994::handles_test_event( SpikeEvent&, rport receptor_type )
+   bpid_kp_2017::handles_test_event( SpikeEvent&, rport receptor_type )
    {
      if ( !( receptor_type == SPIKE_RECEPTOR
           || receptor_type == RF
@@ -212,7 +215,7 @@ namespace nest
    }
 
    inline port
-   binary_kp_1994::send_test_event( Node& target,
+   bpid_kp_2017::send_test_event( Node& target,
      rport receptor_type,
      synindex,
      bool )
@@ -223,7 +226,7 @@ namespace nest
    }
 
    inline port
-   binary_kp_1994::handles_test_event( DataLoggingRequest& dlr, rport receptor_type )
+   bpid_kp_2017::handles_test_event( DataLoggingRequest& dlr, rport receptor_type )
    {
      if ( receptor_type != 0 )
      {
@@ -235,4 +238,4 @@ namespace nest
 
 } //namespace
 
-#endif //BINARY_KP_1994_H
+#endif //bpid_kp_2017_H

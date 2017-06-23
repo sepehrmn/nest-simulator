@@ -20,17 +20,17 @@
 // *
 // */
 
-#ifndef KAY_PHILLIPS_CONNECTION_H
-#define KAY_PHILLIPS_CONNECTION_H
+#ifndef BPID_KP_CONNECTION
+#define BPID_KP_CONNECTION
 
 // Includes from nestkernel:
 #include "connection.h"
 
 /* BeginDocumentation
- Name: KAY_PHILLIPS synapse - Synapse for use with binary_kp_1994.
+ Name: KAY_PHILLIPS synapse - Synapse for use with bpid_kp_2017.
 
  Description:
- This synapse should be used with the binary_kp_1994 model.
+ This synapse should be used with the bpid_kp_2017 model.
 
  Parameters:
     The following parameters can be set in the status dictionary:
@@ -43,14 +43,14 @@
 
  FirstVersion: January 2017
  Author: Sepehr Mahmoudian
- SeeAlso: binary_kp_1994
+ SeeAlso: bpid_kp_2017
 */
 
 namespace nest
 {
 
    template < typename targetidentifierT >
-   class KP1994Connection : public Connection< targetidentifierT >
+   class BPIDKPCONNECTION : public Connection< targetidentifierT >
    {
    public:
        typedef CommonSynapseProperties CommonPropertiesType;
@@ -60,7 +60,7 @@ namespace nest
         * Default Constructor.
         * Sets default values for all parameters. Needed by GenericConnectorModel.
         */
-       KP1994Connection()
+       BPIDKPCONNECTION()
        : ConnectionBase()
        , weight_(0)
        {
@@ -70,7 +70,7 @@ namespace nest
         * Copy constructor.
         * Needs to be defined properly in order for GenericConnector to work.
         */
-        KP1994Connection( const KP1994Connection& rhs )
+        BPIDKPCONNECTION( const BPIDKPCONNECTION& rhs )
         : ConnectionBase( rhs )
         , weight_( rhs.weight_ )
         {
@@ -167,7 +167,7 @@ namespace nest
 
    template < typename targetidentifierT >
    void
-   KP1994Connection< targetidentifierT >::get_status( DictionaryDatum& d ) const
+   BPIDKPCONNECTION< targetidentifierT >::get_status( DictionaryDatum& d ) const
    {
        ConnectionBase::get_status( d );
        def< double >( d, names::weight, weight_ );
@@ -176,7 +176,7 @@ namespace nest
 
    template < typename targetidentifierT >
    void
-   KP1994Connection< targetidentifierT >::set_status( const DictionaryDatum& d,
+   BPIDKPCONNECTION< targetidentifierT >::set_status( const DictionaryDatum& d,
                                                   ConnectorModel& cm )
    {
        ConnectionBase::set_status( d, cm );
@@ -192,4 +192,4 @@ namespace nest
 
 } // namespace
 
-#endif // KAY_PHILLIPS_CONNECTION_H
+#endif // BPID_KP_CONNECTION

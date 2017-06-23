@@ -28,7 +28,7 @@ set( models_sources
     aeif_psc_exp.h aeif_psc_exp.cpp
     amat2_psc_exp.h amat2_psc_exp.cpp
     binary_neuron.h binary_neuron_impl.h
-    binary_kp_1994.h binary_kp_1994.cpp
+    bpid_kp_2017.h bpid_kp_2017.cpp
     cont_delay_connection.h cont_delay_connection_impl.h
     correlation_detector.h correlation_detector.cpp
     correlomatrix_detector.h correlomatrix_detector.cpp
@@ -60,7 +60,7 @@ set( models_sources
     iaf_psc_exp.h iaf_psc_exp.cpp
     iaf_tum_2000.h iaf_tum_2000.cpp
     izhikevich.h izhikevich.cpp
-    kp_1994_connection.h
+    bpid_kp_connection.h
     mat2_psc_exp.h mat2_psc_exp.cpp
     mcculloch_pitts_neuron.h mcculloch_pitts_neuron.cpp
     mip_generator.h mip_generator.cpp

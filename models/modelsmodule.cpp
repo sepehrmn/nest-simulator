@@ -51,7 +51,7 @@
 #include "aeif_psc_alpha.h"
 #include "aeif_psc_exp.h"
 #include "amat2_psc_exp.h"
-#include "binary_kp_1994.h"
+#include "bpid_kp_2017.h"
 #include "ginzburg_neuron.h"
 #include "hh_cond_exp_traub.h"
 #include "hh_psc_alpha.h"
@@ -112,7 +112,7 @@
 #include "cont_delay_connection_impl.h"
 #include "gap_junction.h"
 #include "ht_connection.h"
-#include "kp_1994_connection.h"
+#include "bpid_kp_connection.h"
 #include "quantal_stp_connection.h"
 #include "quantal_stp_connection_impl.h"
 #include "spike_dilutor.h"
@@ -178,7 +178,7 @@ ModelsModule::commandstring( void ) const
 void
 ModelsModule::init( SLIInterpreter* )
 {
-  kernel().model_manager.register_node_model< binary_kp_1994 >( "binary_kp_1994" );
+  kernel().model_manager.register_node_model< bpid_kp_2017 >( "bpid_kp_2017" );
   kernel().model_manager.register_node_model< iaf_neuron >( "iaf_neuron",
     /* private_model */ false,
     /* deprecation_info */ "NEST 3.0" );
@@ -625,11 +625,11 @@ ModelsModule::init( SLIInterpreter* )
 */
   kernel()
           .model_manager
-          .register_connection_model< KP1994Connection< TargetIdentifierPtrRport > >(
+          .register_connection_model< BPIDKPCONNECTION< TargetIdentifierPtrRport > >(
                   "kp_1994_synapse" );
   kernel()
           .model_manager
-          .register_connection_model< KP1994Connection< TargetIdentifierIndex > >(
+          .register_connection_model< BPIDKPCONNECTION< TargetIdentifierIndex > >(
                   "kp_1994_synapse_hpc" );
 }
 

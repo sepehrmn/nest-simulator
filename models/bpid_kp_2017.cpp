@@ -1,6 +1,6 @@
 
 /*
- *  binary_kp_1994.cpp
+ *  bpid_kp_2017.cpp
  *
  *  This file is part of NEST.
  *
@@ -21,7 +21,7 @@
  *
  */
 
-#include "binary_kp_1994.h"
+#include "bpid_kp_2017.h"
 
 // Includes from libnestutil:
 #include "numerics.h"
@@ -39,8 +39,8 @@
  * Recordables map
  * ---------------------------------------------------------------- */
 
-nest::RecordablesMap< nest::binary_kp_1994 >
-  nest::binary_kp_1994::recordablesMap_;
+nest::RecordablesMap< nest::bpid_kp_2017 >
+  nest::bpid_kp_2017::recordablesMap_;
 
 namespace nest
 {
@@ -53,12 +53,12 @@ namespace nest
    */
   template <>
   void
-  RecordablesMap< binary_kp_1994 >::create()
+  RecordablesMap< bpid_kp_2017 >::create()
   {
     // use standard names whereever you can for consistency!
-    insert_( names::receptive_field, &binary_kp_1994::get_receptive_field_ );
-    insert_( names::contextual_field, &binary_kp_1994::get_contextual_field_ );
-    insert_( names::theta, &binary_kp_1994::get_theta_ );
+    insert_( names::receptive_field, &bpid_kp_2017::get_receptive_field_ );
+    insert_( names::contextual_field, &bpid_kp_2017::get_contextual_field_ );
+    insert_( names::theta, &bpid_kp_2017::get_theta_ );
   }
 } //namespace
 
@@ -67,7 +67,7 @@ namespace nest
    * Default and copy constructor for node
    * ---------------------------------------------------------------- */
 
-   nest::binary_kp_1994::binary_kp_1994()
+   nest::bpid_kp_2017::bpid_kp_2017()
      : Archiving_Node()
      , P_()
      , S_()
@@ -76,7 +76,7 @@ namespace nest
      recordablesMap_.create();
    }
 
-   nest::binary_kp_1994::binary_kp_1994( const binary_kp_1994& n )
+   nest::bpid_kp_2017::bpid_kp_2017( const bpid_kp_2017& n )
      : Archiving_Node( n )
      , P_( n.P_ )
      , S_( n.S_ )
@@ -89,7 +89,7 @@ namespace nest
     * Default constructors defining default parameters and state
     * ---------------------------------------------------------------- */
 
-   nest::binary_kp_1994::Parameters_::Parameters_()
+   nest::bpid_kp_2017::Parameters_::Parameters_()
      : k1_( 0.5 )
      , k2_( 2.0 )
      , k3_( 0.0 )
@@ -97,7 +97,7 @@ namespace nest
    {
    }
 
-   nest::binary_kp_1994::State_::State_()
+   nest::bpid_kp_2017::State_::State_()
      : theta_( 0.0 )
      ,  w_0_ ( 0.0 )
      ,  v_0_ ( 0.0 )
@@ -111,7 +111,7 @@ namespace nest
   * ---------------------------------------------------------------- */
 
 void
-nest::binary_kp_1994::get_status( DictionaryDatum& d ) const
+nest::bpid_kp_2017::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d );
@@ -131,7 +131,7 @@ nest::binary_kp_1994::get_status( DictionaryDatum& d ) const
 }
 
 void
-nest::binary_kp_1994::set_status( const DictionaryDatum& d )
+nest::bpid_kp_2017::set_status( const DictionaryDatum& d )
 {
   P_.set( d );
   S_.set( d );
@@ -140,7 +140,7 @@ nest::binary_kp_1994::set_status( const DictionaryDatum& d )
 // Parameters
 
 void
-nest::binary_kp_1994::Parameters_::get( DictionaryDatum& d ) const
+nest::bpid_kp_2017::Parameters_::get( DictionaryDatum& d ) const
 {
   def< double >( d, names::k1, k1_ );
   def< double >( d, names::k2, k2_ );
@@ -149,7 +149,7 @@ nest::binary_kp_1994::Parameters_::get( DictionaryDatum& d ) const
 }
 
 void
-nest::binary_kp_1994::Parameters_::set( const DictionaryDatum& d )
+nest::bpid_kp_2017::Parameters_::set( const DictionaryDatum& d )
 {
   updateValue< double >( d, names::k1, k1_ );
   updateValue< double >( d, names::k2, k2_ );
@@ -160,7 +160,7 @@ nest::binary_kp_1994::Parameters_::set( const DictionaryDatum& d )
 // State
 
 void
-nest::binary_kp_1994::State_::get( DictionaryDatum& d) const
+nest::bpid_kp_2017::State_::get( DictionaryDatum& d) const
 {
   def< double >( d, names::theta, theta_);
   def< double >( d, names::w_0, w_0_ );
@@ -170,7 +170,7 @@ nest::binary_kp_1994::State_::get( DictionaryDatum& d) const
 }
 
 void
-nest::binary_kp_1994::State_::set( const DictionaryDatum& d )
+nest::bpid_kp_2017::State_::set( const DictionaryDatum& d )
 {
   updateValue< double >( d, names::theta, theta_ );
   updateValue< double >( d, names::w_0, w_0_ );
@@ -181,12 +181,12 @@ nest::binary_kp_1994::State_::set( const DictionaryDatum& d )
 
 // Buffers
 
-nest::binary_kp_1994::Buffers_::Buffers_( binary_kp_1994& n )
+nest::bpid_kp_2017::Buffers_::Buffers_( bpid_kp_2017& n )
   : logger_( n )
 {
 }
 
-nest::binary_kp_1994::Buffers_::Buffers_( const Buffers_&, binary_kp_1994& n )
+nest::bpid_kp_2017::Buffers_::Buffers_( const Buffers_&, bpid_kp_2017& n )
   : logger_( n )
 {
 }
@@ -196,14 +196,14 @@ nest::binary_kp_1994::Buffers_::Buffers_( const Buffers_&, binary_kp_1994& n )
 * ---------------------------------------------------------------- */
 
 void
-nest::binary_kp_1994::init_state_( const Node& proto )
+nest::bpid_kp_2017::init_state_( const Node& proto )
 {
-  const binary_kp_1994& pr = downcast< binary_kp_1994 >( proto );
+  const bpid_kp_2017& pr = downcast< bpid_kp_2017 >( proto );
   S_ = pr.S_;
 }
 
 void
-nest::binary_kp_1994::init_buffers_()
+nest::bpid_kp_2017::init_buffers_()
 {
   B_.spikes_rf_.clear(); // includes resize
   B_.spikes_cf_.clear(); // includes resize
@@ -212,7 +212,7 @@ nest::binary_kp_1994::init_buffers_()
 }
 
 void
-nest::binary_kp_1994::calibrate()
+nest::bpid_kp_2017::calibrate()
 {
   // ensures initialization in case mm connected after Simulate
   B_.logger_.init();
@@ -224,7 +224,7 @@ nest::binary_kp_1994::calibrate()
  * ---------------------------------------------------------------- */
 
 void
-nest::binary_kp_1994::update( const Time& origin, const long from, const long to )
+nest::bpid_kp_2017::update( const Time& origin, const long from, const long to )
 {
   assert(
     to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
@@ -270,7 +270,7 @@ nest::binary_kp_1994::update( const Time& origin, const long from, const long to
 }
 
 void
-nest::binary_kp_1994::handle( SpikeEvent& e )
+nest::bpid_kp_2017::handle( SpikeEvent& e )
 {
   assert( e.get_delay() > 0 );
 
@@ -289,7 +289,7 @@ nest::binary_kp_1994::handle( SpikeEvent& e )
 }
 
 void
-nest::binary_kp_1994::handle( DataLoggingRequest& e )
+nest::bpid_kp_2017::handle( DataLoggingRequest& e )
 {
   B_.logger_.handle( e );
 }
