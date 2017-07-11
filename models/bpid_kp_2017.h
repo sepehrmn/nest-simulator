@@ -30,7 +30,13 @@
    [2] J Kay and WA Phillips (1994). Technical Report CCCN-15.
    [3] D Smyth, J Kay, WA Phillips (1996). Network: Computation in Neural Systems.
    [4] Partial information decomposition as a unified approach to the specification of neural goal functions
-Michael Wibrala, Viola Priesemannb, Jim W. Kayc, Joseph T. Lizierd, William A. Phillipse
+Michael Wibral, Viola Priesemann, Jim W. Kay, Joseph T. Lizier, William A. Phillips
+
+  Note that the receptive_field and contextual_field include w_0 and v_0
+  respectively, and that are used to calculate the output probability.
+  Add w_0 to receptive_field and v_0 to contextual_field to get the value of
+  only the neural input added.
+
   FirstVersion: May 2017
   Author: Sepehr Mahmoudian
   SeeAlso: bpid_kp_connection

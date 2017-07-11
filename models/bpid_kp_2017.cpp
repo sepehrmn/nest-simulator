@@ -237,13 +237,13 @@ nest::bpid_kp_2017::update( const Time& origin, const long from, const long to )
     // the buffer for incoming spikes for every time step contains the
     // difference
     // of the total input h with respect to the previous step, so sum them up
-    S_.receptive_field_ = B_.spikes_rf_.get_value( lag );
+    S_.receptive_field_ = B_.spikes_rf_.get_value( lag ) - S_.w_0_;
 
     // update the input current
     // the buffer for incoming spikes for every time step contains the
     // difference
     // of the total input h with respect to the previous step, so sum them up
-    S_.contextual_field_ = B_.spikes_cf_.get_value( lag );
+    S_.contextual_field_ = B_.spikes_cf_.get_value( lag ) - S_.v_0_;
 
     double activ_val = S_.receptive_field_ *
               ( P_.k1_ + ( 1 - P_.k1_ ) * exp( P_.k2_ * S_.receptive_field_ * S_.contextual_field_ ) )
