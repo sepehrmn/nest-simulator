@@ -252,12 +252,12 @@ nest::bpid_kp_2017::update( const Time& origin, const long from, const long to )
     // To overcome overflow. Underflow gets set to 0 in c++ and python?
     if (S_.receptive_field_ >= 0)
     {
-      S_.theta_ = exp(activ_val) / (1 + exp(activ_val));
+      S_.theta_ = 1 / (1 + exp(-activ_val));
     }
 
     else
     {
-      S_.theta_ = 1 / (1 + exp(-activ_val));
+      S_.theta_ = exp(activ_val) / (1 + exp(activ_val));
     }
 
     // The if statement below makes sure that the neuron only fires once in a
