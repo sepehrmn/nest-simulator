@@ -242,12 +242,12 @@ extern const Name inh_conductance;         //!< Recorder parameter
 extern const Name instant_unblock_NMDA;    //!< specific to Hill-Tononi
 extern const Name
   Interpol_Order;           //!< Interpolation order (precise timing neurons)
+extern const Name integration_type; //!< bpid_kp_2017 parameter
 extern const Name interval; //!< Recorder parameter
 extern const Name is_refractory; //!< Neuron is in refractory period (debugging)
 
 extern const Name k1;     //!< Exclusive to kp neuron
 extern const Name k2;     //!< Exclusive to kp neuron
-extern const Name k3;     //!< Exclusive to kp neuron
 
 extern const Name label;      //!< Miscellaneous parameters
 extern const Name lambda_0;   //!< Specific to gif models

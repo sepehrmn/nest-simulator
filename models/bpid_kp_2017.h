@@ -37,6 +37,11 @@ Michael Wibral, Viola Priesemann, Jim W. Kay, Joseph T. Lizier, William A. Phill
   Add w_0 to receptive_field and v_0 to contextual_field to get the value of
   only the neural input added.
 
+  // by default integration_type is additive and k1 and k2 are set to 1.0
+  // if this is changed to modulatory, k1 and k2 are changed to 0.5 and 2.0,
+  // respectively, unless specified otherwise. If the integration type of the neuron is changed,
+  // and k1/k2 are not specified, they are set to the default values for that integration type.
+
   FirstVersion: May 2017
   Author: Sepehr Mahmoudian
   SeeAlso: bpid_kp_connection
@@ -106,6 +111,12 @@ namespace nest
         CF
       };
 
+      enum IntegrationTypes
+      {
+        ADDITIVE = 0,
+        MODULATORY
+      };
+
     void init_state_( const Node& proto );
     void init_buffers_();
     void calibrate();
@@ -125,8 +136,8 @@ namespace nest
       double k1_;
       // k2 parameter of the activation function
       double k2_;
-      // k3 parameter of the activation function
-      double k3_;
+      // integration type (e.g., additive or modulatory)
+      int integration_type_;
 
       // Update interval
       double interval_;

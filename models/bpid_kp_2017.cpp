@@ -90,9 +90,9 @@ namespace nest
     * ---------------------------------------------------------------- */
 
    nest::bpid_kp_2017::Parameters_::Parameters_()
-     : k1_( 0.5 )
-     , k2_( 2.0 )
-     , k3_( 0.0 )
+     : k1_( 1.0 )
+     , k2_( 1.0 )
+     , integration_type_(ADDITIVE)
      , interval_( 1.0 ) // ms
    {
    }
@@ -124,6 +124,11 @@ nest::bpid_kp_2017::get_status( DictionaryDatum& d ) const
   ( *receptor_types )[ "contextual_field" ] = CF;
   ( *d )[ "receptor_types" ] = receptor_types;
 
+  DictionaryDatum integration_types = new Dictionary();
+  ( *integration_types )[ "additive" ] = ADDITIVE;
+  ( *integration_types )[ "modulatory" ] = MODULATORY;
+  ( *d )[ "integration_types" ] = integration_types;
+
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 
   ( *d )[ names::receptive_field ] = S_.receptive_field_;
@@ -144,7 +149,7 @@ nest::bpid_kp_2017::Parameters_::get( DictionaryDatum& d ) const
 {
   def< double >( d, names::k1, k1_ );
   def< double >( d, names::k2, k2_ );
-  def< double >( d, names::k3, k3_ );
+  def< long >( d, names::integration_type, integration_type_ ); //TODO fix from long. int does not work
   def< double >( d, names::interval, interval_ );
 }
 
@@ -153,8 +158,23 @@ nest::bpid_kp_2017::Parameters_::set( const DictionaryDatum& d )
 {
   updateValue< double >( d, names::k1, k1_ );
   updateValue< double >( d, names::k2, k2_ );
-  updateValue< double >( d, names::k3, k3_ );
+  updateValue< long >( d, names::integration_type, integration_type_ ); //TODO fix from long. int does not work
   updateValue< double >( d, names::interval, interval_ );
+
+  if ( !d->known( names::k1 ) or !d->known( names::k2 )  )
+  {
+    if (integration_type_ == ADDITIVE)
+    {
+      k1_ = 1.0;
+      k2_ = 1.0;
+    }
+
+    else if (integration_type_ == MODULATORY)
+    {
+      k1_ = 0.5;
+      k2_ = 2.0;
+    }
+  }
 }
 
 // State
@@ -245,9 +265,18 @@ nest::bpid_kp_2017::update( const Time& origin, const long from, const long to )
     // of the total input h with respect to the previous step, so sum them up
     S_.contextual_field_ = B_.spikes_cf_.get_value( lag ) - S_.v_0_;
 
-    double activ_val = S_.receptive_field_ *
-              ( P_.k1_ + ( 1 - P_.k1_ ) * exp( P_.k2_ * S_.receptive_field_ * S_.contextual_field_ ) )
-               + P_.k3_ *  S_.contextual_field_;
+    double activ_val = 0.0;
+
+    if (P_.integration_type_ == ADDITIVE)
+    {
+      activ_val = P_.k1_ * S_.receptive_field_ + P_.k2_ * S_.contextual_field_;
+    }
+
+    else if (P_.integration_type_ == MODULATORY)
+    {
+      activ_val = S_.receptive_field_ *
+                ( P_.k1_ + ( 1 - P_.k1_ ) * exp( P_.k2_ * S_.receptive_field_ * S_.contextual_field_ ) );
+    }
 
     // To overcome overflow. Underflow gets set to 0 in c++ and python?
     if (S_.receptive_field_ >= 0)

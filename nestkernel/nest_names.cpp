@@ -204,13 +204,13 @@ const Name index_map( "index_map" );
 const Name individual_spike_trains( "individual_spike_trains" );
 const Name inh_conductance( "inh_conductance" );
 const Name instant_unblock_NMDA( "instant_unblock_NMDA" );
+const Name integration_type("integration_type");
 const Name Interpol_Order( "Interpol_Order" );
 const Name interval( "interval" );
 const Name is_refractory( "is_refractory" );
 
 const Name k1( "k1" );
 const Name k2( "k2" );
-const Name k3( "k3" );
 
 const Name label( "label" );
 const Name lambda_0( "lambda_0" );
