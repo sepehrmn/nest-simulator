@@ -217,9 +217,9 @@ SLIStartup::checkenvpath( std::string const& envvar,
 SLIStartup::SLIStartup( int argc, char** argv )
   : startupfilename( "sli-init.sli" )
   , slilibpath( "/sli" )
-  , slihomepath( NEST_PREFIX "/" NEST_DATADIR )
-  , slidocdir( NEST_PREFIX "/" NEST_DOCDIR )
-  , sliprefix( NEST_PREFIX )
+  , slihomepath( NEST_INSTALL_PREFIX "/" NEST_INSTALL_DATADIR )
+  , slidocdir( NEST_INSTALL_PREFIX "/" NEST_INSTALL_DOCDIR )
+  , sliprefix( NEST_INSTALL_PREFIX )
   , verbosity_( SLIInterpreter::M_INFO ) // default verbosity level
   , debug_( false )
   , argv_name( "argv" )
@@ -256,6 +256,12 @@ SLIStartup::SLIStartup( int argc, char** argv )
   , ndebug_name( "ndebug" )
   , exitcodes_name( "exitcodes" )
   , exitcode_success_name( "success" )
+  , exitcode_skipped_name( "skipped" )
+  , exitcode_skipped_no_mpi_name( "skipped_no_mpi" )
+  , exitcode_skipped_have_mpi_name( "skipped_have_mpi" )
+  , exitcode_skipped_no_threading_name( "skipped_no_threading" )
+  , exitcode_skipped_no_gsl_name( "skipped_no_gsl" )
+  , exitcode_skipped_no_music_name( "skipped_no_music" )
   , exitcode_scripterror_name( "scripterror" )
   , exitcode_abort_name( "abort" )
   , exitcode_userabort_name( "userabort" )
@@ -269,12 +275,15 @@ SLIStartup::SLIStartup( int argc, char** argv )
 
   // argv[0] is the name of the program that was given to the shell.
   // This name must be given to SLI, otherwise initialization fails.
-  // To catch accidental removal, e.g. in pyNEST, we explicitly assert
-  // that argv[0] is a non-empty string.
-  assert( std::strlen( argv[ 0 ] ) > 0 );
+  // If we import NEST directly from the Python interpreter, that is, not from
+  // a script but by using an interactive session in Python, argv[0] is an
+  // empty string, see documentation for argv in
+  // https://docs.python.org/3/library/sys.html
   for ( int i = 0; i < argc; ++i )
   {
     StringDatum* sd = new StringDatum( argv[ i ] );
+    ad.push_back( Token( sd ) );
+
     if ( *sd == "-d" || *sd == "--debug" )
     {
       debug_ = true;
@@ -327,8 +336,6 @@ SLIStartup::SLIStartup( int argc, char** argv )
       verbosity_ = SLIInterpreter::M_QUIET;
       continue;
     }
-
-    ad.push_back( Token( sd ) );
   }
   targs = ad;
 }
@@ -539,17 +546,31 @@ SLIStartup::init( SLIInterpreter* i )
   exitcodes->insert(
     exitcode_success_name, Token( new IntegerDatum( EXIT_SUCCESS ) ) );
   exitcodes->insert(
-    exitcode_scripterror_name, Token( new IntegerDatum( 126 ) ) );
+    exitcode_skipped_name, Token( new IntegerDatum( EXITCODE_SKIPPED ) ) );
+  exitcodes->insert( exitcode_skipped_no_mpi_name,
+    Token( new IntegerDatum( EXITCODE_SKIPPED_NO_MPI ) ) );
+  exitcodes->insert( exitcode_skipped_have_mpi_name,
+    Token( new IntegerDatum( EXITCODE_SKIPPED_HAVE_MPI ) ) );
+  exitcodes->insert( exitcode_skipped_no_threading_name,
+    Token( new IntegerDatum( EXITCODE_SKIPPED_NO_THREADING ) ) );
+  exitcodes->insert( exitcode_skipped_no_gsl_name,
+    Token( new IntegerDatum( EXITCODE_SKIPPED_NO_GSL ) ) );
+  exitcodes->insert( exitcode_skipped_no_music_name,
+    Token( new IntegerDatum( EXITCODE_SKIPPED_NO_MUSIC ) ) );
+  exitcodes->insert( exitcode_scripterror_name,
+    Token( new IntegerDatum( EXITCODE_SCRIPTERROR ) ) );
   exitcodes->insert(
     exitcode_abort_name, Token( new IntegerDatum( NEST_EXITCODE_ABORT ) ) );
-  exitcodes->insert( exitcode_userabort_name, Token( new IntegerDatum( 15 ) ) );
+  exitcodes->insert(
+    exitcode_userabort_name, Token( new IntegerDatum( EXITCODE_USERABORT ) ) );
   exitcodes->insert( exitcode_segfault_name,
     Token( new IntegerDatum( NEST_EXITCODE_SEGFAULT ) ) );
   exitcodes->insert(
-    exitcode_exception_name, Token( new IntegerDatum( 125 ) ) );
-  exitcodes->insert( exitcode_fatal_name, Token( new IntegerDatum( 127 ) ) );
+    exitcode_exception_name, Token( new IntegerDatum( EXITCODE_EXCEPTION ) ) );
   exitcodes->insert(
-    exitcode_unknownerror_name, Token( new IntegerDatum( 10 ) ) );
+    exitcode_fatal_name, Token( new IntegerDatum( EXITCODE_FATAL ) ) );
+  exitcodes->insert( exitcode_unknownerror_name,
+    Token( new IntegerDatum( EXITCODE_UNKNOWN_ERROR ) ) );
 
   statusdict->insert( exitcodes_name, exitcodes );
 

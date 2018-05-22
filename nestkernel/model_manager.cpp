@@ -378,6 +378,8 @@ ModelManager::set_synapse_defaults_( index model_id,
   std::vector< lockPTR< WrappedThreadException > > exceptions_raised_(
     kernel().vp_manager.get_num_threads() );
 #ifdef _OPENMP
+// We have to run this in parallel to set the status on nodes that exist on each
+// thread, such as volume_transmitter.
 #pragma omp parallel
   {
     index t = kernel().vp_manager.get_thread_id();
@@ -444,7 +446,7 @@ ModelManager::get_connector_defaults( synindex syn_id ) const
     prototypes_[ t ][ syn_id ]->get_status( dict );
   }
 
-  ( *dict )[ "num_connections" ] =
+  ( *dict )[ names::num_connections ] =
     kernel().connection_manager.get_num_connections( syn_id );
 
   return dict;
@@ -619,8 +621,8 @@ ModelManager::register_connection_model_( ConnectorModel* cf )
 
   pristine_prototypes_.push_back( cf );
 
-  const synindex syn_id = prototypes_[ 0 ].size();
-  pristine_prototypes_[ syn_id ]->set_syn_id( syn_id );
+  const synindex syn_id = prototypes_.at( 0 ).size();
+  pristine_prototypes_.at( syn_id )->set_syn_id( syn_id );
 
   for ( thread t = 0;
         t < static_cast< thread >( kernel().vp_manager.get_num_threads() );

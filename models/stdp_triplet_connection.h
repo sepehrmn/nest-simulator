@@ -259,11 +259,9 @@ STDPTripletConnection< targetidentifierT >::send( Event& e,
     // Pfister et al, 2006
     double ky = start->triplet_Kminus_ - 1.0;
     ++start;
-    if ( minus_dt == 0 )
-    {
-      continue;
-    }
-
+    // get_history() should make sure that
+    // start->t_ > t_lastspike - dendritic_delay, i.e. minus_dt < 0
+    assert( minus_dt < -1.0 * kernel().connection_manager.get_stdp_eps() );
     weight_ =
       facilitate_( weight_, Kplus_ * std::exp( minus_dt / tau_plus_ ), ky );
   }
@@ -328,15 +326,15 @@ STDPTripletConnection< targetidentifierT >::get_status(
 {
   ConnectionBase::get_status( d );
   def< double >( d, names::weight, weight_ );
-  def< double >( d, "tau_plus", tau_plus_ );
-  def< double >( d, "tau_plus_triplet", tau_plus_triplet_ );
-  def< double >( d, "Aplus", Aplus_ );
-  def< double >( d, "Aminus", Aminus_ );
-  def< double >( d, "Aplus_triplet", Aplus_triplet_ );
-  def< double >( d, "Aminus_triplet", Aminus_triplet_ );
-  def< double >( d, "Kplus", Kplus_ );
-  def< double >( d, "Kplus_triplet", Kplus_triplet_ );
-  def< double >( d, "Wmax", Wmax_ );
+  def< double >( d, names::tau_plus, tau_plus_ );
+  def< double >( d, names::tau_plus_triplet, tau_plus_triplet_ );
+  def< double >( d, names::Aplus, Aplus_ );
+  def< double >( d, names::Aminus, Aminus_ );
+  def< double >( d, names::Aplus_triplet, Aplus_triplet_ );
+  def< double >( d, names::Aminus_triplet, Aminus_triplet_ );
+  def< double >( d, names::Kplus, Kplus_ );
+  def< double >( d, names::Kplus_triplet, Kplus_triplet_ );
+  def< double >( d, names::Wmax, Wmax_ );
 }
 
 template < typename targetidentifierT >
@@ -347,15 +345,15 @@ STDPTripletConnection< targetidentifierT >::set_status(
 {
   ConnectionBase::set_status( d, cm );
   updateValue< double >( d, names::weight, weight_ );
-  updateValue< double >( d, "tau_plus", tau_plus_ );
-  updateValue< double >( d, "tau_plus_triplet", tau_plus_triplet_ );
-  updateValue< double >( d, "Aplus", Aplus_ );
-  updateValue< double >( d, "Aminus", Aminus_ );
-  updateValue< double >( d, "Aplus_triplet", Aplus_triplet_ );
-  updateValue< double >( d, "Aminus_triplet", Aminus_triplet_ );
-  updateValue< double >( d, "Kplus", Kplus_ );
-  updateValue< double >( d, "Kplus_triplet", Kplus_triplet_ );
-  updateValue< double >( d, "Wmax", Wmax_ );
+  updateValue< double >( d, names::tau_plus, tau_plus_ );
+  updateValue< double >( d, names::tau_plus_triplet, tau_plus_triplet_ );
+  updateValue< double >( d, names::Aplus, Aplus_ );
+  updateValue< double >( d, names::Aminus, Aminus_ );
+  updateValue< double >( d, names::Aplus_triplet, Aplus_triplet_ );
+  updateValue< double >( d, names::Aminus_triplet, Aminus_triplet_ );
+  updateValue< double >( d, names::Kplus, Kplus_ );
+  updateValue< double >( d, names::Kplus_triplet, Kplus_triplet_ );
+  updateValue< double >( d, names::Wmax, Wmax_ );
 
   // check if weight_ and Wmax_ has the same sign
   if ( not( ( ( weight_ >= 0 ) - ( weight_ < 0 ) )

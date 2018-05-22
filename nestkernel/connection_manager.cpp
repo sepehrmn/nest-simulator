@@ -28,6 +28,8 @@
 // C++ includes:
 #include <cassert>
 #include <cmath>
+#include <iomanip>
+#include <limits>
 #include <set>
 #include <vector>
 
@@ -74,6 +76,10 @@ nest::ConnectionManager::ConnectionManager()
   , connbuilder_factories_()
   , min_delay_( 1 )
   , max_delay_( 1 )
+  , initial_connector_capacity_( CONFIG_CONNECTOR_CUTOFF )
+  , large_connector_limit_( CONFIG_CONNECTOR_CUTOFF * 2 )
+  , large_connector_growth_factor_( 1.5 )
+  , stdp_eps_( 1.0e-6 )
 {
 }
 
@@ -130,9 +136,57 @@ nest::ConnectionManager::finalize()
 void
 nest::ConnectionManager::set_status( const DictionaryDatum& d )
 {
+  long initial_connector_capacity = initial_connector_capacity_;
+  if ( updateValue< long >(
+         d, names::initial_connector_capacity, initial_connector_capacity ) )
+  {
+    if ( initial_connector_capacity < CONFIG_CONNECTOR_CUTOFF )
+    {
+      throw KernelException(
+        "The initial connector capacity should be higher or equal to "
+        "connector_cutoff value specified via cmake flag [default 3]" );
+    }
+
+    initial_connector_capacity_ = initial_connector_capacity;
+  }
+
+  long large_connector_limit = large_connector_limit_;
+  if ( updateValue< long >(
+         d, names::large_connector_limit, large_connector_limit ) )
+  {
+    if ( large_connector_limit < CONFIG_CONNECTOR_CUTOFF )
+    {
+      throw KernelException(
+        "The large connector limit should be higher or equal to "
+        "connector_cutoff value specified via cmake flag [default 3]" );
+    }
+
+    large_connector_limit_ = large_connector_limit;
+  }
+
+  double large_connector_growth_factor = large_connector_growth_factor_;
+  if ( updateValue< double >( d,
+         names::large_connector_growth_factor,
+         large_connector_growth_factor ) )
+  {
+    if ( large_connector_growth_factor <= 1.0 )
+    {
+      throw KernelException(
+        "The large connector capacity growth factor should be higher than "
+        "1.0" );
+    }
+
+    large_connector_growth_factor_ = large_connector_growth_factor;
+  }
+
   for ( size_t i = 0; i < delay_checkers_.size(); ++i )
   {
     delay_checkers_[ i ].set_status( d );
+  }
+  //  Need to update the saved values if we have changed the delay bounds.
+  if ( d->known( names::min_delay ) or d->known( names::max_delay ) )
+  {
+    update_delay_extrema_();
   }
 }
 
@@ -146,11 +200,19 @@ void
 nest::ConnectionManager::get_status( DictionaryDatum& d )
 {
   update_delay_extrema_();
-  def< double >( d, "min_delay", Time( Time::step( min_delay_ ) ).get_ms() );
-  def< double >( d, "max_delay", Time( Time::step( max_delay_ ) ).get_ms() );
+  def< double >(
+    d, names::min_delay, Time( Time::step( min_delay_ ) ).get_ms() );
+  def< double >(
+    d, names::max_delay, Time( Time::step( max_delay_ ) ).get_ms() );
+
+  def< long >(
+    d, names::initial_connector_capacity, initial_connector_capacity_ );
+  def< long >( d, names::large_connector_limit, large_connector_limit_ );
+  def< double >(
+    d, names::large_connector_growth_factor, large_connector_growth_factor_ );
 
   size_t n = get_num_connections();
-  def< long >( d, "num_connections", n );
+  def< long >( d, names::num_connections, n );
 }
 
 DictionaryDatum
@@ -163,7 +225,7 @@ nest::ConnectionManager::get_synapse_status( index gid,
 
   DictionaryDatum dict( new Dictionary );
   validate_pointer( connections_[ tid ].get( gid ) )
-    ->get_synapse_status( syn_id, dict, p );
+    ->get_synapse_status( syn_id, dict, p, tid );
   ( *dict )[ names::source ] = gid;
   ( *dict )[ names::synapse_model ] = LiteralDatum(
     kernel().model_manager.get_synapse_prototype( syn_id ).get_name() );
@@ -397,6 +459,13 @@ nest::ConnectionManager::connect( index sgid,
       return;
     }
 
+    if ( target->one_node_per_process() )
+    {
+      // connection to music proxy or similar device with one node per process.
+      connect_( *source, *target, sgid, target_thread, syn, d, w );
+      return;
+    }
+
     // make sure connections are only created on the thread of the device
     if ( ( source->get_thread() != target_thread )
       && ( source->has_proxies() ) )
@@ -456,6 +525,13 @@ nest::ConnectionManager::connect( index sgid,
     // make sure source is on this MPI rank
     if ( source->is_proxy() )
     {
+      return;
+    }
+
+    if ( target->one_node_per_process() )
+    {
+      // connection to music proxy or similar device with one node per process.
+      connect_( *source, *target, sgid, target_thread, syn, params, d, w );
       return;
     }
 
@@ -525,6 +601,13 @@ nest::ConnectionManager::connect( index sgid,
     if ( source->is_proxy() )
     {
       return false;
+    }
+
+    if ( target->one_node_per_process() )
+    {
+      // connection to music proxy or similar device with one node per process.
+      connect_( *source, *target, sgid, target_thread, syn, params );
+      return true;
     }
 
     // make sure connections are only created on the thread of the device
@@ -1368,5 +1451,33 @@ nest::ConnectionManager::get_targets( const std::vector< index >& sources,
             *targets_it, tid, synapse_model, post_synaptic_element );
       }
     }
+  }
+}
+
+void
+nest::ConnectionManager::set_stdp_eps( const double stdp_eps )
+{
+  if ( not( stdp_eps < Time::get_resolution().get_ms() ) )
+  {
+    throw KernelException(
+      "The epsilon used for spike-time comparison in STDP must be less "
+      "than the simulation resolution." );
+  }
+  else if ( stdp_eps < 0 )
+  {
+    throw KernelException(
+      "The epsilon used for spike-time comparison in STDP must not be "
+      "negative." );
+  }
+  else
+  {
+    stdp_eps_ = stdp_eps;
+
+    std::ostringstream os;
+    os << "Epsilon for spike-time comparison in STDP was set to "
+       << std::setprecision( std::numeric_limits< long double >::digits10 )
+       << stdp_eps_ << ".";
+
+    LOG( M_INFO, "ConnectionManager::set_stdp_eps", os.str() );
   }
 }

@@ -197,6 +197,15 @@ public:
   void set_status( const DictionaryDatum& d, ConnectorModel& cm );
 
   /**
+   * Checks to see if illegal parameters are given in syn_spec.
+   *
+   * The illegal parameters are: vt, A_minus, A_plus, Wmax, Wmin, b, tau_c,
+   * tau_n, tau_plus, c and n. The last two are prohibited only if we have more
+   * than one thread.
+   */
+  void check_synapse_params( const DictionaryDatum& d ) const;
+
+  /**
    * Send an event to the receiver of this connection.
    * \param e The event to send
    */
@@ -334,8 +343,8 @@ STDPDopaConnection< targetidentifierT >::get_status( DictionaryDatum& d ) const
   def< double >( d, names::weight, weight_ );
 
   // own properties, different for individual synapse
-  def< double >( d, "c", c_ );
-  def< double >( d, "n", n_ );
+  def< double >( d, names::c, c_ );
+  def< double >( d, names::n, n_ );
 }
 
 template < typename targetidentifierT >
@@ -347,8 +356,54 @@ STDPDopaConnection< targetidentifierT >::set_status( const DictionaryDatum& d,
   ConnectionBase::set_status( d, cm );
   updateValue< double >( d, names::weight, weight_ );
 
-  updateValue< double >( d, "c", c_ );
-  updateValue< double >( d, "n", n_ );
+  updateValue< double >( d, names::c, c_ );
+  updateValue< double >( d, names::n, n_ );
+}
+
+template < typename targetidentifierT >
+void
+STDPDopaConnection< targetidentifierT >::check_synapse_params(
+  const DictionaryDatum& syn_spec ) const
+{
+  if ( syn_spec->known( names::vt ) )
+  {
+    throw NotImplemented(
+      "Connect doesn't support the direct specification of the "
+      "volume transmitter of stdp_dopamine_synapse in syn_spec."
+      "Use SetDefaults() or CopyModel()." );
+  }
+  // Setting of parameter c and n not thread safe.
+  if ( kernel().vp_manager.get_num_threads() > 1 )
+  {
+    if ( syn_spec->known( names::c ) )
+    {
+      throw NotImplemented(
+        "For multi-threading Connect doesn't support the setting "
+        "of parameter c in stdp_dopamine_synapse. "
+        "Use SetDefaults() or CopyModel()." );
+    }
+    if ( syn_spec->known( names::n ) )
+    {
+      throw NotImplemented(
+        "For multi-threading Connect doesn't support the setting "
+        "of parameter n in stdp_dopamine_synapse. "
+        "Use SetDefaults() or CopyModel()." );
+    }
+  }
+  std::string param_arr[] = {
+    "A_minus", "A_plus", "Wmax", "Wmin", "b", "tau_c", "tau_n", "tau_plus"
+  };
+
+  const size_t n_param = sizeof( param_arr ) / sizeof( std::string );
+  for ( size_t n = 0; n < n_param; ++n )
+  {
+    if ( syn_spec->known( param_arr[ n ] ) )
+    {
+      throw NotImplemented(
+        "Connect doesn't support the setting of parameter param_arr[ n ]"
+        "in stdp_dopamine_synapse. Use SetDefaults() or CopyModel()." );
+    }
+  }
 }
 
 template < typename targetidentifierT >
@@ -397,7 +452,8 @@ STDPDopaConnection< targetidentifierT >::process_dopa_spikes_(
   // process dopa spikes in (t0, t1]
   // propagate weight from t0 to t1
   if ( ( dopa_spikes.size() > dopa_spikes_idx_ + 1 )
-    && ( dopa_spikes[ dopa_spikes_idx_ + 1 ].spike_time_ <= t1 ) )
+    && ( t1 - dopa_spikes[ dopa_spikes_idx_ + 1 ].spike_time_ > -1.0
+           * kernel().connection_manager.get_stdp_eps() ) )
   {
     // there is at least 1 dopa spike in (t0, t1]
     // propagate weight up to first dopa spike and update dopamine trace
@@ -413,7 +469,8 @@ STDPDopaConnection< targetidentifierT >::process_dopa_spikes_(
     // process remaining dopa spikes in (t0, t1]
     double cd;
     while ( ( dopa_spikes.size() > dopa_spikes_idx_ + 1 )
-      && ( dopa_spikes[ dopa_spikes_idx_ + 1 ].spike_time_ <= t1 ) )
+      && ( t1 - dopa_spikes[ dopa_spikes_idx_ + 1 ].spike_time_ > -1.0
+                * kernel().connection_manager.get_stdp_eps() ) )
     {
       // propagate weight up to next dopa spike and update dopamine trace
       // weight and dopamine trace n are at time of last dopa spike td but
@@ -510,8 +567,9 @@ STDPDopaConnection< targetidentifierT >::send( Event& e,
     process_dopa_spikes_( dopa_spikes, t0, start->t_ + dendritic_delay, cp );
     t0 = start->t_ + dendritic_delay;
     minus_dt = t_last_update_ - t0;
-    if ( start->t_ < t_spike ) // only depression if pre- and postsyn. spike
-                               // occur at the same time
+    // facilitate only in case of post- after presyn. spike
+    // skip facilitation if pre- and postsyn. spike occur at the same time
+    if ( t_spike - start->t_ > kernel().connection_manager.get_stdp_eps() )
     {
       facilitate_( Kplus_ * std::exp( minus_dt / cp.tau_plus_ ), cp );
     }

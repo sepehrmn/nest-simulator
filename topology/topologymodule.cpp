@@ -39,7 +39,6 @@
 #include "doubledatum.h"
 #include "integerdatum.h"
 #include "iostreamdatum.h"
-#include "lockptrdatum_impl.h"
 
 // Includes from topology:
 #include "connection_creator_impl.h"
@@ -52,6 +51,7 @@
 #include "mask_impl.h"
 #include "topology.h"
 #include "topology_parameter.h"
+
 
 namespace nest
 {
@@ -403,6 +403,7 @@ TopologyModule::init( SLIInterpreter* i )
   register_parameter< ExponentialParameter >( "exponential" );
   register_parameter< GaussianParameter >( "gaussian" );
   register_parameter< Gaussian2DParameter >( "gaussian2D" );
+  register_parameter< GammaParameter >( "gamma" );
   register_parameter< UniformParameter >( "uniform" );
   register_parameter< NormalParameter >( "normal" );
   register_parameter< LognormalParameter >( "lognormal" );

@@ -197,8 +197,8 @@ nest::iaf_psc_alpha_canon::State_::get( DictionaryDatum& d,
   const Parameters_& p ) const
 {
   def< double >( d, names::V_m, y3_ + p.E_L_ ); // Membrane potential
-  def< double >( d, "y1", y1_ );                // y1 state
-  def< double >( d, "y2", y2_ );                // y2 state
+  def< double >( d, names::y1, y1_ );           // y1 state
+  def< double >( d, names::y2, y2_ );           // y2 state
   def< bool >( d, names::is_refractory, is_refractory_ );
 }
 
@@ -216,8 +216,8 @@ nest::iaf_psc_alpha_canon::State_::set( const DictionaryDatum& d,
     y3_ -= delta_EL;
   }
 
-  updateValue< double >( d, "y1", y1_ );
-  updateValue< double >( d, "y2", y2_ );
+  updateValue< double >( d, names::y1, y1_ );
+  updateValue< double >( d, names::y2, y2_ );
 }
 
 nest::iaf_psc_alpha_canon::Buffers_::Buffers_( iaf_psc_alpha_canon& n )
@@ -358,7 +358,7 @@ nest::iaf_psc_alpha_canon::update( Time const& origin,
     bool end_of_refract;
 
     if ( not B_.events_.get_next_spike(
-           T, ev_offset, ev_weight, end_of_refract ) )
+           T, true, ev_offset, ev_weight, end_of_refract ) )
     { // No incoming spikes, handle with fixed propagator matrix.
       // Handling this case separately improves performance significantly
       // if there are many steps without input spikes.
@@ -428,8 +428,8 @@ nest::iaf_psc_alpha_canon::update( Time const& origin,
         V_.y3_before_ = S_.y3_;
         last_offset = ev_offset;
 
-      } while (
-        B_.events_.get_next_spike( T, ev_offset, ev_weight, end_of_refract ) );
+      } while ( B_.events_.get_next_spike(
+        T, true, ev_offset, ev_weight, end_of_refract ) );
 
       // no events remaining, plain update step across remainder
       // of interval

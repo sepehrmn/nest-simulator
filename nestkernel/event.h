@@ -79,6 +79,9 @@ class Node;
  * @see CurrentEvent
  * @see ConductanceEvent
  * @see GapJunctionEvent
+ * @see InstantaneousRateConnectionEvent
+ * @see DelayedRateConnectionEvent
+ * @see DiffusionConnectionEvent
  * @ingroup event_interface
  */
 
@@ -247,6 +250,16 @@ public:
   void set_weight( weight t );
 
   /**
+   * Set drift_factor of the event (see DiffusionConnectionEvent).
+   */
+  virtual void set_drift_factor( weight t ){};
+
+  /**
+   * Set diffusion_factor of the event (see DiffusionConnectionEvent).
+   */
+  virtual void set_diffusion_factor( weight t ){};
+
+  /**
    * Check integrity of the event.
    * This function returns true, if all data, in particular sender
    * and receiver pointers are correctly set.
@@ -308,6 +321,14 @@ protected:
    * when the event shall arrive at the target.
    */
   Time stamp_;
+
+  /**
+   * Time stamp in steps.
+   * Caches the value of stamp in steps for efficiency.
+   * Needs to be declared mutable since it is modified
+   * by a const function (get_rel_delivery_steps).
+   */
+  mutable long stamp_steps_;
 
   /**
    * Offset for precise spike times.
@@ -554,8 +575,11 @@ public:
   /** Create empty request for use during simulation. */
   DataLoggingRequest();
 
-  /** Create event for given time stamp and vector of recordables. */
   DataLoggingRequest( const Time&, const std::vector< Name >& );
+
+  /** Create event for given time interval, offset for interval start,
+   *  and vector of recordables. */
+  DataLoggingRequest( const Time&, const Time&, const std::vector< Name >& );
 
   DataLoggingRequest* clone() const;
 
@@ -564,6 +588,9 @@ public:
   /** Access to stored time interval.*/
   const Time& get_recording_interval() const;
 
+  /** Access to stored offset.*/
+  const Time& get_recording_offset() const;
+
   /** Access to vector of recordables. */
   const std::vector< Name >& record_from() const;
 
@@ -571,6 +598,8 @@ private:
   //! Interval between two recordings, first is step 1
   Time recording_interval_;
 
+  //! Offset relative to which the intervals are computed
+  Time recording_offset_;
   /**
    * Names of properties to record from.
    * @note This pointer shall be NULL unless the event is sent by a connection
@@ -582,6 +611,7 @@ private:
 inline DataLoggingRequest::DataLoggingRequest()
   : Event()
   , recording_interval_( Time::neg_inf() )
+  , recording_offset_( Time::ms( 0. ) )
   , record_from_( 0 )
 {
 }
@@ -593,6 +623,17 @@ inline DataLoggingRequest::DataLoggingRequest( const Time& rec_int,
   , record_from_( &recs )
 {
 }
+
+inline DataLoggingRequest::DataLoggingRequest( const Time& rec_int,
+  const Time& rec_offset,
+  const std::vector< Name >& recs )
+  : Event()
+  , recording_interval_( rec_int )
+  , recording_offset_( rec_offset )
+  , record_from_( &recs )
+{
+}
+
 
 inline DataLoggingRequest*
 DataLoggingRequest::clone() const
@@ -608,6 +649,13 @@ DataLoggingRequest::get_recording_interval() const
   assert( recording_interval_.is_finite() );
 
   return recording_interval_;
+}
+
+inline const Time&
+DataLoggingRequest::get_recording_offset() const
+{
+  assert( recording_offset_.is_finite() );
+  return recording_offset_;
 }
 
 inline const std::vector< Name >&
@@ -808,8 +856,8 @@ public:
 
 /**
  * This template function returns the number of uints covered by a variable of
- * type T. This function is used to determine the storage demands for a variable
- * of type T in the NEST communication buffer, which is of type
+ * type T. This function is used to determine the storage demands for a
+ * variable of type T in the NEST communication buffer, which is of type
  * std::vector<unsigned int>.
  */
 template < typename T >
@@ -830,11 +878,9 @@ number_of_uints_covered( void )
  * Please note that this function does not increase the size of the vector,
  * it just writes the data to the position given by the iterator.
  * The function is used to write data from SecondaryEvents to the NEST
- * communcation buffer.
- * The pos iterator is advanced during execution.
+ * communication buffer. The pos iterator is advanced during execution.
  * For a discussion on the functionality of this function see github issue #181
- * and pull request
- * #184.
+ * and pull request #184.
  */
 template < typename T >
 void
@@ -861,11 +907,9 @@ write_to_comm_buffer( T d, std::vector< unsigned int >::iterator& pos )
 /**
  * This template function reads data of type T from a given position of a
  * std::vector< unsigned int >. The function is used to read SecondaryEvents
- * data from
- * the NEST communcation buffer.
- * The pos iterator is advanced during execution.
- * For a discussion on the functionality of this function see github issue #181
- * and pull request #184.
+ * data from the NEST communication buffer. The pos iterator is advanced
+ * during execution. For a discussion on the functionality of this function see
+ * github issue #181 and pull request #184.
  */
 template < typename T >
 void
@@ -890,11 +934,16 @@ read_from_comm_buffer( T& d, std::vector< unsigned int >::iterator& pos )
 }
 
 /**
- * Event for gap-junction information.
- * The event transmits the interpolation of the membrane potential
- * to the connected neurons.
- * Technically the GapJunctionEvent only contains iterators pointing to
- * the memory location of the interpolation array.
+ * Template class for the storage and communication of a std::vector of type
+ * DataType. The class provides the functionality to communicate homogeneous
+ * data of type DataType. The second template type Subclass (which should be
+ * chosen as the derived class itself) is used to distinguish derived classes
+ * with the same DataType. This is required because of the included static
+ * variables in the base class (as otherwise all derived classes with the same
+ * DataType would share the same static variables).
+ *
+ * Technically the DataSecondaryEvent only contains iterators pointing to
+ * the memory location of the std::vector< DataType >.
  *
  * Conceptually, there is a one-to-one mapping between a SecondaryEvent
  * and a SecondaryConnectorModel. The synindex of this particular
@@ -907,27 +956,20 @@ read_from_comm_buffer( T& d, std::vector< unsigned int >::iterator& pos )
  * supports_syn_id()-function allows testing if a particular synid is mapped
  * with the SecondaryEvent in question.
  */
-class GapJunctionEvent : public SecondaryEvent
+template < typename DataType, typename Subclass >
+class DataSecondaryEvent : public SecondaryEvent
 {
 private:
-  // we chose std::vector over std::set because we expect this always to be
-  // short
+  // we chose std::vector over std::set because we expect this to be short
   static std::vector< synindex > supported_syn_ids_;
   static size_t coeff_length_; // length of coeffarray
 
-  std::vector< double >::iterator coeffarray_as_doubles_begin_;
-  std::vector< double >::iterator coeffarray_as_doubles_end_;
+  typename std::vector< DataType >::iterator coeffarray_as_d_begin_;
+  typename std::vector< DataType >::iterator coeffarray_as_d_end_;
   std::vector< unsigned int >::iterator coeffarray_as_uints_begin_;
   std::vector< unsigned int >::iterator coeffarray_as_uints_end_;
 
 public:
-  GapJunctionEvent()
-  {
-  }
-
-  void operator()();
-  GapJunctionEvent* clone() const;
-
   /**
    * This function is needed to set the synid on model registration.
    * At this point no object of this type is available and the
@@ -971,16 +1013,16 @@ public:
   }
 
   void
-  set_coeffarray( std::vector< double >& ca )
+  set_coeffarray( std::vector< DataType >& ca )
   {
-    coeffarray_as_doubles_begin_ = ca.begin();
-    coeffarray_as_doubles_end_ = ca.end();
+    coeffarray_as_d_begin_ = ca.begin();
+    coeffarray_as_d_end_ = ca.end();
     assert( coeff_length_ == ca.size() );
   }
 
   /**
-   * The following operator is used to read the information
-   * of the GapJunctionEvent from the buffer in Scheduler::deliver_events_
+   * The following operator is used to read the information of the
+   * DataSecondaryEvent from the buffer in EventDeliveryManager::deliver_events
    */
   std::vector< unsigned int >::iterator& operator<<(
     std::vector< unsigned int >::iterator& pos )
@@ -993,7 +1035,7 @@ public:
     // therefore we save an iterator to the beginning+end of the coeffarray
     coeffarray_as_uints_begin_ = pos;
 
-    pos += coeff_length_ * number_of_uints_covered< double >();
+    pos += coeff_length_ * number_of_uints_covered< DataType >();
 
     coeffarray_as_uints_end_ = pos;
 
@@ -1001,18 +1043,18 @@ public:
   }
 
   /**
-   * The following operator is used to write the information
-   * of the GapJunctionEvent into the secondary_events_buffer_
-   * All GapJunctionEvents are identified by the synid of the
-   * first element in supported_syn_ids_
+   * The following operator is used to write the information of the
+   * DataSecondaryEvent into the secondary_events_buffer_.
+   * All DataSecondaryEvents are identified by the synid of the
+   * first element in supported_syn_ids_.
    */
   std::vector< unsigned int >::iterator& operator>>(
     std::vector< unsigned int >::iterator& pos )
   {
     write_to_comm_buffer( *( supported_syn_ids_.begin() ), pos );
     write_to_comm_buffer( sender_gid_, pos );
-    for ( std::vector< double >::iterator i = coeffarray_as_doubles_begin_;
-          i != coeffarray_as_doubles_end_;
+    for ( typename std::vector< DataType >::iterator i = coeffarray_as_d_begin_;
+          i != coeffarray_as_d_end_;
           i++ )
     {
       write_to_comm_buffer( *i, pos );
@@ -1025,7 +1067,7 @@ public:
   {
     size_t s = number_of_uints_covered< synindex >();
     s += number_of_uints_covered< index >();
-    s += number_of_uints_covered< double >() * coeff_length_;
+    s += number_of_uints_covered< DataType >() * coeff_length_;
 
     return s;
   }
@@ -1042,21 +1084,147 @@ public:
     return coeffarray_as_uints_end_;
   }
 
-  double get_coeffvalue( std::vector< unsigned int >::iterator& pos );
+  DataType get_coeffvalue( std::vector< unsigned int >::iterator& pos );
 };
 
-inline double
-GapJunctionEvent::get_coeffvalue( std::vector< unsigned int >::iterator& pos )
+/**
+ * Event for gap-junction information. The event transmits the interpolation
+ * of the membrane potential to the connected neurons.
+ */
+class GapJunctionEvent : public DataSecondaryEvent< double, GapJunctionEvent >
 {
-  double elem = 0.0;
+
+public:
+  GapJunctionEvent()
+  {
+  }
+
+  void operator()();
+  GapJunctionEvent* clone() const;
+};
+
+/**
+ * Event for rate model connections without delay. The event transmits
+ * the rate to the connected neurons.
+ */
+class InstantaneousRateConnectionEvent
+  : public DataSecondaryEvent< double, InstantaneousRateConnectionEvent >
+{
+
+public:
+  InstantaneousRateConnectionEvent()
+  {
+  }
+
+  void operator()();
+  InstantaneousRateConnectionEvent* clone() const;
+};
+
+/**
+ * Event for rate model connections with delay. The event transmits
+ * the rate to the connected neurons.
+ */
+class DelayedRateConnectionEvent
+  : public DataSecondaryEvent< double, DelayedRateConnectionEvent >
+{
+
+public:
+  DelayedRateConnectionEvent()
+  {
+  }
+
+  void operator()();
+  DelayedRateConnectionEvent* clone() const;
+};
+
+/**
+ * Event for diffusion connections (rate model connections for the
+ * siegert_neuron). The event transmits the rate to the connected neurons.
+ */
+class DiffusionConnectionEvent
+  : public DataSecondaryEvent< double, DiffusionConnectionEvent >
+{
+private:
+  // drift factor of the corresponding connection
+  weight drift_factor_;
+  // diffusion factor of the corresponding connection
+  weight diffusion_factor_;
+
+public:
+  DiffusionConnectionEvent()
+  {
+  }
+
+  void operator()();
+  DiffusionConnectionEvent* clone() const;
+
+  void
+  set_diffusion_factor( weight t )
+  {
+    diffusion_factor_ = t;
+  };
+
+  void
+  set_drift_factor( weight t )
+  {
+    drift_factor_ = t;
+  };
+
+  weight get_drift_factor() const;
+  weight get_diffusion_factor() const;
+};
+
+template < typename DataType, typename Subclass >
+inline DataType
+DataSecondaryEvent< DataType, Subclass >::get_coeffvalue(
+  std::vector< unsigned int >::iterator& pos )
+{
+  DataType elem;
   read_from_comm_buffer( elem, pos );
   return elem;
 }
+
+template < typename DataType, typename Subclass >
+std::vector< synindex >
+  DataSecondaryEvent< DataType, Subclass >::supported_syn_ids_;
+
+template < typename DataType, typename Subclass >
+size_t DataSecondaryEvent< DataType, Subclass >::coeff_length_ = 0;
 
 inline GapJunctionEvent*
 GapJunctionEvent::clone() const
 {
   return new GapJunctionEvent( *this );
+}
+
+inline InstantaneousRateConnectionEvent*
+InstantaneousRateConnectionEvent::clone() const
+{
+  return new InstantaneousRateConnectionEvent( *this );
+}
+
+inline DelayedRateConnectionEvent*
+DelayedRateConnectionEvent::clone() const
+{
+  return new DelayedRateConnectionEvent( *this );
+}
+
+inline DiffusionConnectionEvent*
+DiffusionConnectionEvent::clone() const
+{
+  return new DiffusionConnectionEvent( *this );
+}
+
+inline weight
+DiffusionConnectionEvent::get_drift_factor() const
+{
+  return drift_factor_;
+}
+
+inline weight
+DiffusionConnectionEvent::get_diffusion_factor() const
+{
+  return diffusion_factor_;
 }
 
 //*************************************************************
@@ -1127,6 +1295,10 @@ inline void
 Event::set_stamp( Time const& s )
 {
   stamp_ = s;
+  stamp_steps_ = 0; // setting stamp_steps to zero indicates
+                    // stamp_steps needs to be recalculated from
+                    // stamp_ next time it is needed (e.g., in
+                    // get_rel_delivery_steps)
 }
 
 inline delay
@@ -1138,7 +1310,11 @@ Event::get_delay() const
 inline long
 Event::get_rel_delivery_steps( const Time& t ) const
 {
-  return stamp_.get_steps() + d_ - 1 - t.get_steps();
+  if ( stamp_steps_ == 0 )
+  {
+    stamp_steps_ = stamp_.get_steps();
+  }
+  return stamp_steps_ + d_ - 1 - t.get_steps();
 }
 
 inline void

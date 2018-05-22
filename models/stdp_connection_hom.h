@@ -302,10 +302,9 @@ STDPConnectionHom< targetidentifierT >::send( Event& e,
   {
     minus_dt = t_lastspike - ( start->t_ + dendritic_delay );
     ++start;
-    if ( minus_dt == 0 )
-    {
-      continue;
-    }
+    // get_history() should make sure that
+    // start->t_ > t_lastspike - dendritic_delay, i.e. minus_dt < 0
+    assert( minus_dt < -1.0 * kernel().connection_manager.get_stdp_eps() );
     weight_ =
       facilitate_( weight_, Kplus_ * std::exp( minus_dt / cp.tau_plus_ ), cp );
   }
@@ -333,7 +332,7 @@ STDPConnectionHom< targetidentifierT >::get_status( DictionaryDatum& d ) const
   def< double >( d, names::weight, weight_ );
 
   // own properties, different for individual synapse
-  def< double >( d, "Kplus", Kplus_ );
+  def< double >( d, names::Kplus, Kplus_ );
   def< long >( d, names::size_of, sizeof( *this ) );
 }
 
@@ -346,7 +345,7 @@ STDPConnectionHom< targetidentifierT >::set_status( const DictionaryDatum& d,
   ConnectionBase::set_status( d, cm );
   updateValue< double >( d, names::weight, weight_ );
 
-  updateValue< double >( d, "Kplus", Kplus_ );
+  updateValue< double >( d, names::Kplus, Kplus_ );
 }
 
 } // of namespace nest

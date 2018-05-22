@@ -127,6 +127,11 @@ public:
   void set_status( const DictionaryDatum& d, ConnectorModel& cm );
 
   /**
+   * Throws exception if n or a are given in syn_spec.
+   */
+  void check_synapse_params( const DictionaryDatum& d ) const;
+
+  /**
    * Send an event to the receiver of this connection.
    * \param e The event to send
    * \param t_lastspike Point in time of last spike sent.
@@ -192,8 +197,6 @@ Quantal_StpConnection< targetidentifierT >::send( Event& e,
   double t_lastspike,
   const CommonSynapseProperties& )
 {
-  const int vp = get_target( t )->get_vp();
-
   const double h = e.get_stamp().get_ms() - t_lastspike;
 
   // Compute the decay factors, based on the time since the last spike.
@@ -207,7 +210,7 @@ Quantal_StpConnection< targetidentifierT >::send( Event& e,
   // Compute number of sites that recovered during the interval.
   for ( int depleted = n_ - a_; depleted > 0; --depleted )
   {
-    if ( kernel().rng_manager.get_rng( vp )->drand() < ( 1.0 - p_decay ) )
+    if ( kernel().rng_manager.get_rng( t )->drand() < ( 1.0 - p_decay ) )
     {
       ++a_;
     }
@@ -217,7 +220,7 @@ Quantal_StpConnection< targetidentifierT >::send( Event& e,
   int n_release = 0;
   for ( int i = a_; i > 0; --i )
   {
-    if ( kernel().rng_manager.get_rng( vp )->drand() < u_ )
+    if ( kernel().rng_manager.get_rng( t )->drand() < u_ )
     {
       ++n_release;
     }
