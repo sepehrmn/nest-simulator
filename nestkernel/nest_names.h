@@ -147,7 +147,7 @@ extern const Name E_K;
 extern const Name E_L;
 extern const Name E_Na;
 extern const Name E_rc;
-extern const Name E_r;  
+extern const Name E_r;
 extern const Name E_rev;
 extern const Name E_rev_AMPA;
 extern const Name E_rev_GABA_A;
@@ -494,6 +494,7 @@ extern const Name update_node;
 extern const Name use_gid_in_filename;
 extern const Name use_wfr;
 
+extern const Name v_0;
 extern const Name V_act_NMDA;
 extern const Name V_epsp;
 extern const Name V_m;

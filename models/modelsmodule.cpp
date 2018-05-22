@@ -701,7 +701,7 @@ ModelsModule::init( SLIInterpreter* )
              .model_manager
              .register_connection_model< BPIDKPCONNECTION< TargetIdentifierIndex > >(
                      "kp_1994_synapse_hpc" );
-                     
+
   /* BeginDocumentation
      Name: bernoulli_synapse - Static synapse with stochastic transmission
      SeeAlso: synapsedict, static_synapse, static_synapse_hom_w
