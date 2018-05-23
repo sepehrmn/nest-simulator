@@ -278,15 +278,25 @@ nest::bpid_kp_2017::update( const Time& origin, const long from, const long to )
                 ( P_.k1_ + ( 1 - P_.k1_ ) * exp( P_.k2_ * S_.receptive_field_ * S_.contextual_field_ ) );
     }
 
-    // To overcome overflow. Underflow gets set to 0 in c++ and python?
-    if (S_.receptive_field_ >= 0)
+    // Floating point comparison according to ''The art of computer programming by Knuth''-
+    // https://stackoverflow.com/questions/17333/what-is-the-most-effective-way-for-float-and-double-comparison
+    // NOTE: infinity and NAN are ignores the if and else if.
+
+    assert(!std::isnan(activ_val) && !std::isinf(activ_val));
+
+    if ((activ_val - 20.) > ( (fabs(activ_val) < fabs(20.) ? fabs(20.) : fabs(activ_val)) * pow(10,-6)))
     {
-      S_.theta_ = 1 / (1 + exp(-activ_val));
+      S_.theta_  = 1.0;
+    }
+
+    else if ((-20 - activ_val) > ( (fabs(-20) < fabs(activ_val) ? fabs(activ_val) : fabs(-20.)) * pow(10,-6)))
+    {
+      S_.theta_  = 0.0;
     }
 
     else
     {
-      S_.theta_ = exp(activ_val) / (1 + exp(activ_val));
+      S_.theta_ = 1 / (1 + exp(-activ_val));
     }
 
     // The if statement below makes sure that the neuron only fires once in a
