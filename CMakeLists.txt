@@ -102,6 +102,11 @@ endif ()
 ##################           Find utility programs            ##################
 ################################################################################
 
+# needed for pynest test suite
+if ( ${with-python} STREQUAL "ON" OR  ${with-python} STREQUAL "2" OR  ${with-python} STREQUAL "3" )
+  find_program( NOSETESTS NAMES nosetests )
+endif ()
+
 # needed for target doc and fulldoc
 find_package( Doxygen )
 find_program( SED NAMES sed gsed )
@@ -351,7 +356,7 @@ configure_file(
 ##################            Install Extra Files             ##################
 ################################################################################
 
-install( FILES LICENSE README.md NEWS
+install( FILES LICENSE README.md
     DESTINATION ${CMAKE_INSTALL_DOCDIR}
     )
 
