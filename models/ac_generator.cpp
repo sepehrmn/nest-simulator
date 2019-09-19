@@ -71,8 +71,7 @@ nest::ac_generator::Parameters_::Parameters_( const Parameters_& p )
 {
 }
 
-nest::ac_generator::Parameters_& nest::ac_generator::Parameters_::operator=(
-  const Parameters_& p )
+nest::ac_generator::Parameters_& nest::ac_generator::Parameters_::operator=( const Parameters_& p )
 {
   if ( this == &p )
   {
@@ -139,7 +138,7 @@ nest::ac_generator::Parameters_::set( const DictionaryDatum& d )
  * ---------------------------------------------------------------- */
 
 nest::ac_generator::ac_generator()
-  : Node()
+  : DeviceNode()
   , device_()
   , P_()
   , S_()
@@ -149,7 +148,7 @@ nest::ac_generator::ac_generator()
 }
 
 nest::ac_generator::ac_generator( const ac_generator& n )
-  : Node( n )
+  : DeviceNode( n )
   , device_( n.device_ )
   , P_( n.P_ )
   , S_( n.S_ )
@@ -206,8 +205,7 @@ nest::ac_generator::calibrate()
 void
 nest::ac_generator::update( Time const& origin, const long from, const long to )
 {
-  assert(
-    to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
+  assert( to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
   assert( from < to );
 
   long start = origin.get_steps();

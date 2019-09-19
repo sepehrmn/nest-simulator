@@ -127,6 +127,18 @@ Node::get_status_dict_()
   return DictionaryDatum( new Dictionary );
 }
 
+void
+Node::set_local_device_id( const index lsdid )
+{
+  assert( false && "set_local_device_id() called on a non-device node of type" );
+}
+
+index
+Node::get_local_device_id() const
+{
+  assert( false && "set_local_device_id() called on a non-device node." );
+}
+
 DictionaryDatum
 Node::get_status_base()
 {
@@ -183,10 +195,7 @@ Node::set_status_base( const DictionaryDatum& dict )
   catch ( BadProperty& e )
   {
     throw BadProperty(
-      String::compose( "Setting status of a '%1' with GID %2: %3",
-        get_name(),
-        get_gid(),
-        e.message() ) );
+      String::compose( "Setting status of a '%1' with GID %2: %3", get_name(), get_gid(), e.message() ) );
   }
 
   updateValue< bool >( dict, names::frozen, frozen_ );
@@ -216,7 +225,7 @@ Node::send_test_event( Node&, rport, synindex, bool )
  * throws IllegalConnection
  */
 void
-Node::register_stdp_connection( double )
+Node::register_stdp_connection( double, double )
 {
   throw IllegalConnection();
 }
@@ -413,6 +422,12 @@ Node::sends_secondary_event( DelayedRateConnectionEvent& )
 
 
 double
+Node::get_LTD_value( double )
+{
+  throw UnexpectedEvent();
+}
+
+double
 Node::get_K_value( double )
 {
   throw UnexpectedEvent();
@@ -426,22 +441,16 @@ Node::get_K_values( double, double&, double& )
 }
 
 void
-nest::Node::get_history( double,
+nest::Node::get_history( double, double, std::deque< histentry >::iterator*, std::deque< histentry >::iterator* )
+{
+  throw UnexpectedEvent();
+}
+
+void
+nest::Node::get_LTP_history( double,
   double,
-  std::deque< histentry >::iterator*,
-  std::deque< histentry >::iterator* )
-{
-  throw UnexpectedEvent();
-}
-
-void
-Node::set_has_proxies( const bool )
-{
-  throw UnexpectedEvent();
-}
-
-void
-Node::set_local_receiver( const bool )
+  std::deque< histentry_cl >::iterator*,
+  std::deque< histentry_cl >::iterator* )
 {
   throw UnexpectedEvent();
 }

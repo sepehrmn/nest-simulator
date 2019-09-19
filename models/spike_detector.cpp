@@ -42,19 +42,15 @@
 #include "integerdatum.h"
 
 nest::spike_detector::spike_detector()
-  : Node()
+  : DeviceNode()
   // record time and gid
   , device_( *this, RecordingDevice::SPIKE_DETECTOR, "gdf", true, true )
-  , has_proxies_( false )
-  , local_receiver_( true )
 {
 }
 
 nest::spike_detector::spike_detector( const spike_detector& n )
-  : Node( n )
+  : DeviceNode( n )
   , device_( *this, n.device_ )
-  , has_proxies_( false )
-  , local_receiver_( true )
 {
 }
 
@@ -79,8 +75,7 @@ void
 nest::spike_detector::calibrate()
 {
 
-  if ( kernel().event_delivery_manager.get_off_grid_communication()
-    and not device_.is_precise_times_user_set() )
+  if ( kernel().event_delivery_manager.get_off_grid_communication() and not device_.is_precise_times_user_set() )
   {
     device_.set_precise_times( true );
     std::string msg = String::compose(
@@ -112,8 +107,7 @@ nest::spike_detector::calibrate()
 void
 nest::spike_detector::update( Time const&, const long, const long )
 {
-  for ( std::vector< Event* >::iterator e =
-          B_.spikes_[ kernel().event_delivery_manager.read_toggle() ].begin();
+  for ( std::vector< Event* >::iterator e = B_.spikes_[ kernel().event_delivery_manager.read_toggle() ].begin();
         e != B_.spikes_[ kernel().event_delivery_manager.read_toggle() ].end();
         ++e )
   {
@@ -135,13 +129,11 @@ nest::spike_detector::get_status( DictionaryDatum& d ) const
 
   // if we are the device on thread 0, also get the data from the
   // siblings on other threads
-  if ( local_receiver_ && get_thread() == 0 )
+  if ( get_thread() == 0 )
   {
-    const SiblingContainer* siblings =
-      kernel().node_manager.get_thread_siblings( get_gid() );
+    const SiblingContainer* siblings = kernel().node_manager.get_thread_siblings( get_gid() );
     std::vector< Node* >::const_iterator sibling;
-    for ( sibling = siblings->begin() + 1; sibling != siblings->end();
-          ++sibling )
+    for ( sibling = siblings->begin() + 1; sibling != siblings->end(); ++sibling )
     {
       ( *sibling )->get_status( d );
     }
@@ -164,9 +156,7 @@ nest::spike_detector::handle( SpikeEvent& e )
     assert( e.get_multiplicity() > 0 );
 
     long dest_buffer;
-    if ( kernel()
-           .modelrange_manager.get_model_of_gid( e.get_sender_gid() )
-           ->has_proxies() )
+    if ( kernel().modelrange_manager.get_model_of_gid( e.get_sender_gid() )->has_proxies() )
     {
       // events from central queue
       dest_buffer = kernel().event_delivery_manager.read_toggle();
@@ -184,4 +174,17 @@ nest::spike_detector::handle( SpikeEvent& e )
       B_.spikes_[ dest_buffer ].push_back( event );
     }
   }
+}
+
+void
+nest::spike_detector::finalize()
+{
+  // The order of the major simulation steps is:
+  // update nodes -- gather spikes -- deliver spikes
+  // Therefore, spikes from the last deliver might still reside in the
+  // B_.spikes_ buffer and need to be recorded.
+  // --> final call to update()
+  const Time time;
+  update( time, -1, -1 );
+  device_.finalize();
 }

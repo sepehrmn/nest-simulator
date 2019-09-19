@@ -166,16 +166,13 @@ nest::iaf_psc_delta::Parameters_::set( const DictionaryDatum& d )
 }
 
 void
-nest::iaf_psc_delta::State_::get( DictionaryDatum& d,
-  const Parameters_& p ) const
+nest::iaf_psc_delta::State_::get( DictionaryDatum& d, const Parameters_& p ) const
 {
   def< double >( d, names::V_m, y3_ + p.E_L_ ); // Membrane potential
 }
 
 void
-nest::iaf_psc_delta::State_::set( const DictionaryDatum& d,
-  const Parameters_& p,
-  double delta_EL )
+nest::iaf_psc_delta::State_::set( const DictionaryDatum& d, const Parameters_& p, double delta_EL )
 {
   if ( updateValue< double >( d, names::V_m, y3_ ) )
   {
@@ -277,12 +274,9 @@ nest::iaf_psc_delta::calibrate()
  */
 
 void
-nest::iaf_psc_delta::update( Time const& origin,
-  const long from,
-  const long to )
+nest::iaf_psc_delta::update( Time const& origin, const long from, const long to )
 {
-  assert(
-    to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
+  assert( to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
   assert( from < to );
 
   const double h = Time::get_resolution().get_ms();
@@ -291,8 +285,7 @@ nest::iaf_psc_delta::update( Time const& origin,
     if ( S_.r_ == 0 )
     {
       // neuron not refractory
-      S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_
-        + B_.spikes_.get_value( lag );
+      S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_ + B_.spikes_.get_value( lag );
 
       // if we have accumulated spikes from refractory period,
       // add and reset accumulator
@@ -311,8 +304,7 @@ nest::iaf_psc_delta::update( Time const& origin,
       // for decay until end of refractory period
       if ( P_.with_refr_input_ )
       {
-        S_.refr_spikes_buffer_ +=
-          B_.spikes_.get_value( lag ) * std::exp( -S_.r_ * h / P_.tau_m_ );
+        S_.refr_spikes_buffer_ += B_.spikes_.get_value( lag ) * std::exp( -S_.r_ * h / P_.tau_m_ );
       }
       else
       {
@@ -346,29 +338,26 @@ nest::iaf_psc_delta::update( Time const& origin,
 void
 nest::iaf_psc_delta::handle( SpikeEvent& e )
 {
-  assert( e.get_delay() > 0 );
+  assert( e.get_delay_steps() > 0 );
 
   // EX: We must compute the arrival time of the incoming spike
   //     explicity, since it depends on delay and offset within
   //     the update cycle.  The way it is done here works, but
   //     is clumsy and should be improved.
   B_.spikes_.add_value(
-    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
-    e.get_weight() * e.get_multiplicity() );
+    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_multiplicity() );
 }
 
 void
 nest::iaf_psc_delta::handle( CurrentEvent& e )
 {
-  assert( e.get_delay() > 0 );
+  assert( e.get_delay_steps() > 0 );
 
   const double c = e.get_current();
   const double w = e.get_weight();
 
   // add weighted current; HEP 2002-10-04
-  B_.currents_.add_value(
-    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
-    w * c );
+  B_.currents_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), w * c );
 }
 
 void

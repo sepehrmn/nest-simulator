@@ -95,7 +95,7 @@ NestModule::commandstring( void ) const
 }
 
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: ChangeSubnet - change the current working subnet.
    Synopsis:
    gid   ChangeSubnet -> -
@@ -126,7 +126,7 @@ NestModule::ChangeSubnet_iFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: CurrentSubnet - return the gid of the current network node.
 
    Synopsis: CurrentSubnet -> gid
@@ -146,7 +146,7 @@ NestModule::CurrentSubnetFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: SetStatus - sets the value of properties of a node, connection, random
    deviate generator or object
 
@@ -247,11 +247,11 @@ NestModule::SetStatus_aaFunction::execute( SLIInterpreter* i ) const
     {
       ConnectionDatum con_id = getValue< ConnectionDatum >( conn_a[ con ] );
       dict->clear_access_flags();
-      kernel().connection_manager.set_synapse_status(
-        con_id.get_source_gid(),       // source_gid
-        con_id.get_synapse_model_id(), // synapse_id
-        con_id.get_port(),             // port
-        con_id.get_target_thread(),    // target thread
+      kernel().connection_manager.set_synapse_status( con_id.get_source_gid(),
+        con_id.get_target_gid(),
+        con_id.get_target_thread(),
+        con_id.get_synapse_model_id(),
+        con_id.get_port(),
         dict );
 
       ALL_ENTRIES_ACCESSED( *dict, "SetStatus", "Unread dictionary entries: " );
@@ -265,11 +265,11 @@ NestModule::SetStatus_aaFunction::execute( SLIInterpreter* i ) const
       DictionaryDatum dict = getValue< DictionaryDatum >( dict_a[ con ] );
       ConnectionDatum con_id = getValue< ConnectionDatum >( conn_a[ con ] );
       dict->clear_access_flags();
-      kernel().connection_manager.set_synapse_status(
-        con_id.get_source_gid(),       // source_gid
-        con_id.get_synapse_model_id(), // synapse_id
-        con_id.get_port(),             // port
-        con_id.get_target_thread(),    // target thread
+      kernel().connection_manager.set_synapse_status( con_id.get_source_gid(),
+        con_id.get_target_gid(),
+        con_id.get_target_thread(),
+        con_id.get_synapse_model_id(),
+        con_id.get_port(),
         dict );
 
       ALL_ENTRIES_ACCESSED( *dict, "SetStatus", "Unread dictionary entries: " );
@@ -280,7 +280,7 @@ NestModule::SetStatus_aaFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: GetStatus - return the property dictionary of a node, connection,
    random deviate generator or object
 
@@ -357,11 +357,11 @@ NestModule::GetStatus_CFunction::execute( SLIInterpreter* i ) const
   long gid = conn.get_source_gid();
   kernel().node_manager.get_node( gid ); // Just to check if the node exists
 
-  DictionaryDatum result_dict =
-    kernel().connection_manager.get_synapse_status( gid,
-      conn.get_synapse_model_id(),
-      conn.get_port(),
-      conn.get_target_thread() );
+  DictionaryDatum result_dict = kernel().connection_manager.get_synapse_status( conn.get_source_gid(),
+    conn.get_target_gid(),
+    conn.get_target_thread(),
+    conn.get_synapse_model_id(),
+    conn.get_port() );
 
   i->OStack.pop();
   i->OStack.push( result_dict );
@@ -380,11 +380,11 @@ NestModule::GetStatus_aFunction::execute( SLIInterpreter* i ) const
   for ( size_t nt = 0; nt < n_results; ++nt )
   {
     ConnectionDatum con_id = getValue< ConnectionDatum >( conns.get( nt ) );
-    DictionaryDatum result_dict =
-      kernel().connection_manager.get_synapse_status( con_id.get_source_gid(),
-        con_id.get_synapse_model_id(),
-        con_id.get_port(),
-        con_id.get_target_thread() );
+    DictionaryDatum result_dict = kernel().connection_manager.get_synapse_status( con_id.get_source_gid(),
+      con_id.get_target_gid(),
+      con_id.get_target_thread(),
+      con_id.get_synapse_model_id(),
+      con_id.get_port() );
     result.push_back( result_dict );
   }
 
@@ -393,7 +393,7 @@ NestModule::GetStatus_aFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/*BeginDocumentation
+/** @BeginDocumentation
   Name: SetDefaults - Set the default values for a node or synapse model.
   Synopsis: /modelname dict SetDefaults -> -
   SeeAlso: GetDefaults
@@ -414,7 +414,7 @@ NestModule::SetDefaults_l_DFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/*BeginDocumentation
+/** @BeginDocumentation
   Name: GetDefaults - Return the default values for a node or synapse model.
   Synopsis: /modelname GetDefaults -> dict
   SeeAlso: SetDefaults
@@ -449,16 +449,15 @@ NestModule::GetConnections_DFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: Simulate - simulate n milliseconds
 
    Synopsis:
    n(int) Simulate -> -
 
    Description: Simulate the network for n milliseconds.
-   Use resume to continue the simulation after an interrupt.
 
-   SeeAlso: resume, ResumeSimulation, unit_conversion
+   SeeAlso: Run, Prepare, Cleanup, unit_conversion
 */
 void
 NestModule::SimulateFunction::execute( SLIInterpreter* i ) const
@@ -474,7 +473,7 @@ NestModule::SimulateFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: Run - simulate n milliseconds
 
    Synopsis:
@@ -489,7 +488,7 @@ NestModule::SimulateFunction::execute( SLIInterpreter* i ) const
    Any changes made between Prepare and Cleanup may cause
    undefined behavior and incorrect results.
 
-   SeeAlso: Simulate, resume, unit_conversion, Prepare, Cleanup
+   SeeAlso: Simulate, unit_conversion, Prepare, Cleanup
 */
 void
 NestModule::RunFunction::execute( SLIInterpreter* i ) const
@@ -505,7 +504,7 @@ NestModule::RunFunction::execute( SLIInterpreter* i ) const
 }
 
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: Prepare - prepare the network for a simulation
 
    Synopsis:
@@ -528,7 +527,7 @@ NestModule::PrepareFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: Cleanup - cleanup the network after a simulation
 
    Synopsis:
@@ -551,7 +550,7 @@ NestModule::CleanupFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: CopyModel - copy a model to a new name, set parameters for copy, if
    given
    Synopsis:
@@ -584,7 +583,7 @@ NestModule::CopyModel_l_l_DFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: Create - create a number of equal nodes in the current subnet
    Synopsis:
    /model          Create -> gid
@@ -645,12 +644,10 @@ NestModule::GetNodes_i_D_b_bFunction::execute( SLIInterpreter* i ) const
 
   const bool return_gids_only = getValue< bool >( i->OStack.pick( 0 ) );
   const bool include_remote = not getValue< bool >( i->OStack.pick( 1 ) );
-  const DictionaryDatum params =
-    getValue< DictionaryDatum >( i->OStack.pick( 2 ) );
+  const DictionaryDatum params = getValue< DictionaryDatum >( i->OStack.pick( 2 ) );
   const index node_id = getValue< long >( i->OStack.pick( 3 ) );
 
-  ArrayDatum result =
-    get_nodes( node_id, params, include_remote, return_gids_only );
+  ArrayDatum result = get_nodes( node_id, params, include_remote, return_gids_only );
 
   i->OStack.pop( 4 );
   i->OStack.push( result );
@@ -663,8 +660,7 @@ NestModule::GetChildren_i_D_bFunction::execute( SLIInterpreter* i ) const
   i->assert_stack_load( 3 );
 
   const bool include_remote = not getValue< bool >( i->OStack.pick( 0 ) );
-  const DictionaryDatum params =
-    getValue< DictionaryDatum >( i->OStack.pick( 1 ) );
+  const DictionaryDatum params = getValue< DictionaryDatum >( i->OStack.pick( 1 ) );
   const index node_id = getValue< long >( i->OStack.pick( 2 ) );
 
   ArrayDatum result = get_children( node_id, params, include_remote );
@@ -680,8 +676,7 @@ NestModule::GetLeaves_i_D_bFunction::execute( SLIInterpreter* i ) const
   i->assert_stack_load( 3 );
 
   const bool include_remote = not getValue< bool >( i->OStack.pick( 0 ) );
-  const DictionaryDatum params =
-    getValue< DictionaryDatum >( i->OStack.pick( 1 ) );
+  const DictionaryDatum params = getValue< DictionaryDatum >( i->OStack.pick( 1 ) );
   const index node_id = getValue< long >( i->OStack.pick( 2 ) );
 
   ArrayDatum result = get_leaves( node_id, params, include_remote );
@@ -692,7 +687,7 @@ NestModule::GetLeaves_i_D_bFunction::execute( SLIInterpreter* i ) const
 }
 
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: ResetKernel - Put the simulation kernel back to its initial state.
    Description:
    This function re-initializes the simulation kernel, returning it to the
@@ -718,10 +713,14 @@ NestModule::ResetKernelFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: ResetNetwork - Reset the dynamic state of the network.
    Synopsis: ResetNetwork -> -
    Description:
+
+   ResetNetwork is deprecated as of NEST 2.18 and will be removed in NEST 3.0,
+   because it cannot be implemented in an efficient and consistent way.
+
    ResetNetwork resets the dynamic state of the entire network to its state
    at T=0. The dynamic state comprises typically the membrane potential,
    synaptic currents, buffers holding input that has been delivered, but not
@@ -764,16 +763,14 @@ NestModule::Disconnect_i_i_lFunction::execute( SLIInterpreter* i ) const
 
   index source = getValue< long >( i->OStack.pick( 2 ) );
   index target = getValue< long >( i->OStack.pick( 1 ) );
-  DictionaryDatum synapse_params =
-    getValue< DictionaryDatum >( i->OStack.pick( 0 ) );
+  DictionaryDatum synapse_params = getValue< DictionaryDatum >( i->OStack.pick( 0 ) );
 
   // check whether the target is on this process
   if ( kernel().node_manager.is_local_gid( target ) )
   {
     Node* const target_node = kernel().node_manager.get_node( target );
     const thread target_thread = target_node->get_thread();
-    kernel().sp_manager.disconnect_single(
-      source, target_node, target_thread, synapse_params );
+    kernel().sp_manager.disconnect_single( source, target_node, target_thread, synapse_params );
   }
 
   i->OStack.pop( 3 );
@@ -786,18 +783,13 @@ NestModule::Disconnect_g_g_D_DFunction::execute( SLIInterpreter* i ) const
 {
   i->assert_stack_load( 4 );
 
-  GIDCollectionDatum sources =
-    getValue< GIDCollectionDatum >( i->OStack.pick( 3 ) );
-  GIDCollectionDatum targets =
-    getValue< GIDCollectionDatum >( i->OStack.pick( 2 ) );
-  DictionaryDatum connectivity =
-    getValue< DictionaryDatum >( i->OStack.pick( 1 ) );
-  DictionaryDatum synapse_params =
-    getValue< DictionaryDatum >( i->OStack.pick( 0 ) );
+  GIDCollectionDatum sources = getValue< GIDCollectionDatum >( i->OStack.pick( 3 ) );
+  GIDCollectionDatum targets = getValue< GIDCollectionDatum >( i->OStack.pick( 2 ) );
+  DictionaryDatum connectivity = getValue< DictionaryDatum >( i->OStack.pick( 1 ) );
+  DictionaryDatum synapse_params = getValue< DictionaryDatum >( i->OStack.pick( 0 ) );
 
   // dictionary access checking is handled by disconnect
-  kernel().sp_manager.disconnect(
-    sources, targets, connectivity, synapse_params );
+  kernel().sp_manager.disconnect( sources, targets, connectivity, synapse_params );
 
   i->OStack.pop( 4 );
   i->EStack.pop();
@@ -810,24 +802,19 @@ NestModule::Connect_g_g_D_DFunction::execute( SLIInterpreter* i ) const
 {
   i->assert_stack_load( 4 );
 
-  GIDCollectionDatum sources =
-    getValue< GIDCollectionDatum >( i->OStack.pick( 3 ) );
-  GIDCollectionDatum targets =
-    getValue< GIDCollectionDatum >( i->OStack.pick( 2 ) );
-  DictionaryDatum connectivity =
-    getValue< DictionaryDatum >( i->OStack.pick( 1 ) );
-  DictionaryDatum synapse_params =
-    getValue< DictionaryDatum >( i->OStack.pick( 0 ) );
+  GIDCollectionDatum sources = getValue< GIDCollectionDatum >( i->OStack.pick( 3 ) );
+  GIDCollectionDatum targets = getValue< GIDCollectionDatum >( i->OStack.pick( 2 ) );
+  DictionaryDatum connectivity = getValue< DictionaryDatum >( i->OStack.pick( 1 ) );
+  DictionaryDatum synapse_params = getValue< DictionaryDatum >( i->OStack.pick( 0 ) );
 
   // dictionary access checking is handled by connect
-  kernel().connection_manager.connect(
-    sources, targets, connectivity, synapse_params );
+  kernel().connection_manager.connect( sources, targets, connectivity, synapse_params );
 
   i->OStack.pop( 4 );
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: DataConnect_i_D_s - Connect many neurons from data.
 
    Synopsis:
@@ -873,25 +860,22 @@ NestModule::DataConnect_i_D_sFunction::execute( SLIInterpreter* i ) const
   DictionaryDatum params = getValue< DictionaryDatum >( i->OStack.pick( 1 ) );
   const Name synmodel_name = getValue< std::string >( i->OStack.pick( 0 ) );
 
-  const Token synmodel =
-    kernel().model_manager.get_synapsedict()->lookup( synmodel_name );
+  const Token synmodel = kernel().model_manager.get_synapsedict()->lookup( synmodel_name );
   if ( synmodel.empty() )
   {
     throw UnknownSynapseType( synmodel_name.toString() );
   }
   const index synmodel_id = static_cast< index >( synmodel );
 
-  kernel().connection_manager.data_connect_single(
-    source, params, synmodel_id );
+  kernel().connection_manager.data_connect_single( source, params, synmodel_id );
 
-  ALL_ENTRIES_ACCESSED(
-    *params, "Connect", "The following synapse parameters are unused: " );
+  ALL_ENTRIES_ACCESSED( *params, "Connect", "The following synapse parameters are unused: " );
 
   i->OStack.pop( 3 );
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
     Name: DataConnect_a - Connect many neurons from a list of synapse status
    dictionaries.
 
@@ -940,7 +924,7 @@ NestModule::DataConnect_aFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: MemoryInfo - Report current memory usage.
    Description:
    MemoryInfo reports the current utilization of the memory manager for all
@@ -961,7 +945,7 @@ NestModule::MemoryInfoFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: PrintNetwork - Print network tree in readable form.
    Synopsis:
    gid depth  PrintNetwork -> -
@@ -1106,7 +1090,7 @@ NestModule::PrintNetworkFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: Rank - Return the MPI rank of the process.
    Synopsis: Rank -> int
    Description:
@@ -1127,7 +1111,7 @@ NestModule::RankFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: NumProcesses - Return the number of MPI processes.
    Synopsis: NumProcesses -> int
    Description:
@@ -1145,7 +1129,7 @@ NestModule::NumProcessesFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: SetFakeNumProcesses - Set a fake number of MPI processes.
    Synopsis: n_procs SetFakeNumProcesses -> -
    Description:
@@ -1199,35 +1183,7 @@ NestModule::SetFakeNumProcesses_iFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
-   Name: SetNumRecProcesses - Set the number of MPI processes dedicated to
-   recording spikes.
-   Synopsis: n_procs SetNumRecProcesses -> -
-   Description:
-   Sets the number of recording MPI processes to n_procs. Usually,
-   spike detectors are distributed over all processes and record
-   from local neurons only. If a number of processes is dedicated to
-   spike detection, each spike detector is hosted on one of these
-   processes and records globally from all simulating processes.
-   Availability: NEST 2.4
-   Authors: Susanne Kunkel, Maximilian Schmidt
-   FirstVersion: April 2014
-   SeeAlso: NumProcesses
-*/
-void
-NestModule::SetNumRecProcesses_iFunction::execute( SLIInterpreter* i ) const
-{
-  i->assert_stack_load( 1 );
-  long n_rec_procs = getValue< long >( i->OStack.pick( 0 ) );
-
-  set_num_rec_processes( n_rec_procs );
-
-  i->OStack.pop( 1 );
-  i->EStack.pop();
-}
-
-
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: SyncProcesses - Synchronize all MPI processes.
    Synopsis: SyncProcesses -> -
    Availability: NEST 2.0
@@ -1247,7 +1203,7 @@ NestModule::SyncProcessesFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: TimeCommunication - returns average time taken for MPI_Allgather over n
    calls with m bytes
    Synopsis:
@@ -1280,7 +1236,7 @@ NestModule::TimeCommunication_i_i_bFunction::execute( SLIInterpreter* i ) const
   i->OStack.push( time );
   i->EStack.pop();
 }
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: TimeCommunicationv - returns average time taken for MPI_Allgatherv over
    n calls with m
    bytes
@@ -1310,7 +1266,7 @@ NestModule::TimeCommunicationv_i_iFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: TimeCommunicationAlltoall - returns average time taken for MPI_Alltoall
    over n calls with m
    bytes
@@ -1324,8 +1280,7 @@ NestModule::TimeCommunicationv_i_iFunction::execute( SLIInterpreter* i ) const
    SeeAlso: TimeCommunication
  */
 void
-NestModule::TimeCommunicationAlltoall_i_iFunction::execute(
-  SLIInterpreter* i ) const
+NestModule::TimeCommunicationAlltoall_i_iFunction::execute( SLIInterpreter* i ) const
 {
   i->assert_stack_load( 2 );
   long samples = getValue< long >( i->OStack.pick( 1 ) );
@@ -1341,7 +1296,7 @@ NestModule::TimeCommunicationAlltoall_i_iFunction::execute(
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: TimeCommunicationAlltoallv - returns average time taken for
    MPI_Alltoallv over n calls with
    m bytes
@@ -1356,8 +1311,7 @@ NestModule::TimeCommunicationAlltoall_i_iFunction::execute(
    SeeAlso: TimeCommunication
  */
 void
-NestModule::TimeCommunicationAlltoallv_i_iFunction::execute(
-  SLIInterpreter* i ) const
+NestModule::TimeCommunicationAlltoallv_i_iFunction::execute( SLIInterpreter* i ) const
 {
   i->assert_stack_load( 2 );
   long samples = getValue< long >( i->OStack.pick( 1 ) );
@@ -1373,7 +1327,7 @@ NestModule::TimeCommunicationAlltoallv_i_iFunction::execute(
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: ProcessorName - Returns a unique specifier for the actual node.
    Synopsis: ProcessorName -> string
    Availability: NEST 2.0
@@ -1398,7 +1352,7 @@ NestModule::ProcessorNameFunction::execute( SLIInterpreter* i ) const
 }
 
 #ifdef HAVE_MPI
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: abort - Abort all NEST processes gracefully.
    Paramteres:
    exitcode - The exitcode to quit with
@@ -1424,7 +1378,7 @@ NestModule::MPIAbort_iFunction::execute( SLIInterpreter* i ) const
 }
 #endif
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: GetVpRNG - return random number generator associated to virtual process
    of node
    Synopsis:
@@ -1481,7 +1435,7 @@ NestModule::GetVpRngFunction::execute( SLIInterpreter* i ) const
   i->EStack.pop();
 }
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: GetGlobalRNG - return global random number generator
    Synopsis:
    GetGlobalRNG -> rngtype
@@ -1571,8 +1525,7 @@ void
 NestModule::Size_gFunction::execute( SLIInterpreter* i ) const
 {
   i->assert_stack_load( 1 );
-  GIDCollectionDatum gidcoll =
-    getValue< GIDCollectionDatum >( i->OStack.pick( 0 ) );
+  GIDCollectionDatum gidcoll = getValue< GIDCollectionDatum >( i->OStack.pick( 0 ) );
 
   i->OStack.pop();
   i->OStack.push( gidcoll.size() );
@@ -1580,7 +1533,7 @@ NestModule::Size_gFunction::execute( SLIInterpreter* i ) const
 }
 
 #ifdef HAVE_MUSIC
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: SetAcceptableLatency - set the acceptable latency of a MUSIC input port
 
    Synopsis:
@@ -1603,8 +1556,7 @@ NestModule::SetAcceptableLatencyFunction::execute( SLIInterpreter* i ) const
   std::string port_name = getValue< std::string >( i->OStack.pick( 1 ) );
   double latency = getValue< double >( i->OStack.pick( 0 ) );
 
-  kernel().music_manager.set_music_in_port_acceptable_latency(
-    port_name, latency );
+  kernel().music_manager.set_music_in_port_acceptable_latency( port_name, latency );
 
   i->OStack.pop( 2 );
   i->EStack.pop();
@@ -1618,15 +1570,14 @@ NestModule::SetMaxBufferedFunction::execute( SLIInterpreter* i ) const
   std::string port_name = getValue< std::string >( i->OStack.pick( 1 ) );
   int maxBuffered = getValue< long >( i->OStack.pick( 0 ) );
 
-  kernel().music_manager.set_music_in_port_max_buffered(
-    port_name, maxBuffered );
+  kernel().music_manager.set_music_in_port_max_buffered( port_name, maxBuffered );
 
   i->OStack.pop( 2 );
   i->EStack.pop();
 }
 #endif
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: SetStructuralPlasticityStatus - Set up parameters for structural
    plasticity.
 
@@ -1645,12 +1596,10 @@ NestModule::SetMaxBufferedFunction::execute( SLIInterpreter* i ) const
    FirstVersion: December 2014
 */
 void
-NestModule::SetStructuralPlasticityStatus_DFunction::execute(
-  SLIInterpreter* i ) const
+NestModule::SetStructuralPlasticityStatus_DFunction::execute( SLIInterpreter* i ) const
 {
   i->assert_stack_load( 1 );
-  DictionaryDatum structural_plasticity_dictionary =
-    getValue< DictionaryDatum >( i->OStack.pick( 0 ) );
+  DictionaryDatum structural_plasticity_dictionary = getValue< DictionaryDatum >( i->OStack.pick( 0 ) );
 
   kernel().sp_manager.set_status( structural_plasticity_dictionary );
 
@@ -1659,13 +1608,11 @@ NestModule::SetStructuralPlasticityStatus_DFunction::execute(
 }
 
 void
-NestModule::GetStructuralPlasticityStatus_DFunction::execute(
-  SLIInterpreter* i ) const
+NestModule::GetStructuralPlasticityStatus_DFunction::execute( SLIInterpreter* i ) const
 {
   i->assert_stack_load( 1 );
 
-  DictionaryDatum current_status =
-    getValue< DictionaryDatum >( i->OStack.pick( 0 ) );
+  DictionaryDatum current_status = getValue< DictionaryDatum >( i->OStack.pick( 0 ) );
   kernel().sp_manager.get_status( current_status );
 
   i->OStack.pop( 1 );
@@ -1679,8 +1626,7 @@ NestModule::GetStructuralPlasticityStatus_DFunction::execute(
  * @param i
  */
 void
-NestModule::EnableStructuralPlasticity_Function::execute(
-  SLIInterpreter* i ) const
+NestModule::EnableStructuralPlasticity_Function::execute( SLIInterpreter* i ) const
 {
   kernel().sp_manager.enable_structural_plasticity();
 
@@ -1691,8 +1637,7 @@ NestModule::EnableStructuralPlasticity_Function::execute(
  * @param i
  */
 void
-NestModule::DisableStructuralPlasticity_Function::execute(
-  SLIInterpreter* i ) const
+NestModule::DisableStructuralPlasticity_Function::execute( SLIInterpreter* i ) const
 {
   kernel().sp_manager.disable_structural_plasticity();
 
@@ -1733,8 +1678,7 @@ NestModule::init( SLIInterpreter* i )
   i->createcommand( "CurrentSubnet", &currentsubnetfunction, "NEST 3.0" );
   i->createcommand( "GetNodes_i_D_b_b", &getnodes_i_D_b_bfunction, "NEST 3.0" );
   i->createcommand( "GetLeaves_i_D_b", &getleaves_i_D_bfunction, "NEST 3.0" );
-  i->createcommand(
-    "GetChildren_i_D_b", &getchildren_i_D_bfunction, "NEST 3.0" );
+  i->createcommand( "GetChildren_i_D_b", &getchildren_i_D_bfunction, "NEST 3.0" );
 
   i->createcommand( "RestoreNodes_a", &restorenodes_afunction );
 
@@ -1762,11 +1706,10 @@ NestModule::init( SLIInterpreter* i )
 
   i->createcommand( "Connect_g_g_D_D", &connect_g_g_D_Dfunction );
 
-  i->createcommand(
-    "DataConnect_i_D_s", &dataconnect_i_D_sfunction, "NEST 3.0" );
+  i->createcommand( "DataConnect_i_D_s", &dataconnect_i_D_sfunction, "NEST 3.0" );
   i->createcommand( "DataConnect_a", &dataconnect_afunction, "NEST 3.0" );
 
-  i->createcommand( "ResetNetwork", &resetnetworkfunction );
+  i->createcommand( "::ResetNetwork", &resetnetworkfunction );
   i->createcommand( "ResetKernel", &resetkernelfunction );
 
   i->createcommand( "MemoryInfo", &memoryinfofunction );
@@ -1776,15 +1719,11 @@ NestModule::init( SLIInterpreter* i )
   i->createcommand( "Rank", &rankfunction );
   i->createcommand( "NumProcesses", &numprocessesfunction );
   i->createcommand( "SetFakeNumProcesses", &setfakenumprocesses_ifunction );
-  i->createcommand( "SetNumRecProcesses", &setnumrecprocesses_ifunction );
   i->createcommand( "SyncProcesses", &syncprocessesfunction );
-  i->createcommand(
-    "TimeCommunication_i_i_b", &timecommunication_i_i_bfunction );
+  i->createcommand( "TimeCommunication_i_i_b", &timecommunication_i_i_bfunction );
   i->createcommand( "TimeCommunicationv_i_i", &timecommunicationv_i_ifunction );
-  i->createcommand(
-    "TimeCommunicationAlltoall_i_i", &timecommunicationalltoall_i_ifunction );
-  i->createcommand(
-    "TimeCommunicationAlltoallv_i_i", &timecommunicationalltoallv_i_ifunction );
+  i->createcommand( "TimeCommunicationAlltoall_i_i", &timecommunicationalltoall_i_ifunction );
+  i->createcommand( "TimeCommunicationAlltoallv_i_i", &timecommunicationalltoallv_i_ifunction );
   i->createcommand( "ProcessorName", &processornamefunction );
 #ifdef HAVE_MPI
   i->createcommand( "MPI_Abort", &mpiabort_ifunction );
@@ -1804,44 +1743,33 @@ NestModule::init( SLIInterpreter* i )
   i->createcommand( "SetAcceptableLatency", &setacceptablelatency_l_dfunction );
   i->createcommand( "SetMaxBuffered", &setmaxbuffered_l_ifunction );
 #endif
-  i->createcommand(
-    "EnableStructuralPlasticity", &enablestructuralplasticity_function );
-  i->createcommand(
-    "DisableStructuralPlasticity", &disablestructuralplasticity_function );
-  i->createcommand(
-    "SetStructuralPlasticityStatus", &setstructuralplasticitystatus_Dfunction );
-  i->createcommand(
-    "GetStructuralPlasticityStatus", &getstructuralplasticitystatus_function );
+  i->createcommand( "EnableStructuralPlasticity", &enablestructuralplasticity_function );
+  i->createcommand( "DisableStructuralPlasticity", &disablestructuralplasticity_function );
+  i->createcommand( "SetStructuralPlasticityStatus", &setstructuralplasticitystatus_Dfunction );
+  i->createcommand( "GetStructuralPlasticityStatus", &getstructuralplasticitystatus_function );
   i->createcommand( "Disconnect", &disconnect_i_i_lfunction );
   i->createcommand( "Disconnect_g_g_D_D", &disconnect_g_g_D_Dfunction );
 
   i->createcommand( "SetStdpEps", &setstdpeps_dfunction );
 
   // Add connection rules
-  kernel().connection_manager.register_conn_builder< OneToOneBuilder >(
-    "one_to_one" );
-  kernel().connection_manager.register_conn_builder< AllToAllBuilder >(
-    "all_to_all" );
-  kernel().connection_manager.register_conn_builder< FixedInDegreeBuilder >(
-    "fixed_indegree" );
-  kernel().connection_manager.register_conn_builder< FixedOutDegreeBuilder >(
-    "fixed_outdegree" );
-  kernel().connection_manager.register_conn_builder< BernoulliBuilder >(
-    "pairwise_bernoulli" );
-  kernel().connection_manager.register_conn_builder< FixedTotalNumberBuilder >(
-    "fixed_total_number" );
+  kernel().connection_manager.register_conn_builder< OneToOneBuilder >( "one_to_one" );
+  kernel().connection_manager.register_conn_builder< AllToAllBuilder >( "all_to_all" );
+  kernel().connection_manager.register_conn_builder< FixedInDegreeBuilder >( "fixed_indegree" );
+  kernel().connection_manager.register_conn_builder< FixedOutDegreeBuilder >( "fixed_outdegree" );
+  kernel().connection_manager.register_conn_builder< BernoulliBuilder >( "pairwise_bernoulli" );
+  kernel().connection_manager.register_conn_builder< SymmetricBernoulliBuilder >( "symmetric_pairwise_bernoulli" );
+  kernel().connection_manager.register_conn_builder< FixedTotalNumberBuilder >( "fixed_total_number" );
 
   // Add MSP growth curves
   kernel().sp_manager.register_growth_curve< GrowthCurveSigmoid >( "sigmoid" );
-  kernel().sp_manager.register_growth_curve< GrowthCurveGaussian >(
-    "gaussian" );
+  kernel().sp_manager.register_growth_curve< GrowthCurveGaussian >( "gaussian" );
   kernel().sp_manager.register_growth_curve< GrowthCurveLinear >( "linear" );
 
   Token statusd = i->baselookup( Name( "statusdict" ) );
   DictionaryDatum dd = getValue< DictionaryDatum >( statusd );
   dd->insert( Name( "kernelname" ), new StringDatum( "NEST" ) );
-  dd->insert(
-    Name( "is_mpi" ), new BoolDatum( kernel().mpi_manager.is_mpi_used() ) );
+  dd->insert( Name( "is_mpi" ), new BoolDatum( kernel().mpi_manager.is_mpi_used() ) );
 }
 
 } // namespace nest

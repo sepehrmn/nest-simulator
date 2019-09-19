@@ -21,48 +21,6 @@
  */
 
 
-/*BeginDocumentation
-  Name: step_current_generator - provides a piecewise constant DC input current
-
-  Description:
-  The dc_generator provides a piecewise constant DC input to the
-  connected node(s).  The amplitude of the current is changed at the
-  specified times. The unit of the current is pA.
-
- Parameters:
-     The following parameters can be set in the status dictionary:
-     amplitude_times   list of doubles - Times at which current changes in ms
-     amplitude_values  list of doubles - Amplitudes of step current current in
-                                         pA
-     allow_offgrid_times  bool - Default false
-       If false, times will be rounded to the nearest step if they are
-       less than tic/2 from the step, otherwise NEST reports an error.
-       If true,  times are rounded to the nearest step if within tic/2
-       from the step, otherwise they are rounded up to the *end* of the
-       step.
-
-  Note:
-    Times of amplitude changes must be strictly increasing after conversion
-    to simulation time steps. The option allow_offgrid_times may be
-    useful, e.g., if you are using randomized times for current changes
-    which typically would not fall onto simulation time steps.
-
-  Examples:
-    The current can be altered in the following way:
-    /step_current_generator Create /sc Set
-    sc << /amplitude_times [0.2 0.5] /amplitude_values [2.0 4.0] >> SetStatus
-
-    The amplitude of the DC will be 0.0 pA in the time interval [0, 0.2),
-    2.0 pA in the interval [0.2, 0.5) and 4.0 from then on.
-
-  Sends: CurrentEvent
-
-  Author: Jochen Martin Eppler, Jens Kremkow
-
-  SeeAlso: ac_generator, dc_generator, step_current_generator, Device,
-  StimulatingDevice
-*/
-
 #ifndef STEP_CURRENT_GENERATOR_H
 #define STEP_CURRENT_GENERATOR_H
 
@@ -71,16 +29,71 @@
 
 // Includes from nestkernel:
 #include "connection.h"
+#include "device_node.h"
 #include "event.h"
 #include "nest_types.h"
-#include "node.h"
 #include "ring_buffer.h"
 #include "stimulating_device.h"
 #include "universal_data_logger.h"
 
 namespace nest
 {
-class step_current_generator : public Node
+
+/** @BeginDocumentation
+@ingroup Devices
+@ingroup generator
+
+Name: step_current_generator - provides a piecewise constant DC input current
+
+Description:
+
+The dc_generator provides a piecewise constant DC input to the
+connected node(s).  The amplitude of the current is changed at the
+specified times. The unit of the current is pA.
+
+Parameters:
+
+The following parameters can be set in the status dictionary:
+
+\verbatim embed:rst
+==================== ===============  ======================================
+ amplitude_times     list of ms       Times at which current changes
+ amplitude_values    list of pA       Amplitudes of step current current
+ allow_offgrid_times boolean          Default false
+==================== ===============  ======================================
+\endverbatim
+
+  If false, times will be rounded to the nearest step if they are
+  less than tic/2 from the step, otherwise NEST reports an error.
+  If true,  times are rounded to the nearest step if within tic/2
+  from the step, otherwise they are rounded up to the *end* of the
+  step.
+
+Note:
+
+Times of amplitude changes must be strictly increasing after conversion
+to simulation time steps. The option allow_offgrid_times may be
+useful, e.g., if you are using randomized times for current changes
+which typically would not fall onto simulation time steps.
+
+Examples:
+
+The current can be altered in the following way:
+
+    /step_current_generator Create /sc Set
+    sc << /amplitude_times [0.2 0.5] /amplitude_values [2.0 4.0] >> SetStatus
+
+    The amplitude of the DC will be 0.0 pA in the time interval [0, 0.2),
+    2.0 pA in the interval [0.2, 0.5) and 4.0 from then on.
+
+Sends: CurrentEvent
+
+Author: Jochen Martin Eppler, Jens Kremkow
+
+SeeAlso: ac_generator, dc_generator, step_current_generator, Device,
+StimulatingDevice
+*/
+class step_current_generator : public DeviceNode
 {
 
 public:
@@ -200,10 +213,7 @@ private:
 };
 
 inline port
-step_current_generator::send_test_event( Node& target,
-  rport receptor_type,
-  synindex syn_id,
-  bool )
+step_current_generator::send_test_event( Node& target, rport receptor_type, synindex syn_id, bool )
 {
   device_.enforce_single_syn_type( syn_id );
 
@@ -214,8 +224,7 @@ step_current_generator::send_test_event( Node& target,
 }
 
 inline port
-step_current_generator::handles_test_event( DataLoggingRequest& dlr,
-  rport receptor_type )
+step_current_generator::handles_test_event( DataLoggingRequest& dlr, rport receptor_type )
 {
   if ( receptor_type != 0 )
   {
@@ -247,7 +256,6 @@ step_current_generator::set_status( const DictionaryDatum& d )
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;
 }
-
 
 } // namespace
 

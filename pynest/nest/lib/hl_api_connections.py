@@ -23,12 +23,26 @@
 Functions for connection handling
 """
 
+import numpy
+
+from ..ll_api import *
+from .. import pynestkernel as kernel
 from .hl_api_helper import *
 from .hl_api_nodes import Create
 from .hl_api_info import GetStatus
 from .hl_api_simulation import GetKernelStatus, SetKernelStatus
 from .hl_api_subnets import GetChildren
-import numpy
+
+__all__ = [
+    'CGConnect',
+    'CGParse',
+    'CGSelectImplementation',
+    'Connect',
+    'DataConnect',
+    'Disconnect',
+    'DisconnectOneToOne',
+    'GetConnections',
+]
 
 
 @check_stack
@@ -180,12 +194,16 @@ def Connect(pre, post, conn_spec=None, syn_spec=None, model=None):
     except for 'receptor_type' which must be initialised with an integer.
 
     Parameter arrays are available for the rules 'one_to_one',
-    'all_to_all', 'fixed_indegree' and 'fixed_outdegree':
+    'all_to_all', 'fixed_total_number', 'fixed_indegree' and
+    'fixed_outdegree':
     - For 'one_to_one' the array has to be a one-dimensional
       NumPy array with length len(pre).
     - For 'all_to_all' the array has to be a two-dimensional NumPy array
       with shape (len(post), len(pre)), therefore the rows describe the
       target and the columns the source neurons.
+    - For 'fixed_total_number' the array has to be a one-dimensional
+      NumPy array with length len(N), where N is the number of connections
+      specified.
     - For 'fixed_indegree' the array has to be a two-dimensional NumPy array
       with shape (len(post), indegree), where indegree is the number of
       incoming connections per target neuron, therefore the rows describe the
@@ -232,10 +250,10 @@ def Connect(pre, post, conn_spec=None, syn_spec=None, model=None):
     if model is not None:
         deprecation_text = "".join([
             "The argument 'model' is there for backward compatibility with ",
-            "the old Connect function and will be removed in a future",
-            "version of NEST. Please change the name of the keyword argument ",
-            "from 'model' to 'syn_spec'. For details, see the documentation ",
-            "at:\nhttp://www.nest-simulator.org/connection_management"
+            "the old Connect function and will be removed in NEST 3.0. ",
+            "Please change the name of the keyword argument from 'model' to ",
+            "'syn_spec'. For details, see the documentation ",
+            "at:\nhttps://www.nest-simulator.org/connection_management"
         ])
         show_deprecation_warning("BackwardCompatibilityConnect",
                                  text=deprecation_text)
@@ -289,12 +307,21 @@ def Connect(pre, post, conn_spec=None, syn_spec=None, model=None):
                                     "scalar or a dictionary.")
                             else:
                                 syn_spec[key] = value
+                        elif rule == 'fixed_total_number':
+                            if ('N' in conn_spec
+                                    and value.shape[0] != conn_spec['N']):
+                                raise kernel.NESTError(
+                                    "'" + key + "' has to be an array of "
+                                    "dimension " + str(conn_spec['N']) + ", a "
+                                    "scalar or a dictionary.")
+                            else:
+                                syn_spec[key] = value
                         else:
                             raise kernel.NESTError(
                                 "'" + key + "' has the wrong type. "
                                 "One-dimensional parameter arrays can "
                                 "only be used in conjunction with rule "
-                                "'one_to_one'.")
+                                "'one_to_one' or 'fixed_total_number'.")
 
                     elif len(value.shape) == 2:
                         if rule == 'all_to_all':
@@ -451,7 +478,7 @@ def CGConnect(pre, post, cg, parameter_map=None, model="static_synapse"):
 
     For further information, see
     * The NEST documentation on using the CG Interface at
-      http://nest-simulator.org/connection-generator-interface
+      https://www.nest-simulator.org/connection-generator-interface
     * The GitHub repository and documentation for libneurosim at
       https://github.com/INCF/libneurosim/
     * The publication about the Connection Generator Interface at
@@ -485,8 +512,8 @@ def CGConnect(pre, post, cg, parameter_map=None, model="static_synapse"):
     if parameter_map is None:
         parameter_map = {}
 
-    sli_func('CGConnect', cg, pre, post,
-             parameter_map, '/' + model, litconv=True)
+    sli_func('CGConnect', cg, pre, post, parameter_map, '/' + model,
+             litconv=True)
 
 
 @check_stack
@@ -549,6 +576,8 @@ def CGSelectImplementation(tag, library):
 
 
 @check_stack
+@deprecated('', 'DisconnectOneToOne is deprecated and will be removed in \
+NEST-3.0. Use Disconnect instead.')
 def DisconnectOneToOne(source, target, syn_spec):
     """Disconnect a currently existing synapse.
 
@@ -564,15 +593,14 @@ def DisconnectOneToOne(source, target, syn_spec):
 
     sps(source)
     sps(target)
-    if syn_spec is not None:
-        sps(syn_spec)
-        if is_string(syn_spec):
-            sr("cvlit")
+    if is_string(syn_spec):
+        syn_spec = {'model': syn_spec}
+    sps(syn_spec)
     sr('Disconnect')
 
 
 @check_stack
-def Disconnect(pre, post, conn_spec, syn_spec):
+def Disconnect(pre, post, conn_spec='one_to_one', syn_spec='static_synapse'):
     """Disconnect pre neurons from post neurons.
 
     Neurons in pre and post are disconnected using the specified disconnection
@@ -604,6 +632,10 @@ def Disconnect(pre, post, conn_spec, syn_spec):
     string describing one synapse model (synapse models are listed in the
     synapsedict) or as a dictionary as described below.
 
+    Note that only the synapse type is checked when we disconnect and that if
+    syn_spec is given as a non-empty dictionary, the 'model' parameter must be
+    present.
+
     If no synapse model is specified the default model 'static_synapse'
     will be used.
 
@@ -621,11 +653,10 @@ def Disconnect(pre, post, conn_spec, syn_spec):
     types in NEST or manually specified synapses created via CopyModel().
 
     All other parameters are not currently implemented.
-    Note: model is alias for syn_spec for backward compatibility.
 
     Notes
     -----
-    Disconnect does not iterate over subnets, it only connects explicitly
+    Disconnect does not iterate over subnets, it only disconnects explicitly
     specified nodes.
     """
 
@@ -634,14 +665,12 @@ def Disconnect(pre, post, conn_spec, syn_spec):
     sps(post)
     sr('cvgidcollection')
 
-    if conn_spec is not None:
-        sps(conn_spec)
-        if is_string(conn_spec):
-            sr("cvlit")
+    if is_string(conn_spec):
+        conn_spec = {'rule': conn_spec}
+    if is_string(syn_spec):
+        syn_spec = {'model': syn_spec}
 
-    if syn_spec is not None:
-        sps(syn_spec)
-        if is_string(syn_spec):
-            sr("cvlit")
+    sps(conn_spec)
+    sps(syn_spec)
 
     sr('Disconnect_g_g_D_D')

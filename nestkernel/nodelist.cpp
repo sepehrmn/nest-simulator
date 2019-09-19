@@ -60,9 +60,9 @@ LocalNodeListBase< LocalNodeListIterator >::begin() const
   do
   {
     assert( not current_subnet->local_empty() );
-    node = current_subnet->local_begin(); // leftmost in current subnet
+    node = current_subnet->local_begin();              // leftmost in current subnet
     current_subnet = dynamic_cast< Subnet* >( *node ); // attempt descend
-  } while ( current_subnet && not current_subnet->local_empty() );
+  } while ( current_subnet and not current_subnet->local_empty() );
 
   // Either node is a non-subnet node or and empty subnet, this is
   // the first node.
@@ -99,7 +99,7 @@ LocalNodeListIterator LocalNodeListIterator::operator++()
   {
     // We have a right neighbor.
     current_subnet = dynamic_cast< Subnet* >( *current_node_ );
-    while ( current_subnet && not current_subnet->local_empty() )
+    while ( current_subnet and not current_subnet->local_empty() )
     {
       // current_node_ is a subnet and we descend into it
       current_node_ = current_subnet->local_begin();
@@ -167,9 +167,9 @@ LocalNodeListBase< LocalLeafListIterator >::begin() const
   do
   {
     assert( not current_subnet->local_empty() );
-    node = current_subnet->local_begin(); // leftmost in current subnet
+    node = current_subnet->local_begin();              // leftmost in current subnet
     current_subnet = dynamic_cast< Subnet* >( *node ); // attempt descend
-  } while ( current_subnet && not current_subnet->local_empty() );
+  } while ( current_subnet and not current_subnet->local_empty() );
 
   // Either node is a non-subnet node or and empty subnet. It is a candidate for
   // the first node. The constructor will automatically move on to the first
@@ -183,7 +183,7 @@ LocalLeafListIterator LocalLeafListIterator::operator++()
   do
   {
     ++base_it_;
-  } while ( not base_it_.is_end_() && not is_leaf_( *base_it_ ) );
+  } while ( not base_it_.is_end_() and not is_leaf_( *base_it_ ) );
 
   return *this;
 }

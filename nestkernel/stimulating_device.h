@@ -32,9 +32,12 @@
 class SpikeEvent;
 class CurrentEvent;
 class DoubleDataEvent;
+class DelayedRateConnectionEvent;
 
-/* BeginDocumentation
+/** @BeginDocumentation
+
    Name: StimulatingDevice - General properties of stimulating devices.
+
    Description:
 
    Stimulating devices inject signals into a network, either as analog signals
@@ -157,8 +160,7 @@ StimulatingDevice< EmittedEvent >::StimulatingDevice()
 }
 
 template < typename EmittedEvent >
-StimulatingDevice< EmittedEvent >::StimulatingDevice(
-  StimulatingDevice< EmittedEvent > const& sd )
+StimulatingDevice< EmittedEvent >::StimulatingDevice( StimulatingDevice< EmittedEvent > const& sd )
   : Device( sd )
   , first_syn_id_( invalid_synindex ) // a new instance can have no connections
 {
@@ -176,6 +178,15 @@ StimulatingDevice< nest::CurrentEvent >::is_active( const Time& T ) const
         t_min_ <= T.get_steps() + 1 < t_max_
    */
   const long step = T.get_steps() + 1;
+  return get_t_min_() <= step and step < get_t_max_();
+}
+
+template <>
+inline bool
+StimulatingDevice< nest::DelayedRateConnectionEvent >::is_active( const Time& T ) const
+{
+  // same as for the CurrentEvent
+  const long step = T.get_steps() + 1;
   return get_t_min_() <= step && step < get_t_max_();
 }
 
@@ -185,7 +196,7 @@ StimulatingDevice< nest::DoubleDataEvent >::is_active( const Time& T ) const
 {
   // same as for the CurrentEvent
   const long step = T.get_steps() + 1;
-  return get_t_min_() <= step && step < get_t_max_();
+  return get_t_min_() <= step and step < get_t_max_();
 }
 
 template <>
@@ -194,7 +205,7 @@ StimulatingDevice< nest::SpikeEvent >::is_active( const Time& T ) const
 {
   /* Input is the time stamp of the spike to be emitted. */
   const long stamp = T.get_steps();
-  return get_t_min_() < stamp && stamp <= get_t_max_();
+  return get_t_min_() < stamp and stamp <= get_t_max_();
 }
 
 template < typename EmittedEvent >
@@ -207,8 +218,7 @@ StimulatingDevice< EmittedEvent >::get_status( DictionaryDatum& d ) const
 
 template < typename EmittedEvent >
 inline void
-nest::StimulatingDevice< EmittedEvent >::enforce_single_syn_type(
-  synindex syn_id )
+nest::StimulatingDevice< EmittedEvent >::enforce_single_syn_type( synindex syn_id )
 {
   if ( first_syn_id_ == invalid_synindex )
   {

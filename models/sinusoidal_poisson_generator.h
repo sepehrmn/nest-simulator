@@ -28,64 +28,75 @@
 
 // Includes from nestkernel:
 #include "connection.h"
+#include "device_node.h"
 #include "event.h"
 #include "nest_types.h"
-#include "node.h"
 #include "stimulating_device.h"
 #include "universal_data_logger.h"
 
 namespace nest
 {
-/* BeginDocumentation
-   Name: sinusoidal_poisson_generator - Generates sinusoidally modulated Poisson
-                                        spike trains.
 
-   Description:
-   sinusoidal_poisson_generator generates sinusoidally modulated Poisson spike
-   trains. By default, each target of the generator will receive a different
-   spike train.
+/** @BeginDocumentation
+@ingroup Devices
+@ingroup generator
 
-   The instantaneous rate of the process is given by
+Name: sinusoidal_poisson_generator - Generates sinusoidally modulated Poisson
+                                     spike trains.
 
-       f(t) = max(0, rate + amplitude sin ( 2 pi frequency t + phase * pi/180 ))
-           >= 0
+Description:
 
-   Parameters:
-   The following parameters can be set in the status dictionary:
+sinusoidal_poisson_generator generates sinusoidally modulated Poisson spike
+trains. By default, each target of the generator will receive a different
+spike train.
 
-   rate       double - Mean firing rate in spikes/second, default: 0 s^-1
-   amplitude  double - Firing rate modulation amplitude in spikes/second,
-                       default: 0 s^-1
-   frequency  double - Modulation frequency in Hz, default: 0 Hz
-   phase      double - Modulation phase in degree [0-360], default: 0
+The instantaneous rate of the process is given by
 
-   individual_spike_trains   bool - See note below, default: true
+@f[  f(t) = max(0, rate + amplitude \sin ( 2 \pi frequency t + phase
+     * \pi/180 )) >= 0
+@f]
+Parameters:
 
-   Remarks:
-   - If amplitude > rate, firing rate is cut off at zero. In this case, the mean
-     firing rate will be less than rate.
-   - The state of the generator is reset on calibration.
-   - The generator does not support precise spike timing.
-   - You can use the multimeter to sample the rate of the generator.
-   - The generator will create different trains if run at different
-     temporal resolutions.
+The following parameters can be set in the status dictionary:
 
-   - Individual spike trains vs single spike train:
-     By default, the generator sends a different spike train to each of its
-     targets. If /individual_spike_trains is set to false using either
-     SetDefaults or CopyModel before a generator node is created, the generator
-     will send the same spike train to all of its targets.
+\verbatim embed:rst
+======================== ======= ==============================================
+ rate                    real    Mean firing rate in spikes/second,
+                                 default: 0 s^-1
+ amplitude               real    Firing rate modulation amplitude in
+                                 spikes/second, default: 0 s^-1
+ frequency               Hz      Modulation frequency, default: 0 Hz
+ phase                   real    Modulation phase in degree [0-360], default: 0
+ individual_spike_trains boolean See note below, default: true
+======================== ======= ==============================================
+\endverbatim
 
-   Receives: DataLoggingRequest
+Remarks:
+- If amplitude > rate, firing rate is cut off at zero. In this case, the mean
+  firing rate will be less than rate.
+- The state of the generator is reset on calibration.
+- The generator does not support precise spike timing.
+- You can use the multimeter to sample the rate of the generator.
+- The generator will create different trains if run at different
+  temporal resolutions.
 
-   Sends: SpikeEvent
+- Individual spike trains vs single spike train:
+  By default, the generator sends a different spike train to each of its
+  targets. If /individual_spike_trains is set to false using either
+  SetDefaults or CopyModel before a generator node is created, the generator
+  will send the same spike train to all of its targets.
 
-   FirstVersion: July 2006, Oct 2009, May 2013
-   Author: Hans Ekkehard Plesser
-   SeeAlso: poisson_generator, sinusoidal_gamma_generator
+Receives: DataLoggingRequest
+
+Sends: SpikeEvent
+
+FirstVersion: July 2006, Oct 2009, May 2013
+
+Author: Hans Ekkehard Plesser
+
+SeeAlso: poisson_generator, sinusoidal_gamma_generator
 */
-
-class sinusoidal_poisson_generator : public Node
+class sinusoidal_poisson_generator : public DeviceNode
 {
 
 public:
@@ -225,10 +236,7 @@ private:
 };
 
 inline port
-sinusoidal_poisson_generator::send_test_event( Node& target,
-  rport receptor_type,
-  synindex syn_id,
-  bool dummy_target )
+sinusoidal_poisson_generator::send_test_event( Node& target, rport receptor_type, synindex syn_id, bool dummy_target )
 {
   device_.enforce_single_syn_type( syn_id );
 
@@ -249,8 +257,7 @@ sinusoidal_poisson_generator::send_test_event( Node& target,
 }
 
 inline port
-sinusoidal_poisson_generator::handles_test_event( DataLoggingRequest& dlr,
-  rport receptor_type )
+sinusoidal_poisson_generator::handles_test_event( DataLoggingRequest& dlr, rport receptor_type )
 {
   if ( receptor_type != 0 )
   {

@@ -39,19 +39,24 @@
 #include <music.hh>
 
 // Includes from nestkernel:
+#include "device_node.h"
 #include "nest_types.h"
-#include "node.h"
 
 // Includes from sli:
 #include "arraydatum.h"
 #include "dictutils.h"
 
-/*BeginDocumentation
+namespace nest
+{
+/** @BeginDocumentation
+@ingroup Devices
+@ingroup music
 
 Name: music_message_in_proxy - A device which receives message strings from
                               MUSIC.
 
 Description:
+
 A music_message_in_proxy can be used to receive message strings from
 remote MUSIC applications in NEST.
 
@@ -61,38 +66,43 @@ which MUSIC can connect a message source. The music_message_in_proxy
 can queried using GetStatus to retrieve the messages.
 
 Parameters:
+
 The following properties are available in the status dictionary:
 
-port_name      - The name of the MUSIC input port to listen to (default:
-                 message_in)
-port_width     - The width of the MUSIC input port
-data           - A sub-dictionary that contains the string messages
-                 in the form of two arrays:
-                 messages      - The strings
-                 message_times - The times the messages were sent (ms)
-n_messages     - The number of messages.
-published      - A bool indicating if the port has been already published
-                 with MUSIC
+\verbatim embed:rst
+============ ======= =========================================================
+ port_name   string  The name of the MUSIC input port to listen to (default:
+                     message_in)
+ port_width  integer The width of the MUSIC input port
+ data        array   A sub-dictionary that contains the string messages
+                     in the form of two arrays:
+                     messages      - The strings
+                     message_times - The times the messages were sent (ms)
+ n_messages  integer The number of messages
+ published   boolean A bool indicating if the port has been already published
+                     with MUSIC
+============ ======= =========================================================
+\endverbatim
 
 The parameter port_name can be set using SetStatus. The field n_messages
 can be set to 0 to clear the data arrays.
 
 Examples:
-/music_message_in_proxy Create /mmip Set
-10 Simulate
-mmip GetStatus /data get /messages get 0 get /command Set
-(Executing command ') command join ('.) join =
-command cvx exec
+
+    /music_message_in_proxy Create /mmip Set
+    10 Simulate
+    mmip GetStatus /data get /messages get 0 get /command Set
+    (Executing command ') command join ('.) join =
+    command cvx exec
 
 Author: Jochen Martin Eppler
+
 FirstVersion: July 2010
+
 Availability: Only when compiled with MUSIC
 
 SeeAlso: music_event_out_proxy, music_event_in_proxy, music_cont_in_proxy
 */
-
-namespace nest
-{
 class MsgHandler : public MUSIC::MessageHandler
 {
   ArrayDatum messages;                 //!< The buffer for incoming message
@@ -110,8 +120,7 @@ public:
   {
     DictionaryDatum dict( new Dictionary );
     ( *dict )[ names::messages ] = messages;
-    ( *dict )[ names::message_times ] =
-      DoubleVectorDatum( new std::vector< double >( message_times ) );
+    ( *dict )[ names::message_times ] = DoubleVectorDatum( new std::vector< double >( message_times ) );
     ( *d )[ names::n_messages ] = messages.size();
     ( *d )[ names::data ] = dict;
   }
@@ -129,7 +138,7 @@ public:
  * MUSIC port. The timestamps of the events also contain offsets,
  * which makes it also useful for precise spikes.
  */
-class music_message_in_proxy : public Node
+class music_message_in_proxy : public DeviceNode
 {
 
 public:

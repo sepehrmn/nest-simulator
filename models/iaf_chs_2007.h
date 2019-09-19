@@ -37,62 +37,74 @@
 
 namespace nest
 {
-/* BeginDocumentation
-   Name: iaf_chs_2007 - Spike-response model used in Carandini et al 2007.
 
-   Description:
-   The membrane potential is the sum of stereotyped events: the postsynaptic
-   potentials (V_syn), waveforms that include a spike and the subsequent
-   after-hyperpolarization (V_spike) and Gaussian-distributed white noise.
+/** @BeginDocumentation
+@ingroup Neurons
+@ingroup iaf
 
-   The postsynaptic potential is described by alpha function where
-   U_epsp is the maximal amplitude of the EPSP and tau_epsp is the time to
-   peak of the EPSP.
+Name: iaf_chs_2007 - Spike-response model used in Carandini et al 2007.
 
-   The spike waveform is described as a delta peak followed by a membrane
-   potential reset and exponential decay. U_reset is the magnitude of the
-   reset/after-hyperpolarization and tau_reset is the time constant of
-   recovery from this hyperpolarization.
+Description:
 
-   The linear subthresold dynamics is integrated by the Exact
-   Integration scheme [1]. The neuron dynamics is solved on the time
-   grid given by the computation step size. Incoming as well as emitted
-   spikes are forced to that grid.
+The membrane potential is the sum of stereotyped events: the postsynaptic
+potentials (V_syn), waveforms that include a spike and the subsequent
+after-hyperpolarization (V_spike) and Gaussian-distributed white noise.
 
-   Remarks:
-   The way the noise term was implemented in the original model makes it
-   unsuitable for simulation in NEST. The workaround was to prepare the
-   noise signal externally prior to simulation. The noise signal,
-   if present, has to be at least as long as the simulation.
+The postsynaptic potential is described by alpha function where
+U_epsp is the maximal amplitude of the EPSP and tau_epsp is the time to
+peak of the EPSP.
 
-   Parameters:
-   The following parameters can be set in the status dictionary.
+The spike waveform is described as a delta peak followed by a membrane
+potential reset and exponential decay. U_reset is the magnitude of the
+reset/after-hyperpolarization and tau_reset is the time constant of
+recovery from this hyperpolarization.
 
-   tau_epsp       double - Membrane time constant in ms.
-   tau_reset      double - Refractory time constant in ms.
-   U_epsp         double - Maximum amplitude of the EPSP. Normalized.
-   U_reset        double - Reset value of the membrane potential. Normalized.
-   U_noise        double - Noise scale. Normalized.
-   noise   vector<double>- Noise signal.
+The linear subthresold dynamics is integrated by the Exact
+Integration scheme [1]. The neuron dynamics is solved on the time
+grid given by the computation step size. Incoming as well as emitted
+spikes are forced to that grid.
 
-   References:
-   [1] Carandini M, Horton JC, Sincich LC (2007) Thalamic filtering of retinal
-   spike trains by postsynaptic summation. J Vis 7(14):20,1-11.
-   [2] Rotter S & Diesmann M (1999) Exact simulation of time-invariant linear
-   systems with applications to neuronal modeling. Biologial Cybernetics
-   81:381-402.
+Remarks:
+The way the noise term was implemented in the original model makes it
+unsuitable for simulation in NEST. The workaround was to prepare the
+noise signal externally prior to simulation. The noise signal,
+if present, has to be at least as long as the simulation.
 
-   Sends: SpikeEvent
+Parameters:
 
-   Receives: SpikeEvent, DataLoggingRequest
+The following parameters can be set in the status dictionary.
 
-   FirstVersion: May 2012
-   Author: Thomas Heiberg, Birgit Kriener
+\verbatim embed:rst
+========== ============== ==================================================
+ tau_epsp  ms             Membrane time constant
+ tau_reset ms             Refractory time constant
+ U_epsp    real           Maximum amplitude of the EPSP, normalized
+ U_reset   real           Reset value of the membrane potential, normalized
+ U_noise   real           Noise scale, normalized
+ noise     list of real   Noise signal
+========== ============== ==================================================
+\endverbatim
+
+References:
+
+\verbatim embed:rst
+.. [1] Carandini M, Horton JC, Sincich LC (2007). Thalamic filtering of retinal
+       spike trains by postsynaptic summation. Journal of Vision 7(14):20,1-11.
+       DOI: https://doi.org/10.1167/7.14.20
+.. [2] Rotter S,  Diesmann M (1999). Exact simulation of time-invariant linear
+       systems with applications to neuronal modeling. Biologial Cybernetics
+       81:381-402.
+       DOI: https://doi.org/10.1007/s004220050570
+\endverbatim
+
+Sends: SpikeEvent
+
+Receives: SpikeEvent, DataLoggingRequest
+
+FirstVersion: May 2012
+
+Author: Thomas Heiberg, Birgit Kriener
 */
-
-/**
- * Neuron model used in Carandini et al 2007.
- */
 class iaf_chs_2007 : public Archiving_Node
 {
 
@@ -271,10 +283,7 @@ private:
 };
 
 inline port
-iaf_chs_2007::send_test_event( Node& target,
-  rport receptor_type,
-  synindex,
-  bool )
+iaf_chs_2007::send_test_event( Node& target, rport receptor_type, synindex, bool )
 {
   SpikeEvent e;
   e.set_sender( *this );

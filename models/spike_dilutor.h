@@ -25,29 +25,40 @@
 
 // Includes from nestkernel:
 #include "connection.h"
+#include "device_node.h"
 #include "event.h"
 #include "nest_types.h"
-#include "node.h"
 #include "ring_buffer.h"
 #include "stimulating_device.h"
 
 namespace nest
 {
 
-/* BeginDocumentation
+/** @BeginDocumentation
+@ingroup Devices
+@ingroup generator
+
 Name: spike_dilutor - repeats incoming spikes with a certain probability.
 
 Description:
-  The device repeats incoming spikes with a certain probability.
-  Targets will receive diffenrent spike trains.
+
+The device repeats incoming spikes with a certain probability.
+Targets will receive diffenrent spike trains.
 
 Remarks:
-  In parallel simulations, a copy of the device is present on each process
-  and spikes are collected only from local sources.
+
+In parallel simulations, a copy of the device is present on each process
+and spikes are collected only from local sources.
 
 Parameters:
-   The following parameters appear in the element's status dictionary:
-   p_copy double - Copy probability
+
+The following parameters appear in the element's status dictionary:
+
+\verbatim embed:rst
+======== ======  ================
+ p_copy  real    Copy probability
+======== ======  ================
+ \endverbatim
 
 Sends: SpikeEvent
 
@@ -56,8 +67,7 @@ ported to Nest 2.6 by: Setareh, April 2015
 
 SeeAlso: mip_generator
 */
-
-class spike_dilutor : public Node
+class spike_dilutor : public DeviceNode
 {
 
 public:
@@ -124,10 +134,7 @@ private:
 };
 
 inline port
-spike_dilutor::send_test_event( Node& target,
-  rport receptor_type,
-  synindex syn_id,
-  bool )
+spike_dilutor::send_test_event( Node& target, rport receptor_type, synindex syn_id, bool )
 {
 
   device_.enforce_single_syn_type( syn_id );

@@ -42,7 +42,9 @@
 #include "slice_ring_buffer.h"
 
 
-/*Begin Documentation
+namespace nest
+{
+/** @BeginDocumentation
 Name: iaf_psc_exp_ps_lossless - Leaky integrate-and-fire neuron
 with exponential postsynaptic currents; precise implementation;
 predicts exact number of spikes by applying state space analysis
@@ -73,11 +75,23 @@ Parameters:
   V_min         double - Absolute lower value for the membrane potential.
   V_reset       double - Reset value for the membrane potential.
 
-Note: In the current implementation, tau_syn_ex and tau_syn_in must be equal.
-  This is because the state space would be 3-dimensional otherwise, which
-  makes the detection of threshold crossing more difficult [1].
-  Support for different time constants may be added in the future, see issue
-  #921.
+Remarks:
+
+This model transmits precise spike times to target nodes (on-grid spike
+time and offset). If this node is connected to a spike_detector, the
+property "precise_times" of the spike_detector has to be set to true in
+order to record the offsets in addition to the on-grid spike times.
+
+The iaf_psc_delta_ps neuron accepts connections transmitting
+CurrentEvents. These events transmit stepwise-constant currents which
+can only change at on-grid times.
+
+In the current implementation, tau_syn_ex and tau_syn_in must be equal.
+This is because the state space would be 3-dimensional otherwise, which
+makes the detection of threshold crossing more difficult [1].
+Support for different time constants may be added in the future,
+see issue #921.
+
 
 References:
 [1] Krishnan J, Porta Mana P, Helias M, Diesmann M and Di Napoli E
@@ -93,13 +107,6 @@ Receives: SpikeEvent, CurrentEvent, DataLoggingRequest
 
 SeeAlso: iaf_psc_exp_ps
 */
-
-namespace nest
-{
-/**
- * Leaky iaf neuron, exponential PSC synapses, lossless implementation.
- * @todo Implement current input in consistent way.
- */
 class iaf_psc_exp_ps_lossless : public Archiving_Node
 {
 public:
@@ -195,10 +202,7 @@ private:
    * @param t0      Beginning of mini-timestep
    * @param dt      Duration of mini-timestep
    */
-  void emit_spike_( const Time& origin,
-    const long lag,
-    const double t0,
-    const double dt );
+  void emit_spike_( const Time& origin, const long lag, const double t0, const double dt );
 
   /**
    * Emit a single spike at a precisely given time.
@@ -207,9 +211,7 @@ private:
    * @param lag           Time step within slice
    * @param spike_offset  Time offset for spike
    */
-  void emit_instant_spike_( const Time& origin,
-    const long lag,
-    const double spike_offset );
+  void emit_instant_spike_( const Time& origin, const long lag, const double spike_offset );
 
   /**
    * Localize threshold crossing by bisectioning.
@@ -278,7 +280,7 @@ private:
 
     Parameters_(); //!< Sets default parameter values
 
-    void get( DictionaryDatum& ) const; //!< Store current values in dictionary
+    void get( DictionaryDatum& ) const;   //!< Store current values in dictionary
     double set( const DictionaryDatum& ); //!< Set values from dicitonary
   };
 
@@ -423,10 +425,7 @@ private:
 };
 
 inline port
-iaf_psc_exp_ps_lossless::send_test_event( Node& target,
-  rport receptor_type,
-  synindex,
-  bool )
+iaf_psc_exp_ps_lossless::send_test_event( Node& target, rport receptor_type, synindex, bool )
 {
   SpikeEvent e;
   e.set_sender( *this );
@@ -454,8 +453,7 @@ iaf_psc_exp_ps_lossless::handles_test_event( CurrentEvent&, port receptor_type )
 }
 
 inline port
-iaf_psc_exp_ps_lossless::handles_test_event( DataLoggingRequest& dlr,
-  port receptor_type )
+iaf_psc_exp_ps_lossless::handles_test_event( DataLoggingRequest& dlr, port receptor_type )
 {
   if ( receptor_type != 0 )
   {

@@ -84,15 +84,12 @@ extern const Name polar_axis;
 extern const Name positions;
 extern const Name radius;
 extern const Name rectangular;
-extern const Name rho;
 extern const Name row;
 extern const Name rows;
-extern const Name sigma;
 extern const Name sigma_x;
 extern const Name sigma_y;
 extern const Name sources;
 extern const Name spherical;
-extern const Name theta;
 extern const Name topology;
 extern const Name upper_right;
 

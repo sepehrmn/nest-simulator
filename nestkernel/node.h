@@ -72,15 +72,17 @@ class Archiving_Node;
  * A new type of Node must be derived from this base class and
  * implement its interface.
  * In order to keep the inheritance hierarchy flat, it is encouraged
- * to direcly subclass from base class Node.
+ * to directly subclass from base class Node.
  *
  * @see class Event
  * @see Subnet
  * @ingroup user_interface
  */
 
-/* BeginDocumentation
+/** @BeginDocumentation
+
    Name: Node - General properties of all nodes.
+
    Parameters:
    frozen     booltype    - Whether the node is updated during simulation
    global_id  integertype - The global id of the node (cf. local_id)
@@ -94,6 +96,7 @@ class Archiving_Node;
                             locally)
    vp         integertype - The id of the virtual process the node is assigned
                             to (valid globally)
+
    SeeAlso: GetStatus, SetStatus, elementstates
  */
 
@@ -131,24 +134,6 @@ public:
    * new nodes to the network.
    */
   virtual bool has_proxies() const;
-
-  /**
-   * Returns true for potential global receivers (e.g. spike_detector) and false
-   * otherwise
-   */
-  virtual bool potential_global_receiver() const;
-
-  /**
-   * Sets has_proxies_ member variable (to switch to global spike detection
-   * mode)
-   */
-  virtual void set_has_proxies( const bool );
-
-  /**
-   * Sets local_receiver_ member variable (to switch to global spike detection
-   * mode)
-   */
-  virtual void set_local_receiver( const bool );
 
   /**
    * Returns true if the node only receives events from nodes/devices
@@ -411,10 +396,7 @@ public:
    * DS*Events when called with the dummy target, and *Events when called with
    * the real target, see #478.
    */
-  virtual port send_test_event( Node& receiving_node,
-    rport receptor_type,
-    synindex syn_id,
-    bool dummy_target );
+  virtual port send_test_event( Node& receiving_node, rport receptor_type, synindex syn_id, bool dummy_target );
 
   /**
    * Check if the node can handle a particular event and receptor type.
@@ -444,12 +426,9 @@ public:
   virtual port handles_test_event( DSSpikeEvent&, rport receptor_type );
   virtual port handles_test_event( DSCurrentEvent&, rport receptor_type );
   virtual port handles_test_event( GapJunctionEvent&, rport receptor_type );
-  virtual port handles_test_event( InstantaneousRateConnectionEvent&,
-    rport receptor_type );
-  virtual port handles_test_event( DiffusionConnectionEvent&,
-    rport receptor_type );
-  virtual port handles_test_event( DelayedRateConnectionEvent&,
-    rport receptor_type );
+  virtual port handles_test_event( InstantaneousRateConnectionEvent&, rport receptor_type );
+  virtual port handles_test_event( DiffusionConnectionEvent&, rport receptor_type );
+  virtual port handles_test_event( DelayedRateConnectionEvent&, rport receptor_type );
 
   /**
    * Required to check, if source neuron may send a SecondaryEvent.
@@ -493,7 +472,7 @@ public:
    * @throws IllegalConnection
    *
    */
-  virtual void register_stdp_connection( double );
+  virtual void register_stdp_connection( double, double );
 
   /**
    * Handle incoming spike events.
@@ -695,6 +674,8 @@ public:
    */
   virtual double get_K_value( double t );
 
+  virtual double get_LTD_value( double t );
+
   /**
    * write the Kminus and triplet_Kminus values at t (in ms) to
    * the provided locations.
@@ -710,6 +691,11 @@ public:
     double t2,
     std::deque< histentry >::iterator* start,
     std::deque< histentry >::iterator* finish );
+
+  virtual void get_LTP_history( double t1,
+    double t2,
+    std::deque< histentry_cl >::iterator* start,
+    std::deque< histentry_cl >::iterator* finish );
 
   /**
    * Modify Event object parameters during event delivery.
@@ -833,6 +819,20 @@ public:
   }
 
   /**
+   * Sets the local device id.
+   * Throws an error if used on a non-device node.
+   * @see get_local_device_id
+   */
+  virtual void set_local_device_id( const index lsdid );
+
+  /**
+   * Gets the local device id.
+   * Throws an error if used on a non-device node.
+   * @see set_local_device_id
+   */
+  virtual index get_local_device_id() const;
+
+  /**
    * Return the number of thread siblings in SiblingContainer.
    *
    * This method is meaningful only for SiblingContainer, for which it
@@ -862,9 +862,9 @@ public:
   }
 
 private:
-  void set_lid_( index );      //!< Set local id, relative to the parent subnet
-  void set_parent_( Subnet* ); //!< Set pointer to parent subnet.
-  void set_gid_( index );      //!< Set global node id
+  void set_lid_( index );          //!< Set local id, relative to the parent subnet
+  void set_parent_( Subnet* );     //!< Set pointer to parent subnet.
+  void set_gid_( index );          //!< Set global node id
   void set_subnet_index_( index ); //!< Index into node array in subnet
 
   /** Return a new dictionary datum .
@@ -963,12 +963,6 @@ inline bool
 Node::has_proxies() const
 {
   return true;
-}
-
-inline bool
-Node::potential_global_receiver() const
-{
-  return false;
 }
 
 inline bool

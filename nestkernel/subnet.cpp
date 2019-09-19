@@ -85,7 +85,7 @@ nest::Subnet::get_dimensions_( std::vector< int >& dim ) const
   {
     return;
   }
-  if ( homogeneous_ && ( dynamic_cast< Subnet* >( nodes_.at( 0 ) ) != NULL ) )
+  if ( homogeneous_ and ( dynamic_cast< Subnet* >( nodes_.at( 0 ) ) != NULL ) )
   {
     bool homog = true;
     for ( size_t i = 0; i < nodes_.size() - 1; ++i )
@@ -201,13 +201,11 @@ nest::Subnet::print_network( int max_depth, int level, std::string prefix )
       // this case.
       if ( next == nodes_.size() )
       {
-        out << prefix
-            << nodes_[ i ]->print_network( max_depth, level + 1, prefix + " " );
+        out << prefix << nodes_[ i ]->print_network( max_depth, level + 1, prefix + " " );
       }
       else
       {
-        out << prefix
-            << nodes_[ i ]->print_network( max_depth, level + 1, prefix + "|" );
+        out << prefix << nodes_[ i ]->print_network( max_depth, level + 1, prefix + "|" );
       }
 
       first = next;
@@ -243,8 +241,7 @@ nest::Subnet::print_network( int max_depth, int level, std::string prefix )
     {
       // Here we print the sequence of consecutive nodes.
       // We can be sure that neither first, nor i point to NULL.
-      out << prefix << "+-[" << first + 1 << "]...[" << i + 1 << "] "
-          << nodes_[ first ]->get_name() << std::endl;
+      out << prefix << "+-[" << first + 1 << "]...[" << i + 1 << "] " << nodes_[ first ]->get_name() << std::endl;
       // Print extra line, if we are at the end of a subnet.
       if ( next == nodes_.size() )
       {
@@ -257,8 +254,7 @@ nest::Subnet::print_network( int max_depth, int level, std::string prefix )
     // Here, we deal the case of an individual Node with no identical
     // neighbours.
 
-    out << prefix << "+-[" << i + 1 << "] " << nodes_[ first ]->get_name()
-        << std::endl;
+    out << prefix << "+-[" << i + 1 << "] " << nodes_[ first ]->get_name() << std::endl;
 
     // Print extra line, if we are at the end of a subnet.
     if ( next == nodes_.size() )
@@ -274,9 +270,9 @@ void
 nest::Subnet::set_label( std::string const label )
 {
   // set the new label on all sibling threads
-  for ( index t = 0; t < kernel().vp_manager.get_num_threads(); ++t )
+  for ( thread tid = 0; tid < kernel().vp_manager.get_num_threads(); ++tid )
   {
-    Node* n = kernel().node_manager.get_node( get_gid(), t );
+    Node* n = kernel().node_manager.get_node( get_gid(), tid );
     Subnet* c = dynamic_cast< Subnet* >( n );
     assert( c );
     c->label_ = label;

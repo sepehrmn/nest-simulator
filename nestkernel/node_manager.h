@@ -119,6 +119,16 @@ public:
    */
   index size() const;
 
+  /**
+   * Returns the maximal number of nodes per virtual process.
+   */
+  index get_max_num_local_nodes() const;
+
+  /**
+   * Returns the number of devices per virtual process.
+   */
+  index get_num_local_devices() const;
+
   Subnet* get_root() const; ///< return root subnet.
   Subnet* get_cwn() const;  ///< current working node.
 
@@ -170,16 +180,6 @@ public:
   void ensure_valid_thread_local_ids();
 
   Node* thread_lid_to_node( thread t, targetindex thread_local_id ) const;
-
-  /**
-   * Increment total number of global spike detectors by 1
-   */
-  void increment_n_gsd();
-
-  /**
-   * Get total number of global spike detectors
-   */
-  index get_n_gsd();
 
   /**
    * Get list of nodes on given thread.
@@ -243,6 +243,8 @@ public:
    * Number of process-local nodes.
    */
   size_t local_nodes_size() const;
+  bool have_nodes_changed() const;
+  void set_have_nodes_changed( const bool changed );
 
 private:
   /**
@@ -261,9 +263,7 @@ private:
    *        each call so Node::set_status_()
    * @throws UnaccessedDictionaryEntry
    */
-  void set_status_single_node_( Node&,
-    const DictionaryDatum&,
-    bool clear_flags = true );
+  void set_status_single_node_( Node&, const DictionaryDatum&, bool clear_flags = true );
 
   /**
    * Initialized buffers, register in list of nodes to update/finalize.
@@ -285,9 +285,6 @@ private:
 
   Model* siblingcontainer_model_; //!< The model for the SiblingContainer class
 
-  index n_gsd_; //!< Total number of global spike detectors, used for
-                //!< distributing them over recording processes
-
   /**
    * Data structure holding node pointers per thread.
    *
@@ -300,14 +297,18 @@ private:
    * essentially undetectable).
    */
   std::vector< std::vector< Node* > > nodes_vec_;
-  std::vector< std::vector< Node* > >
-    wfr_nodes_vec_;  //!< Nodelists for unfrozen nodes that
-                     //!< use the waveform relaxation method
-  bool wfr_is_used_; //!< there is at least one node that uses
-                     //!< waveform relaxation
+  std::vector< std::vector< Node* > > wfr_nodes_vec_; //!< Nodelists for unfrozen nodes that
+                                                      //!< use the waveform relaxation method
+  bool wfr_is_used_;                                  //!< there is at least one node that uses
+                                                      //!< waveform relaxation
   //! Network size when nodes_vec_ was last updated
   index nodes_vec_network_size_;
   size_t num_active_nodes_; //!< number of nodes created by prepare_nodes
+
+  index num_local_devices_; //!< stores number of local devices
+
+  bool have_nodes_changed_; //!< true if new nodes have been created
+                            //!< since startup or last call to simulate
 };
 
 inline index
@@ -338,18 +339,6 @@ inline Node*
 NodeManager::thread_lid_to_node( thread t, targetindex thread_local_id ) const
 {
   return nodes_vec_[ t ][ thread_local_id ];
-}
-
-inline void
-NodeManager::increment_n_gsd()
-{
-  ++n_gsd_;
-}
-
-inline index
-NodeManager::get_n_gsd()
-{
-  return n_gsd_;
 }
 
 inline const std::vector< Node* >&
@@ -386,6 +375,18 @@ inline size_t
 NodeManager::local_nodes_size() const
 {
   return local_nodes_.size();
+}
+
+inline bool
+NodeManager::have_nodes_changed() const
+{
+  return have_nodes_changed_;
+}
+
+inline void
+NodeManager::set_have_nodes_changed( const bool changed )
+{
+  have_nodes_changed_ = changed;
 }
 
 } // namespace

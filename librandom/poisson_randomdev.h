@@ -85,8 +85,9 @@
 namespace librandom
 {
 
-/*BeginDocumentation
+/** @BeginDocumentation
 Name: rdevdict::poisson - poisson random deviate generator
+
 Description:
    Generates poisson distributed random numbers.
 
@@ -96,6 +97,7 @@ Parameters:
    lambda - distribution parameter, lambda
 
 SeeAlso: CreateRDV, RandomArray, rdevdict
+
 Author: Hans Ekkehard Plesser
 */
 
@@ -173,11 +175,7 @@ private:
   static const unsigned n_a_; //!< length of array
 
   //! Procedure F from Ahrens & Dieter
-  void proc_f_( const unsigned k,
-    double& px,
-    double& py,
-    double& fx,
-    double& fy ) const;
+  void proc_f_( const unsigned k, double& px, double& py, double& fx, double& fy ) const;
 };
 }
 
