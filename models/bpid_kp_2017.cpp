@@ -93,12 +93,19 @@ namespace nest
      : k1_( 1.0 )
      , k2_( 1.0 )
      , integration_type_(ADDITIVE)
+     , phis_()
+     , alpha_( 0.01 )
+     , beta_( 0.01 )
+     , eta_( 0.01 )
      , interval_( 1.0 ) // ms
    {
    }
 
    nest::bpid_kp_2017::State_::State_()
-     : theta_( 0.0 )
+     : E( 0.01 )
+     , E_c_( 0.01 )
+     , E_r_( 0.01 )
+     , theta_( 0.0 )
      ,  w_0_ ( 0.0 )
      ,  v_0_ ( 0.0 )
      , receptive_field_ ( 0.0 )
@@ -147,15 +154,22 @@ nest::bpid_kp_2017::set_status( const DictionaryDatum& d )
 void
 nest::bpid_kp_2017::Parameters_::get( DictionaryDatum& d ) const
 {
+  def< double >( d, names::alpha, alpha_ );
+  def< double >( d, names::beta, beta_ );
+  def< double >( d, names::eta, eta_ );
   def< double >( d, names::k1, k1_ );
   def< double >( d, names::k2, k2_ );
   def< long >( d, names::integration_type, integration_type_ ); //TODO fix from long. int does not work
   def< double >( d, names::interval, interval_ );
+  def< std::vector<double> >( d, names::phis, phis_ );
 }
 
 void
 nest::bpid_kp_2017::Parameters_::set( const DictionaryDatum& d )
 {
+  updateValue< double >( d, names::alpha, alpha_ );
+  updateValue< double >( d, names::beta, beta_ );
+  updateValue< double >( d, names::eta, eta_ );
   updateValue< double >( d, names::k1, k1_ );
   updateValue< double >( d, names::k2, k2_ );
   updateValue< long >( d, names::integration_type, integration_type_ ); //TODO fix from long. int does not work
@@ -175,6 +189,12 @@ nest::bpid_kp_2017::Parameters_::set( const DictionaryDatum& d )
       k2_ = 2.0;
     }
   }
+
+  updateValue< std::vector< double > >( d, names::phis, phis_ );
+
+  // P_.phis_ =
+  // getValue< std::vector< double > >( d, names::phis );
+
 }
 
 // State
@@ -243,6 +263,15 @@ nest::bpid_kp_2017::calibrate()
  * Update and spike handling functions
  * ---------------------------------------------------------------- */
 
+ void
+ nest::bpid_kp_2017::learn_( )
+ {
+
+   //if P_.interval_ == V_.current_interval_:
+
+
+ }
+
 void
 nest::bpid_kp_2017::update( const Time& origin, const long from, const long to )
 {
@@ -303,6 +332,9 @@ nest::bpid_kp_2017::update( const Time& origin, const long from, const long to )
     // discrete timestep (defined by the network min_delay)
     if ( from == 0 && lag == to-1 )
     {
+      // Training
+      learn_();
+
       // threshold crossing
       if ( V_.rng_->drand() < S_.theta_ )
       {
@@ -322,12 +354,24 @@ nest::bpid_kp_2017::handle( SpikeEvent& e )
 {
   assert( e.get_delay() > 0 );
 
-  if ( e.get_rport() == RF )
+  // String of the rport
+  std::string str = std::to_string(e.get_rport());
+
+  // the receptor number
+  std::string num_string = str.substr(0, str.length() - 1);
+  int rt_num = std::stoi (num_string);
+  
+  // Type of the receptor (last digit)
+  std::string type_string = str.substr(str.length() - 1, str.length());
+  int rt_type = std::stoi (type_string);
+
+  if ( rt_type == RF )
   {
     B_.spikes_rf_.add_value( e.get_rel_delivery_steps(
                                kernel().simulation_manager.get_slice_origin() ),
       e.get_weight() * e.get_multiplicity() );
   }
+
   else
   {
     B_.spikes_cf_.add_value( e.get_rel_delivery_steps(

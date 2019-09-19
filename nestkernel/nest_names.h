@@ -324,6 +324,7 @@ extern const Name p_copy;
 extern const Name p_transmit;
 extern const Name parent;
 extern const Name phase;
+extern const Name phis;
 extern const Name port;
 extern const Name port_name;
 extern const Name port_width;

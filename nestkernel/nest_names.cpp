@@ -303,6 +303,7 @@ const Name p_copy( "p_copy" );
 const Name p_transmit( "p_transmit" );
 const Name parent( "parent" );
 const Name phase( "phase" );
+const Name phis( "phis" );
 const Name port( "port" );
 const Name port_name( "port_name" );
 const Name port_width( "port_width" );

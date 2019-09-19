@@ -42,15 +42,10 @@ Michael Wibral, Viola Priesemann, Jim W. Kay, Joseph T. Lizier, William A. Phill
   // respectively, unless specified otherwise. If the integration type of the neuron is changed,
   // and k1/k2 are not specified, they are set to the default values for that integration type.
 
-  FirstVersion: May 2017
+  FirstVersion: November 2018
   Author: Sepehr Mahmoudian
   SeeAlso: bpid_kp_connection
 */
-
-// TODO: interval not implemented. implemen
-// TODO: Create 4 output types. -1, not firing buy carrying information, 0 not firing and no information content, 1, firing, 2 firing with burst(possibly specify degree of burst)
-// TODO: check if exponential dist sampling better. it makes the firing statistics poissonian. tau detemines the mean inter-pike interval and incoming spikes the output rate.
-// TODO: Add freeze feature for assessing performance in batches/
 
 // Includes from librandom:
 #include "exp_randomdev.h"
@@ -122,6 +117,8 @@ namespace nest
     void calibrate();
     void update( const Time&, const long, const long );
 
+    void learn_();
+
     // The next two classes need to be friends to access the State_ class/member
     friend class RecordablesMap< bpid_kp_2017 >;
     friend class UniversalDataLogger< bpid_kp_2017 >;
@@ -132,12 +129,20 @@ namespace nest
     struct Parameters_
     {
 
+
       // k1 parameter of the activation function
       double k1_;
       // k2 parameter of the activation function
       double k2_;
       // integration type (e.g., additive or modulatory)
       int integration_type_;
+
+      // phis
+      std::vector< double > phis_;
+
+      double alpha_;
+      double beta_;
+      double eta_;
 
       // Update interval
       double interval_;
@@ -149,11 +154,14 @@ namespace nest
 
     struct State_
     {
+      int update_counter_;
+
+      double E;  // Average output probability for joint r and c
+      double E_c_;  // Average output probability conditioned on c
+      double E_r_;  // Average output probability conditioned on r
+
       // Output probability
       double theta_; // Output probability
-      // double E_rc_;  // Average output probability for joint r and c
-      // double E_c_;  // Average output probability conditioned on c
-      // double E_r_;  // Average output probability conditioned on r
 
       // Integrated receptive field bias
       double w_0_;
@@ -186,6 +194,9 @@ namespace nest
 
     struct Variables_
     {
+      int r_counter = 0;
+      int c_counter = 0;
+
       librandom::RngPtr rng_; // pointer to thread specific random generator
     };
 
@@ -227,8 +238,29 @@ namespace nest
      {
        throw UnknownReceptorType( receptor_type, get_name() );
      }
+
      else
-       return receptor_type;
+     {
+
+       std::string rt_str = std::to_string(receptor_type);
+
+       if ( receptor_type == RF )
+       {
+         rt_str.append(std::to_string(V_.r_counter));
+         V_.r_counter += 1;
+       }
+
+       else
+       {
+         rt_str.append(std::to_string(V_.c_counter));
+         V_.c_counter += 1;
+       }
+
+       receptor_type = std::stoi(rt_str);
+
+     }
+
+     return receptor_type;
    }
 
    inline port
