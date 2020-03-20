@@ -42,7 +42,7 @@ Michael Wibral, Viola Priesemann, Jim W. Kay, Joseph T. Lizier, William A. Phill
   // respectively, unless specified otherwise. If the integration type of the neuron is changed,
   // and k1/k2 are not specified, they are set to the default values for that integration type.
 
-  FirstVersion: November 2018
+  FirstVersion: March 2020
   Author: Sepehr Mahmoudian
   SeeAlso: bpid_kp_connection
 */

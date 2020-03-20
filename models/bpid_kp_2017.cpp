@@ -360,7 +360,7 @@ nest::bpid_kp_2017::handle( SpikeEvent& e )
   // the receptor number
   std::string num_string = str.substr(0, str.length() - 1);
   int rt_num = std::stoi (num_string);
-  
+
   // Type of the receptor (last digit)
   std::string type_string = str.substr(str.length() - 1, str.length());
   int rt_type = std::stoi (type_string);

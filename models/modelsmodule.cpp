@@ -298,7 +298,7 @@ ModelsModule::init( SLIInterpreter* )
 
   // register all connection models
   register_connection_model< BernoulliConnection >( "bernoulli_synapse" );
-  register_connection_model< BernoulliConnection >( "kp_1994_synapse" );
+  register_connection_model< BPIDKPConnection >( "bpid_kp_synapse" );
   register_connection_model< ClopathConnection >(
     "clopath_synapse", default_connection_model_flags | RegisterConnectionModelFlags::REQUIRES_CLOPATH_ARCHIVING );
   register_connection_model< ContDelayConnection >( "cont_delay_synapse" );
