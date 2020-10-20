@@ -44,27 +44,23 @@
 const unsigned librandom::PoissonRandomDev::n_tab_ = 46;
 
 // factorials
-const unsigned librandom::PoissonRandomDev::fact_[] =
-  { 1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880 };
+const unsigned librandom::PoissonRandomDev::fact_[] = { 1, 1, 2, 6, 24, 120, 720, 5040, 40320, 362880 };
 
 // coefficients for economized polynomial phi(v), see Eq. (6) and Table I
 // NOTE: these are not the first 10 coefficients of the series, but the
 //       coefficients of the 10th-degree polynomial approximating best
 // NOTE: precision is only ~ O(10^-10)
 const unsigned librandom::PoissonRandomDev::n_a_ = 10;
-const double
-  librandom::PoissonRandomDev::a_[ librandom::PoissonRandomDev::n_a_ ] = {
-    -0.5000000002,
-    0.3333333343,
-    -0.2499998565,
-    0.1999997049,
-    -0.1666848753,
-    0.1428833286,
-    -0.1241963125,
-    0.1101687109,
-    -0.1142650302,
-    0.1055093006
-  };
+const double librandom::PoissonRandomDev::a_[ librandom::PoissonRandomDev::n_a_ ] = { -0.5000000002,
+  0.3333333343,
+  -0.2499998565,
+  0.1999997049,
+  -0.1666848753,
+  0.1428833286,
+  -0.1241963125,
+  0.1101687109,
+  -0.1142650302,
+  0.1055093006 };
 
 librandom::PoissonRandomDev::PoissonRandomDev( RngPtr r_source, double lambda )
   : RandomDev( r_source )
@@ -112,13 +108,16 @@ librandom::PoissonRandomDev::set_status( const DictionaryDatum& d )
 
   double new_mu = mu_;
 
-  if ( updateValue< double >( d, "lambda", new_mu ) )
+  if ( updateValue< double >( d, names::lambda, new_mu ) )
   {
     if ( new_mu < 0 )
+    {
       throw BadParameterValue( "Poisson RDV: lambda >= 0 required." );
+    }
     if ( new_mu > MU_MAX )
-      throw BadParameterValue(
-        String::compose( "Poisson RDV: lambda < %1 required.", MU_MAX ) );
+    {
+      throw BadParameterValue( String::compose( "Poisson RDV: lambda < %1 required.", MU_MAX ) );
+    }
     set_lambda( new_mu );
   }
 }
@@ -128,7 +127,7 @@ librandom::PoissonRandomDev::get_status( DictionaryDatum& d ) const
 {
   RandomDev::get_status( d );
 
-  def< double >( d, "lambda", mu_ );
+  def< double >( d, names::lambda, mu_ );
 }
 
 void
@@ -172,29 +171,27 @@ librandom::PoissonRandomDev::init_()
     }
 
     // breaks in case of rounding issues
-    assert( ( P_[ n_tab_ - 1 ] <= 1.0 )
-      && ( 1 - P_[ n_tab_ - 1 ] < 10
-                * std::numeric_limits< double >::epsilon() ) );
+    assert( ( P_[ n_tab_ - 1 ] <= 1.0 ) && ( 1 - P_[ n_tab_ - 1 ] < 10 * std::numeric_limits< double >::epsilon() ) );
 
     // ensure table ends with 1.0
     P_[ n_tab_ - 1 ] = 1.0;
   }
-  else             // mu == 0.0
+  else // mu == 0.0
+  {
     P_[ 0 ] = 1.0; // just for safety
+  }
 }
 
 long
 librandom::PoissonRandomDev::ldev( RngPtr r ) const
 {
-
-  // make sure we have an RNG
-  assert( r.valid() );
-
   // the result for lambda == 0 is well defined,
   // added the following two lines of code
   // Diesmann, 26.7.2002
   if ( mu_ == 0.0 )
+  {
     return 0;
+  }
 
   unsigned long K = 0; // candidate
 
@@ -206,7 +203,9 @@ librandom::PoissonRandomDev::ldev( RngPtr r ) const
 
     K = 0; // be defensive
     while ( U > P_[ K ] && K != n_tab_ )
+    {
       ++K;
+    }
 
     return K; // maximum value: K == n_tab_ == 46
   }
@@ -314,11 +313,7 @@ librandom::PoissonRandomDev::ldev( RngPtr r ) const
 }
 
 void
-librandom::PoissonRandomDev::proc_f_( const unsigned K,
-  double& px,
-  double& py,
-  double& fx,
-  double& fy ) const
+librandom::PoissonRandomDev::proc_f_( const unsigned K, double& px, double& py, double& fx, double& fy ) const
 {
   // Poisson PDF == py * exp(px), see Sec 2
 

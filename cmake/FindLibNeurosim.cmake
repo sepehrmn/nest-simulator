@@ -27,7 +27,7 @@
 #
 # As a hint allows LIBNEUROSIM_ROOT.
 
-find_path( LIBNEUROSIM_INCLUDE_DIRS
+find_path( LIBNEUROSIM_INCLUDE_DIR
     NAMES neurosim/connection_generator.h
     HINTS ${LIBNEUROSIM_ROOT}/include
     )
@@ -36,15 +36,22 @@ find_library( NEUROSIM_LIBRARY
     HINTS ${LIBNEUROSIM_ROOT}/lib
     )
 
-find_library( PYNEUROSIM_LIBRARY
-    NAMES pyneurosim
-    HINTS ${LIBNEUROSIM_ROOT}/lib
+if ( ${PYTHON_VERSION} VERSION_GREATER "3" )
+    find_library( PYNEUROSIM_LIBRARY
+        NAMES py3neurosim
+        HINTS ${LIBNEUROSIM_ROOT}/lib
     )
+else ()
+    find_library( PYNEUROSIM_LIBRARY
+        NAMES pyneurosim
+        HINTS ${LIBNEUROSIM_ROOT}/lib
+    )
+endif ()
 
-if ( EXISTS "${LIBNEUROSIM_INCLUDE_DIRS}/neurosim/version.h" )
-  file( STRINGS "${LIBNEUROSIM_INCLUDE_DIRS}/neurosim/version.h"
+if ( EXISTS "${LIBNEUROSIM_INCLUDE_DIR}/neurosim/version.h" )
+  file( STRINGS "${LIBNEUROSIM_INCLUDE_DIR}/neurosim/version.h"
                 version_h_contents REGEX "define LIBNEUROSIM_VERSION" )
-  string( REGEX REPLACE ".*([0-9]+\\.[0-9]+\\.[0-9]+).*" "\\1" 
+  string( REGEX REPLACE ".*([0-9]+\\.[0-9]+\\.[0-9]+).*" "\\1"
                         LIBNEUROSIM_VERSION ${version_h_contents} )
 endif ()
 
@@ -55,12 +62,14 @@ find_package_handle_standard_args( LibNeurosim
   REQUIRED_VARS
     NEUROSIM_LIBRARY
     PYNEUROSIM_LIBRARY
-    LIBNEUROSIM_INCLUDE_DIRS
+    LIBNEUROSIM_INCLUDE_DIR
   VERSION_VAR
     LIBNEUROSIM_VERSION
     )
 
-set( LIBNEUROSIM_LIBRARIES ${NEUROSIM_LIBRARY} ${PYNEUROSIM_LIBRARY} )
+if ( LIBNEUROSIM_FOUND )
+  set( LIBNEUROSIM_LIBRARIES "${NEUROSIM_LIBRARY}" "${PYNEUROSIM_LIBRARY}" )
+  set( LIBNEUROSIM_INCLUDE_DIRS "${LIBNEUROSIM_INCLUDE_DIR}" )
+endif ()
 
-mark_as_advanced( LIBNEUROSIM_ROOT LIBNEUROSIM_INCLUDE_DIRS LIBNEUROSIM_LIBRARIES
-    NEUROSIM_LIBRARY PYNEUROSIM_LIBRARY )
+mark_as_advanced( LIBNEUROSIM_ROOT LIBNEUROSIM_INCLUDE_DIR NEUROSIM_LIBRARY PYNEUROSIM_LIBRARY )

@@ -20,7 +20,7 @@
  *
  */
 
- /* BeginDocumentation
+ /** @BeginDocumentation
 Name: testsuite::test_iaf_min_delay_set - sli script for testing explicit specification of min_delay
 
 Synopsis: (test_iaf_min_delay_set) run -> compares results for different min_delays
@@ -41,7 +41,7 @@ Description:
   see the SeeAlso key below. If this test fails go back to the simpler ones.
 
 Author:  July 2004, Diesmann, January 2005, Plesser, September 2010, Diesmann
-SeeAlso: iaf_neuron, testsuite::test_iaf_i0, testsuite::test_iaf_i0_refractory, testsuite::test_iaf_dc, testsuite::test_min_delay, testsuite::test_min_delay
+SeeAlso: iaf_psc_alpha, testsuite::test_iaf_i0, testsuite::test_iaf_i0_refractory, testsuite::test_iaf_dc, testsuite::test_min_delay, testsuite::test_min_delay
 */
 
 (unittest) run
@@ -58,24 +58,23 @@ SeeAlso: iaf_neuron, testsuite::test_iaf_i0, testsuite::test_iaf_i0_refractory, 
 
   ResetKernel
 
-  0 <<
+  <<
     /local_num_threads 1
     /resolution h
     /min_delay min_del
     /max_delay delay
-  >> SetStatus
+  >> SetKernelStatus
 
   /static_synapse <<
     /delay delay  
   >> SetDefaults
 
-  /iaf_neuron Create /neuron Set  
+  /iaf_psc_alpha Create /neuron Set
 
   /dc_generator Create /dc_gen Set
   dc_gen <<  /amplitude 1000. >> SetStatus
 
   /voltmeter Create /vm Set
-  vm << /withtime true >> SetStatus
 
   % must connect with explicit delay to assure
   % consistency as min_delay varies      

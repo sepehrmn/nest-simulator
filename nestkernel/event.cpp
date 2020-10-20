@@ -35,15 +35,16 @@
 namespace nest
 {
 Event::Event()
-  : sender_gid_( 0 ) // initializing to 0 as this is an unsigned type
-                     // gid 0 is network, can never send an event, so
-                     // this is safe
+  : sender_node_id_( 0 ) // initializing to 0 as this is an unsigned type
+                         // node ID 0 is network, can never send an event, so
+                         // this is safe
   , sender_( NULL )
   , receiver_( NULL )
   , p_( -1 )
   , rp_( 0 )
   , d_( 1 )
   , stamp_( Time::step( 0 ) )
+  , stamp_steps_( 0 )
   , offset_( 0.0 )
   , w_( 0.0 )
 {
@@ -105,13 +106,24 @@ void GapJunctionEvent::operator()()
   receiver_->handle( *this );
 }
 
-std::vector< synindex > GapJunctionEvent::supported_syn_ids_;
-size_t GapJunctionEvent::coeff_length_ = 0;
+void InstantaneousRateConnectionEvent::operator()()
+{
+  receiver_->handle( *this );
 }
 
+void DelayedRateConnectionEvent::operator()()
+{
+  receiver_->handle( *this );
+}
+
+void DiffusionConnectionEvent::operator()()
+{
+  receiver_->handle( *this );
+}
+}
 
 nest::index
-nest::Event::get_receiver_gid( void ) const
+nest::Event::get_receiver_node_id( void ) const
 {
-  return receiver_->get_gid();
+  return receiver_->get_node_id();
 }

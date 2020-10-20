@@ -26,6 +26,7 @@
 #include <limits>
 
 // Includes from libnestutil:
+#include "dict_util.h"
 #include "numerics.h"
 
 // Includes from nestkernel:
@@ -116,69 +117,74 @@ nest::mat2_psc_exp::Parameters_::get( DictionaryDatum& d ) const
 }
 
 double
-nest::mat2_psc_exp::Parameters_::set( const DictionaryDatum& d )
+nest::mat2_psc_exp::Parameters_::set( const DictionaryDatum& d, Node* node )
 {
   // if E_L_ is changed, we need to adjust all variables defined relative to
   // E_L_
   const double ELold = E_L_;
-  updateValue< double >( d, names::E_L, E_L_ );
+  updateValueParam< double >( d, names::E_L, E_L_, node );
   const double delta_EL = E_L_ - ELold;
 
-  updateValue< double >( d, names::I_e, I_e_ );
-  updateValue< double >( d, names::C_m, C_ );
-  updateValue< double >( d, names::tau_m, Tau_ );
-  updateValue< double >( d, names::tau_syn_ex, tau_ex_ );
-  updateValue< double >( d, names::tau_syn_in, tau_in_ );
-  updateValue< double >( d, names::t_ref, tau_ref_ );
-  updateValue< double >( d, names::tau_1, tau_1_ );
-  updateValue< double >( d, names::tau_2, tau_2_ );
-  updateValue< double >( d, names::alpha_1, alpha_1_ );
-  updateValue< double >( d, names::alpha_2, alpha_2_ );
+  updateValueParam< double >( d, names::I_e, I_e_, node );
+  updateValueParam< double >( d, names::C_m, C_, node );
+  updateValueParam< double >( d, names::tau_m, Tau_, node );
+  updateValueParam< double >( d, names::tau_syn_ex, tau_ex_, node );
+  updateValueParam< double >( d, names::tau_syn_in, tau_in_, node );
+  updateValueParam< double >( d, names::t_ref, tau_ref_, node );
+  updateValueParam< double >( d, names::tau_1, tau_1_, node );
+  updateValueParam< double >( d, names::tau_2, tau_2_, node );
+  updateValueParam< double >( d, names::alpha_1, alpha_1_, node );
+  updateValueParam< double >( d, names::alpha_2, alpha_2_, node );
 
-  if ( updateValue< double >( d, names::omega, omega_ ) )
+  if ( updateValueParam< double >( d, names::omega, omega_, node ) )
+  {
     omega_ -= E_L_;
+  }
   else
+  {
     omega_ -= delta_EL;
-
+  }
   if ( C_ <= 0 )
+  {
     throw BadProperty( "Capacitance must be strictly positive." );
-
-  if ( Tau_ <= 0 || tau_ex_ <= 0 || tau_in_ <= 0 || tau_ref_ <= 0 || tau_1_ <= 0
-    || tau_2_ <= 0 )
+  }
+  if ( Tau_ <= 0 || tau_ex_ <= 0 || tau_in_ <= 0 || tau_ref_ <= 0 || tau_1_ <= 0 || tau_2_ <= 0 )
+  {
     throw BadProperty( "All time constants must be strictly positive." );
-
+  }
   if ( Tau_ == tau_ex_ || Tau_ == tau_in_ )
+  {
     throw BadProperty(
       "Membrane and synapse time constant(s) must differ."
       "See note in documentation." );
+  }
 
   return delta_EL;
 }
 
 void
-nest::mat2_psc_exp::State_::get( DictionaryDatum& d,
-  const Parameters_& p ) const
+nest::mat2_psc_exp::State_::get( DictionaryDatum& d, const Parameters_& p ) const
 {
-  def< double >( d, names::V_m, V_m_ + p.E_L_ ); // Membrane potential
-  def< double >( d,
-    names::V_th,
-    p.E_L_ + p.omega_ + V_th_1_ + V_th_2_ ); // Adaptive threshold
+  def< double >( d, names::V_m, V_m_ + p.E_L_ );                          // Membrane potential
+  def< double >( d, names::V_th, p.E_L_ + p.omega_ + V_th_1_ + V_th_2_ ); // Adaptive threshold
   def< double >( d, names::V_th_alpha_1, V_th_1_ );
   def< double >( d, names::V_th_alpha_2, V_th_2_ );
 }
 
 void
-nest::mat2_psc_exp::State_::set( const DictionaryDatum& d,
-  const Parameters_& p,
-  double delta_EL )
+nest::mat2_psc_exp::State_::set( const DictionaryDatum& d, const Parameters_& p, double delta_EL, Node* node )
 {
-  if ( updateValue< double >( d, names::V_m, V_m_ ) )
+  if ( updateValueParam< double >( d, names::V_m, V_m_, node ) )
+  {
     V_m_ -= p.E_L_;
+  }
   else
+  {
     V_m_ -= delta_EL;
+  }
 
-  updateValue< double >( d, names::V_th_alpha_1, V_th_1_ );
-  updateValue< double >( d, names::V_th_alpha_2, V_th_2_ );
+  updateValueParam< double >( d, names::V_th_alpha_1, V_th_1_, node );
+  updateValueParam< double >( d, names::V_th_alpha_2, V_th_2_, node );
 }
 
 nest::mat2_psc_exp::Buffers_::Buffers_( mat2_psc_exp& n )
@@ -281,7 +287,7 @@ nest::mat2_psc_exp::calibrate()
   // To ensure consistency with the overall simulation scheme such conversion
   // should be carried out via objects of class nest::Time. The conversion
   // requires 2 steps:
-  //     1. A time object r is constructed defining representation of
+  //     1. A time object r is constructed, defining representation of
   //        tau_ref_ in tics. This representation is then converted to
   //        computation time steps again by a strategy defined by class
   //        nest::Time.
@@ -289,15 +295,16 @@ nest::mat2_psc_exp::calibrate()
   //        member function of class nest::Time.
   //
   // Choosing a tau_ref_ that is not an integer multiple of the computation time
-  // step h will leed to accurate (up to the resolution h) and self-consistent
+  // step h will lead to accurate (up to the resolution h) and self-consistent
   // results. However, a neuron model capable of operating with real valued
   // spike time may exhibit a different effective refractory time.
 
   V_.RefractoryCountsTot_ = Time( Time::ms( P_.tau_ref_ ) ).get_steps();
 
   if ( V_.RefractoryCountsTot_ < 1 )
-    throw BadProperty(
-      "Total refractory time must be at least one time step." );
+  {
+    throw BadProperty( "Total refractory time must be at least one time step." );
+  }
 }
 
 /* ----------------------------------------------------------------
@@ -307,8 +314,7 @@ nest::mat2_psc_exp::calibrate()
 void
 nest::mat2_psc_exp::update( Time const& origin, const long from, const long to )
 {
-  assert(
-    to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
+  assert( to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
   assert( from < to );
 
   // evolve from timestep 'from' to timestep 'to' with steps of h each
@@ -316,8 +322,8 @@ nest::mat2_psc_exp::update( Time const& origin, const long from, const long to )
   {
 
     // evolve membrane potential
-    S_.V_m_ = S_.V_m_ * V_.P22_expm1_ + S_.V_m_ + S_.i_syn_ex_ * V_.P21ex_
-      + S_.i_syn_in_ * V_.P21in_ + ( P_.I_e_ + S_.i_0_ ) * V_.P20_;
+    S_.V_m_ = S_.V_m_ * V_.P22_expm1_ + S_.V_m_ + S_.i_syn_ex_ * V_.P21ex_ + S_.i_syn_in_ * V_.P21in_
+      + ( P_.I_e_ + S_.i_0_ ) * V_.P20_;
 
     // evolve adaptive threshold
     S_.V_th_1_ *= V_.P11th_;
@@ -332,8 +338,7 @@ nest::mat2_psc_exp::update( Time const& origin, const long from, const long to )
 
     if ( S_.r_ == 0 ) // neuron is allowed to fire
     {
-      if ( S_.V_m_ >= P_.omega_ + S_.V_th_2_
-          + S_.V_th_1_ ) // threshold crossing
+      if ( S_.V_m_ >= P_.omega_ + S_.V_th_2_ + S_.V_th_1_ ) // threshold crossing
       {
         S_.r_ = V_.RefractoryCountsTot_;
 
@@ -348,7 +353,10 @@ nest::mat2_psc_exp::update( Time const& origin, const long from, const long to )
       }
     }
     else
-      --S_.r_; // neuron is totally refractory (cannot generate spikes)
+    {
+      // neuron is totally refractory (cannot generate spikes)
+      --S_.r_;
+    }
 
     // set new input current
     S_.i_0_ = B_.currents_.get_value( lag );
@@ -362,30 +370,30 @@ nest::mat2_psc_exp::update( Time const& origin, const long from, const long to )
 void
 nest::mat2_psc_exp::handle( SpikeEvent& e )
 {
-  assert( e.get_delay() > 0 );
+  assert( e.get_delay_steps() > 0 );
 
   if ( e.get_weight() >= 0.0 )
-    B_.spikes_ex_.add_value( e.get_rel_delivery_steps(
-                               kernel().simulation_manager.get_slice_origin() ),
+  {
+    B_.spikes_ex_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
       e.get_weight() * e.get_multiplicity() );
+  }
   else
-    B_.spikes_in_.add_value( e.get_rel_delivery_steps(
-                               kernel().simulation_manager.get_slice_origin() ),
+  {
+    B_.spikes_in_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
       e.get_weight() * e.get_multiplicity() );
+  }
 }
 
 void
 nest::mat2_psc_exp::handle( CurrentEvent& e )
 {
-  assert( e.get_delay() > 0 );
+  assert( e.get_delay_steps() > 0 );
 
   const double c = e.get_current();
   const double w = e.get_weight();
 
   // add weighted current; HEP 2002-10-04
-  B_.currents_.add_value(
-    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
-    w * c );
+  B_.currents_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), w * c );
 }
 
 void

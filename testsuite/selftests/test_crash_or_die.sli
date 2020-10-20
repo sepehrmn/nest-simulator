@@ -20,7 +20,7 @@
  *
  */
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: testsuite::test_crash_or_die - sli script to test the crash_or_die function
 
    Synopsis: (test_crash_or_die) run
@@ -33,11 +33,16 @@
 (unittest) run
 /unittest using
 
+% We skip the test if NDEBUG is set, as this removes all assertions
+% from the code and we rely on failing assertions in this test.
+statusdict/ndebug :: { /skipped exit_test_gracefully } if
+
+
 % Preparatory work for proper test code in case NEST is complied with MPI support
 % For now we just ignore this test, this will later be replaced 
 % by a restart of NEST with a serial binary.
 % The commented code below is the real one.
-statusdict/is_mpi :: {3 quit_i} if
+skip_if_have_mpi
 
 
 /*

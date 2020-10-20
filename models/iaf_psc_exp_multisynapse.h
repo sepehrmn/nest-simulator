@@ -23,6 +23,9 @@
 #ifndef IAF_PSC_EXP_MULTISYNAPSE_H
 #define IAF_PSC_EXP_MULTISYNAPSE_H
 
+// Generated includes:
+#include <sstream>
+
 // Includes from nestkernel:
 #include "archiving_node.h"
 #include "connection.h"
@@ -34,28 +37,48 @@
 
 namespace nest
 {
-/* BeginDocumentation
-Name: iaf_psc_exp_multisynapse - Leaky integrate-and-fire neuron model with
-                                 multiple ports.
 
-Description:
+/* BeginUserDocs: neuron, integrate-and-fire
 
- iaf_psc_exp_multisynapse is a direct extension of iaf_psc_exp.
- On the postsynapic side, there can be arbitrarily many synaptic
- time constants (iaf_psc_exp has exactly two: tau_syn_ex and tau_syn_in).
+Short description
++++++++++++++++++
 
- This can be reached by specifying separate receptor ports, each for
- a different time constant. The port number has to match the respective
- "receptor_type" in the connectors.
+Leaky integrate-and-fire neuron model with multiple ports
 
-Sends: SpikeEvent
+Description
++++++++++++
 
-Receives: SpikeEvent, CurrentEvent, DataLoggingRequest
+iaf_psc_exp_multisynapse is a direct extension of iaf_psc_exp.
+On the postsynapic side, there can be arbitrarily many synaptic
+time constants (iaf_psc_exp has exactly two: tau_syn_ex and tau_syn_in).
 
-Author:  Plesser, adapted from iaf_psc_alpha_multisynapse
-SeeAlso: iaf_psc_alpha, iaf_psc_delta, iaf_psc_exp, iaf_cond_exp,
-iaf_psc_alpha_multisynapse
-*/
+This can be reached by specifying separate receptor ports, each for
+a different time constant. The port number has to match the respective
+"receptor_type" in the connectors.
+
+Remarks:
+
+For conversion between postsynaptic potentials (PSPs) and PSCs,
+please refer to the ``postsynaptic_potential_to_current`` function in
+:doc:`PyNEST Microcircuit: Helper Functions <../auto_examples/Potjans_2014/helpers>`.
+
+Sends
++++++
+
+SpikeEvent
+
+Receives
+++++++++
+
+SpikeEvent, CurrentEvent, DataLoggingRequest
+
+See also
+++++++++
+
+iaf_psc_alpha, iaf_psc_delta, iaf_psc_exp, iaf_cond_exp, iaf_psc_alpha_multisynapse
+
+EndUserDocs */
+
 class iaf_psc_exp_multisynapse : public Archiving_Node
 {
 
@@ -92,8 +115,9 @@ private:
   void update( Time const&, const long, const long );
 
   // The next two classes need to be friends to access the State_ class/member
-  friend class RecordablesMap< iaf_psc_exp_multisynapse >;
-  friend class UniversalDataLogger< iaf_psc_exp_multisynapse >;
+  friend class DynamicRecordablesMap< iaf_psc_exp_multisynapse >;
+  friend class DynamicUniversalDataLogger< iaf_psc_exp_multisynapse >;
+  friend class DataAccessFunctor< iaf_psc_exp_multisynapse >;
 
   // ----------------------------------------------------------------
 
@@ -102,7 +126,6 @@ private:
    */
   struct Parameters_
   {
-
     /** Membrane time constant in ms. */
     double Tau_;
 
@@ -140,7 +163,7 @@ private:
     /** Set values from dictionary.
      * @returns Change in reversal potential E_L, to be passed to State_::set()
      */
-    double set( const DictionaryDatum& );
+    double set( const DictionaryDatum&, Node* node );
   }; // Parameters_
 
   // ----------------------------------------------------------------
@@ -150,6 +173,28 @@ private:
    */
   struct State_
   {
+    /**
+     * Enumeration identifying recordable state elements.
+     * This enum identifies the element that will be recorded when
+     * calling get_state_element. The first two (V_M and I) are fixed
+     * sized state elements, while the third (I_SYN) represents the
+     * synaptic current at each receptor, thus it can have a variable
+     * size. The current at each receptor is read out from the vector
+     * i_syn_. To get the synaptic current's value at synapse k, one
+     * must call get_state_element as:
+     * get_state_element( State_::I_SYN + k *
+     *    State_::NUM_STATE_ELEMENTS_PER_RECEPTOR )
+     */
+    enum StateVecElems
+    {
+      V_M = 0,
+      I,    // 1
+      I_SYN // 2
+    };
+
+    static const size_t NUMBER_OF_FIXED_STATES_ELEMENTS = I_SYN; // V_M, I
+    static const size_t NUM_STATE_ELEMENTS_PER_RECEPTOR = 1;     // I_SYN
+
     double I_const_; //!< synaptic dc input current, variable 0
     std::vector< double > i_syn_;
     double V_m_;     //!< membrane potential, variable 2
@@ -168,7 +213,7 @@ private:
      * @param current parameters
      * @param Change in reversal potential E_L specified by this dict
      */
-    void set( const DictionaryDatum&, const Parameters_&, const double );
+    void set( const DictionaryDatum&, const Parameters_&, const double, Node* );
   }; // State_
 
   // ----------------------------------------------------------------
@@ -186,7 +231,7 @@ private:
     RingBuffer currents_;
 
     //! Logger for all analog data
-    UniversalDataLogger< iaf_psc_exp_multisynapse > logger_;
+    DynamicUniversalDataLogger< iaf_psc_exp_multisynapse > logger_;
   };
 
   // ----------------------------------------------------------------
@@ -215,15 +260,6 @@ private:
 
   }; // Variables
 
-  // Access functions for UniversalDataLogger -------------------------------
-
-  //! Read out the real membrane potential
-  double
-  get_V_m_() const
-  {
-    return S_.V_m_ + P_.E_L_;
-  }
-
   /**
    * @defgroup iaf_psc_exp_multisynapse_data
    * Instances of private data structures for the different types
@@ -238,7 +274,32 @@ private:
   /** @} */
 
   //! Mapping of recordables names to access functions
-  static RecordablesMap< iaf_psc_exp_multisynapse > recordablesMap_;
+  DynamicRecordablesMap< iaf_psc_exp_multisynapse > recordablesMap_;
+
+  // Data Access Functor getter
+  DataAccessFunctor< iaf_psc_exp_multisynapse > get_data_access_functor( size_t elem );
+  inline double
+  get_state_element( size_t elem )
+  {
+    if ( elem == State_::V_M )
+    {
+      return S_.V_m_ + P_.E_L_;
+    }
+    else if ( elem == State_::I )
+    {
+      return S_.current_;
+    }
+    else
+    {
+      return S_.i_syn_[ elem - S_.NUMBER_OF_FIXED_STATES_ELEMENTS ];
+    }
+  };
+
+  // Utility function that inserts the synaptic conductances to the
+  // recordables map
+
+  Name get_i_syn_name( size_t elem );
+  void insert_current_recordables( size_t first = 0 );
 };
 
 inline size_t
@@ -248,10 +309,7 @@ iaf_psc_exp_multisynapse::Parameters_::n_receptors_() const
 }
 
 inline port
-iaf_psc_exp_multisynapse::send_test_event( Node& target,
-  rport receptor_type,
-  synindex,
-  bool )
+iaf_psc_exp_multisynapse::send_test_event( Node& target, rport receptor_type, synindex, bool )
 {
   SpikeEvent e;
   e.set_sender( *this );
@@ -260,20 +318,22 @@ iaf_psc_exp_multisynapse::send_test_event( Node& target,
 }
 
 inline port
-iaf_psc_exp_multisynapse::handles_test_event( CurrentEvent&,
-  rport receptor_type )
+iaf_psc_exp_multisynapse::handles_test_event( CurrentEvent&, rport receptor_type )
 {
   if ( receptor_type != 0 )
+  {
     throw UnknownReceptorType( receptor_type, get_name() );
+  }
   return 0;
 }
 
 inline port
-iaf_psc_exp_multisynapse::handles_test_event( DataLoggingRequest& dlr,
-  rport receptor_type )
+iaf_psc_exp_multisynapse::handles_test_event( DataLoggingRequest& dlr, rport receptor_type )
 {
   if ( receptor_type != 0 )
+  {
     throw UnknownReceptorType( receptor_type, get_name() );
+  }
   return B_.logger_.connect_logging_device( dlr, recordablesMap_ );
 }
 
@@ -285,25 +345,6 @@ iaf_psc_exp_multisynapse::get_status( DictionaryDatum& d ) const
   Archiving_Node::get_status( d );
 
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
-}
-
-inline void
-iaf_psc_exp_multisynapse::set_status( const DictionaryDatum& d )
-{
-  Parameters_ ptmp = P_;                 // temporary copy in case of errors
-  const double delta_EL = ptmp.set( d ); // throws if BadProperty
-  State_ stmp = S_;                      // temporary copy in case of errors
-  stmp.set( d, ptmp, delta_EL );         // throws if BadProperty
-
-  // We now know that (ptmp, stmp) are consistent. We do not
-  // write them back to (P_, S_) before we are also sure that
-  // the properties to be set in the parent class are internally
-  // consistent.
-  Archiving_Node::set_status( d );
-
-  // if we get here, temporaries contain consistent set of properties
-  P_ = ptmp;
-  S_ = stmp;
 }
 
 } // namespace

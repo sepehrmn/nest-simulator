@@ -34,6 +34,9 @@
 // Includes from sli:
 #include "dictdatum.h"
 
+// Inclused from nestkernel:
+#include "nest_names.h"
+
 class Dictionary;
 
 namespace nest
@@ -82,11 +85,7 @@ public:
    * insted use the LOG() function provided by the logging.h header.
    *
    */
-  void publish_log( const severity_t,
-    const std::string&,
-    const std::string&,
-    const std::string&,
-    const size_t ) const;
+  void publish_log( const severity_t, const std::string&, const std::string&, const std::string&, const size_t ) const;
 
   /**
    * Implements standard behaviour for dictionary entry misses. Use with define

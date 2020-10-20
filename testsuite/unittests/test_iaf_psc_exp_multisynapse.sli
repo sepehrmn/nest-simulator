@@ -20,19 +20,17 @@
  *
  */
 
-/* BeginDocumentation
+/** @BeginDocumentation
    Name: testsuite::test_iaf_psc_exp_multisynapse - sli script for the multisynapse model
 
    Synopsis: (test_iaf_psc_exp_multisynapse) run
 
    Description:
    This test creates a multisynapse neuron and first checks if time constants
-   can be set correctly. 
-   Afterwards a neuron with four synaptic time constants with different weights and delays 
-   is simulated and the resulting membrane potential values after the income of one spike  
+   can be set correctly.
+   Afterwards a neuron with four synaptic time constants with different weights and delays
+   is simulated and the resulting membrane potential values after the income of one spike
    are checked against analytically obtained values.
-   The textual output of the voltmeter documented in this file can be regenerated 
-   by setting adding /to_screen true to the SetStatus call of vm below.
   
    SeeAlso: testsuite::test_iaf_psc_alpha_multisynapse, iaf_psc_exp_multisynapse
 
@@ -48,10 +46,10 @@
 
 ResetKernel
 
-0 << 
-      /local_num_threads 1 
+<<
+      /local_num_threads 1
       /resolution h
-  >> SetStatus
+  >> SetKernelStatus
 
 /taus       [2. 20. 60. 100.] def
 /delays     [7. 5. 2. 1. ] def % ms
@@ -62,11 +60,11 @@ ResetKernel
 /iaf_psc_exp_multisynapse Create /npost Set
 npost << /tau_syn taus >> SetStatus
 
-npost GetStatus /tau_syn get
+npost 0 get GetStatus /tau_syn get
 taus eq assert_or_die
 
 /voltmeter Create /vm Set
-vm << /withtime true  /time_in_steps true /interval h /to_screen false >> SetStatus
+vm << /time_in_steps true /interval h >> SetStatus
    
 /spike_generator Create /sg Set
 sg << /spike_times [spike_time] >> SetStatus
@@ -76,7 +74,7 @@ sg << /spike_times [spike_time] >> SetStatus
   /receptor Set
   /delay Set
   /weight Set
-  [sg] [npost] /one_to_one << /weight weight /delay delay /receptor_type receptor >> Connect
+  sg npost /one_to_one pstack << /weight weight /delay delay /receptor_type receptor >> Connect
 } ScanThread
 
 
@@ -86,8 +84,8 @@ vm npost 1.0 h Connect
 
 
 {                                            % reference data
- dup Transpose First /test_times Set         % times of reference 
-                               
+ dup Transpose First /test_times Set         % times of reference
+
  vm [/events [/times /V_m]] get cva   % array of recorded data
   6 ToUnitTestPrecision                      % to precision of reference
   Transpose                                  % all recorded tuples
@@ -95,14 +93,14 @@ vm npost 1.0 h Connect
  eq                                          % compare
 }
 
-%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%% 
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 %
-% Expected output of this program: 
+% Expected output of this program:
 %
 % time (in steps)  voltage (in mV)
 [
 [ 1       -70      ] % <----- Spike time
-[ 2       -70      ] 
+[ 2       -70      ]
 [ 3       -70      ]
 [ 4       -70      ]
 [ 5       -70      ]
@@ -143,10 +141,156 @@ vm npost 1.0 h Connect
 [ 73      -69.1159 ] %  |
 [ 74      -69.0854 ] %   --- the effect of the four synaptic currents is visible in the membrane potential
 [ 75      -69.0557 ] %
-]                       
-%                         
+]
+%
 %
 
 exch assert_or_die
+
+% --------------------------------------------
+
+% The following tests address #800
+% - Test that the default recordables are V_m, w and I_syn_1
+% - Test that the recordable I_syn's change when changing the number of receptor ports
+
+% test default recordables include I_syn_1
+{
+  << >> begin
+  ResetKernel
+
+  /nrn /iaf_psc_exp_multisynapse Create def
+  
+  /mm /multimeter << /time_in_steps true
+                     /interval 1.0
+		     /record_from [ /V_m /I_syn /I_syn_1 ]
+		  >> Create def
+  
+  mm nrn Connect
+
+  /len nrn /recordables get length def
+  len 3 eq
+  end
+}
+assert_or_die
+
+% test resize recordables
+{
+  << >> begin
+  ResetKernel
+
+  /tau_syn1  [5.0  1.0  25.0] def
+  /tau_syn2  [5.0  1.0] def
+  /tau_syn3  [5.0  1.0  25.0 50.] def
+
+  /nrn /iaf_psc_exp_multisynapse << /tau_syn tau_syn1 >> Create def
+  /len1 nrn /recordables get length def
+
+  nrn << /tau_syn tau_syn2 >> SetStatus
+  /len2 nrn /recordables get length def
+
+  nrn << /tau_syn tau_syn3 >> SetStatus
+  /len3 nrn /recordables get length def
+
+  len1 5 eq len2 4 eq and len3 6 eq and
+  end
+}
+assert_or_die
+
+% test record I_syn_i and check for exp function synapse
+{
+  << >> begin
+  ResetKernel
+  /tau_syn     [40.0 20.0  30.0 25.] def % synaptic time constants
+  /weight     [1.0  0.5   2.0  1.0] def % synaptic weights
+  /delays      [1.0  3.0   10.0 10.] def % ms - synaptic delays
+  /spike_time  10.  def    % time at which the single spike occurs
+  /dt          0.1  def    % time step
+  /total_t     500. def    % total simulation time
+  /tolerance   1e-7 def    % tolerable difference between theoretic and simulated alpha synapse currents
+
+  /exp_function
+  {
+    % Call like t0 W tau t alpha_function
+    << /tau 1.0 /W 1.0 /t0 0. >>
+    begin
+      /t exch def
+      /tau exch def
+      /W exch def
+      /t0 exch def
+
+      t
+      {
+        /tt exch def
+        tt t0 geq
+        {
+          /tdiff_over_tau tt t0 sub tau div def
+          tdiff_over_tau neg exp W mul
+        }
+        % else
+        {
+          0.
+        } ifelse
+      } Map
+    end
+  } def
+
+  << /resolution dt >> SetKernelStatus
+
+  % Create a spike generator that generates a single spike
+  /spike_generator Create /sg Set
+  sg << /spike_times [spike_time] >> SetStatus % generates a single peak
+
+  % Create the multisynapse neuron
+  /nrn /iaf_psc_exp_multisynapse
+    <<  /I_e 0. /tau_syn tau_syn  >> Create def
+
+  % Create an array of synaptic indexes to loop through
+  delays length 1 arraystore Range /synapses_idx exch def
+  [delays weights synapses_idx] % loop on synaptic receptor ports
+  {
+    /syn_id exch def
+    /W exch def
+    /delay exch def
+    % Connect spike generator to each port
+    sg nrn /one_to_one <<
+      /synapse_model /static_synapse
+      /delay delay
+      /weight W
+      /receptor_type syn_id >>
+      Connect
+  } ScanThread
+
+  % Create the multimeter that will record from the 4 synapse channels
+  /mm /multimeter << /time_in_steps true
+                     /interval dt
+		     /record_from [ /I_syn_1 /I_syn_2 /I_syn_3 /I_syn_4 ]
+                  >> Create def
+
+  mm nrn Connect
+
+  % Simulate
+  total_t Simulate
+
+  % Get the conductances measured during the simulation
+  /t       mm /events get /times get cva dt mul def
+  /sim_I_syn_1 mm /events get /I_syn_1   get cva def
+  /sim_I_syn_2 mm /events get /I_syn_2   get cva def
+  /sim_I_syn_3 mm /events get /I_syn_3   get cva def
+  /sim_I_syn_4 mm /events get /I_syn_4   get cva def
+  /sim_I_syns [sim_I_syn_1 sim_I_syn_2 sim_I_syn_3 sim_I_syn_4] def
+
+  true
+  [delays weights tau_syn sim_I_syns]
+  {
+    /sim_I_syn  exch def
+    /tau        exch def
+    /W          exch def
+    /t0         exch spike_time add def
+    /theo_I_syn t0 W tau t exp_function def
+    sim_I_syn theo_I_syn sub { abs } Map Max tolerance leq and
+  } ScanThread
+  end
+}
+assert_or_die
 
 endusing

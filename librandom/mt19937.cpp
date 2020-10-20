@@ -83,8 +83,7 @@ librandom::MT19937::init_genrand( unsigned long s )
   mt[ 0 ] = s & 0xffffffffUL;
   for ( mti = 1; static_cast< unsigned int >( mti ) < N; mti++ )
   {
-    mt[ mti ] =
-      ( 1812433253UL * ( mt[ mti - 1 ] ^ ( mt[ mti - 1 ] >> 30 ) ) + mti );
+    mt[ mti ] = ( 1812433253UL * ( mt[ mti - 1 ] ^ ( mt[ mti - 1 ] >> 30 ) ) + mti );
     /* See Knuth TAOCP Vol2. 3rd Ed. P.106 for multiplier. */
     /* In the previous versions, MSBs of the seed affect   */
     /* only MSBs of the array mt[].                        */
@@ -105,8 +104,10 @@ librandom::MT19937::genrand_int32()
   { /* generate N words at one time */
     int kk;
 
-    if ( mti == N + 1 )       /* if init_genrand() has not been called, */
+    if ( mti == N + 1 ) /* if init_genrand() has not been called, */
+    {
       init_genrand( 5489UL ); /* a default initial seed is used */
+    }
 
     for ( kk = 0; static_cast< unsigned int >( kk ) < N - M; kk++ )
     {

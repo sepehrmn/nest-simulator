@@ -26,7 +26,7 @@ import numpy
 import unittest
 
 
-@nest.check_stack
+@nest.ll_api.check_stack
 class QuantalSTPSynapseTestCase(unittest.TestCase):
     """Compare quantal_stp_synapse with its deterministic equivalent."""
 
@@ -40,10 +40,6 @@ class QuantalSTPSynapseTestCase(unittest.TestCase):
         # parameter set for facilitation
         fac_params = {"U": 0.03, "u": 0.03,
                       "tau_fac": 500., "tau_rec": 200., "weight": 1.}
-        dep_params = {"U": 0.5, "u": 0.5,  "tau_fac": 15.,
-                      "tau_rec": 670., "weight": 1.}
-        lin_params = {"U": 0.3, "u": 0.3,  "tau_fac": 330.,
-                      "tau_rec": 330., "weight": 1.}
 
         # Here we assign the parameter set to the synapse models
         t1_params = fac_params       # for tsodyks2_synapse
@@ -77,8 +73,7 @@ class QuantalSTPSynapseTestCase(unittest.TestCase):
         nest.Connect(parrot, neuron[1:], syn_spec="quantal_stp_synapse")
 
         voltmeter = nest.Create("voltmeter", 2)
-        nest.SetStatus(voltmeter, {"withgid": False, "withtime": True})
-        t_plot = 1000.
+
         t_tot = 1500.
 
         # the following is a dry run trial so that the synapse dynamics is
@@ -87,8 +82,8 @@ class QuantalSTPSynapseTestCase(unittest.TestCase):
         nest.Simulate(t_tot)
 
         # Now we connect the voltmeters
-        nest.Connect([voltmeter[0]], [neuron[0]])
-        nest.Connect([voltmeter[1]], [neuron[1]])
+        nest.Connect(voltmeter[:1], neuron[:1])
+        nest.Connect(voltmeter[1:], neuron[1:])
 
         for t in range(n_trials):
             t_net = nest.GetKernelStatus('time')
@@ -97,19 +92,19 @@ class QuantalSTPSynapseTestCase(unittest.TestCase):
 
         nest.Simulate(.1)  # flush the last voltmeter events from the queue
 
-        vm = numpy.array(nest.GetStatus([voltmeter[1]], 'events')[0]['V_m'])
-        vm_reference = numpy.array(nest.GetStatus(
-            [voltmeter[0]], 'events')[0]['V_m'])
+        vm = numpy.array(nest.GetStatus(voltmeter[1], 'events')[0]['V_m'])
+        vm_reference = numpy.array(nest.GetStatus(voltmeter[0],
+                                                  'events')[0]['V_m'])
 
-        vm.shape = (n_trials, t_tot)
-        vm_reference.shape = (n_trials, t_tot)
+        assert(len(vm) % n_trials == 0)
+        n_steps = int(len(vm) / n_trials)
+        vm.shape = (n_trials, n_steps)
+        vm_reference.shape = (n_trials, n_steps)
 
-        vm_mean = numpy.array([numpy.mean(vm[:, i])
-                               for i in range(int(t_tot))])
-        vm_ref_mean = numpy.array(
-            [numpy.mean(vm_reference[:, i]) for i in range(int(t_tot))])
+        vm_mean = numpy.mean(vm, axis=0)
+        vm_ref_mean = numpy.mean(vm_reference, axis=0)
 
-        error = numpy.sqrt((vm_ref_mean[:t_plot] - vm_mean[:t_plot])**2)
+        error = numpy.sqrt((vm_ref_mean - vm_mean)**2)
         self.assertTrue(numpy.max(error) < 4.0e-4)
 
 

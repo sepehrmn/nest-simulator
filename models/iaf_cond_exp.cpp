@@ -31,6 +31,7 @@
 #include <limits>
 
 // Includes from libnestutil:
+#include "dict_util.h"
 #include "numerics.h"
 
 // Includes from nestkernel:
@@ -60,12 +61,9 @@ void
 RecordablesMap< iaf_cond_exp >::create()
 {
   // use standard names whereever you can for consistency!
-  insert_(
-    names::V_m, &iaf_cond_exp::get_y_elem_< iaf_cond_exp::State_::V_M > );
-  insert_(
-    names::g_ex, &iaf_cond_exp::get_y_elem_< iaf_cond_exp::State_::G_EXC > );
-  insert_(
-    names::g_in, &iaf_cond_exp::get_y_elem_< iaf_cond_exp::State_::G_INH > );
+  insert_( names::V_m, &iaf_cond_exp::get_y_elem_< iaf_cond_exp::State_::V_M > );
+  insert_( names::g_ex, &iaf_cond_exp::get_y_elem_< iaf_cond_exp::State_::G_EXC > );
+  insert_( names::g_in, &iaf_cond_exp::get_y_elem_< iaf_cond_exp::State_::G_INH > );
 }
 }
 
@@ -77,8 +75,7 @@ nest::iaf_cond_exp_dynamics( double, const double y[], double f[], void* pnode )
 
   // get access to node so we can almost work as in a member function
   assert( pnode );
-  const nest::iaf_cond_exp& node =
-    *( reinterpret_cast< nest::iaf_cond_exp* >( pnode ) );
+  const nest::iaf_cond_exp& node = *( reinterpret_cast< nest::iaf_cond_exp* >( pnode ) );
 
   // y[] here is---and must be---the state vector supplied by the integrator,
   // not the state vector in the node, node.S_.y[].
@@ -90,8 +87,7 @@ nest::iaf_cond_exp_dynamics( double, const double y[], double f[], void* pnode )
   const double I_L = node.P_.g_L * ( y[ S::V_M ] - node.P_.E_L );
 
   // V dot
-  f[ 0 ] = ( -I_L + node.B_.I_stim_ + node.P_.I_e - I_syn_exc - I_syn_inh )
-    / node.P_.C_m;
+  f[ 0 ] = ( -I_L + node.B_.I_stim_ + node.P_.I_e - I_syn_exc - I_syn_inh ) / node.P_.C_m;
 
   f[ 1 ] = -y[ S::G_EXC ] / node.P_.tau_synE;
   f[ 2 ] = -y[ S::G_INH ] / node.P_.tau_synI;
@@ -129,16 +125,18 @@ nest::iaf_cond_exp::State_::State_( const State_& s )
   : r_( s.r_ )
 {
   for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
+  {
     y_[ i ] = s.y_[ i ];
+  }
 }
 
-nest::iaf_cond_exp::State_& nest::iaf_cond_exp::State_::operator=(
-  const State_& s )
+nest::iaf_cond_exp::State_& nest::iaf_cond_exp::State_::operator=( const State_& s )
 {
   assert( this != &s ); // would be bad logical error in program
-
   for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
+  {
     y_[ i ] = s.y_[ i ];
+  }
   r_ = s.r_;
   return *this;
 }
@@ -164,48 +162,56 @@ nest::iaf_cond_exp::Parameters_::get( DictionaryDatum& d ) const
 }
 
 void
-nest::iaf_cond_exp::Parameters_::set( const DictionaryDatum& d )
+nest::iaf_cond_exp::Parameters_::set( const DictionaryDatum& d, Node* node )
 {
   // allow setting the membrane potential
-  updateValue< double >( d, names::V_th, V_th_ );
-  updateValue< double >( d, names::V_reset, V_reset_ );
-  updateValue< double >( d, names::t_ref, t_ref_ );
-  updateValue< double >( d, names::E_L, E_L );
+  updateValueParam< double >( d, names::V_th, V_th_, node );
+  updateValueParam< double >( d, names::V_reset, V_reset_, node );
+  updateValueParam< double >( d, names::t_ref, t_ref_, node );
+  updateValueParam< double >( d, names::E_L, E_L, node );
 
-  updateValue< double >( d, names::E_ex, E_ex );
-  updateValue< double >( d, names::E_in, E_in );
+  updateValueParam< double >( d, names::E_ex, E_ex, node );
+  updateValueParam< double >( d, names::E_in, E_in, node );
 
-  updateValue< double >( d, names::C_m, C_m );
-  updateValue< double >( d, names::g_L, g_L );
+  updateValueParam< double >( d, names::C_m, C_m, node );
+  updateValueParam< double >( d, names::g_L, g_L, node );
 
-  updateValue< double >( d, names::tau_syn_ex, tau_synE );
-  updateValue< double >( d, names::tau_syn_in, tau_synI );
+  updateValueParam< double >( d, names::tau_syn_ex, tau_synE, node );
+  updateValueParam< double >( d, names::tau_syn_in, tau_synI, node );
 
-  updateValue< double >( d, names::I_e, I_e );
-
+  updateValueParam< double >( d, names::I_e, I_e, node );
   if ( V_reset_ >= V_th_ )
+  {
     throw BadProperty( "Reset potential must be smaller than threshold." );
-
+  }
   if ( C_m <= 0 )
+  {
     throw BadProperty( "Capacitance must be strictly positive." );
-
+  }
   if ( t_ref_ < 0 )
+  {
     throw BadProperty( "Refractory time cannot be negative." );
-
+  }
   if ( tau_synE <= 0 || tau_synI <= 0 )
+  {
     throw BadProperty( "All time constants must be strictly positive." );
+  }
 }
 
 void
 nest::iaf_cond_exp::State_::get( DictionaryDatum& d ) const
 {
   def< double >( d, names::V_m, y_[ V_M ] ); // Membrane potential
+  def< double >( d, names::g_ex, y_[ G_EXC ] );
+  def< double >( d, names::g_in, y_[ G_INH ] );
 }
 
 void
-nest::iaf_cond_exp::State_::set( const DictionaryDatum& d, const Parameters_& )
+nest::iaf_cond_exp::State_::set( const DictionaryDatum& d, const Parameters_&, Node* node )
 {
-  updateValue< double >( d, names::V_m, y_[ V_M ] );
+  updateValueParam< double >( d, names::V_m, y_[ V_M ], node );
+  updateValueParam< double >( d, names::g_ex, y_[ G_EXC ], node );
+  updateValueParam< double >( d, names::g_in, y_[ G_INH ], node );
 }
 
 nest::iaf_cond_exp::Buffers_::Buffers_( iaf_cond_exp& n )
@@ -253,11 +259,17 @@ nest::iaf_cond_exp::~iaf_cond_exp()
 {
   // GSL structs may not have been allocated, so we need to protect destruction
   if ( B_.s_ )
+  {
     gsl_odeiv_step_free( B_.s_ );
+  }
   if ( B_.c_ )
+  {
     gsl_odeiv_control_free( B_.c_ );
+  }
   if ( B_.e_ )
+  {
     gsl_odeiv_evolve_free( B_.e_ );
+  }
 }
 
 /* ----------------------------------------------------------------
@@ -285,20 +297,31 @@ nest::iaf_cond_exp::init_buffers_()
   B_.IntegrationStep_ = B_.step_;
 
   if ( B_.s_ == 0 )
-    B_.s_ =
-      gsl_odeiv_step_alloc( gsl_odeiv_step_rkf45, State_::STATE_VEC_SIZE );
+  {
+    B_.s_ = gsl_odeiv_step_alloc( gsl_odeiv_step_rkf45, State_::STATE_VEC_SIZE );
+  }
   else
+  {
     gsl_odeiv_step_reset( B_.s_ );
+  }
 
   if ( B_.c_ == 0 )
+  {
     B_.c_ = gsl_odeiv_control_y_new( 1e-3, 0.0 );
+  }
   else
+  {
     gsl_odeiv_control_init( B_.c_, 1e-3, 0.0, 1.0, 0.0 );
+  }
 
   if ( B_.e_ == 0 )
+  {
     B_.e_ = gsl_odeiv_evolve_alloc( State_::STATE_VEC_SIZE );
+  }
   else
+  {
     gsl_odeiv_evolve_reset( B_.e_ );
+  }
 
   B_.sys_.function = iaf_cond_exp_dynamics;
   B_.sys_.jacobian = NULL;
@@ -327,8 +350,7 @@ void
 nest::iaf_cond_exp::update( Time const& origin, const long from, const long to )
 {
 
-  assert(
-    to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
+  assert( to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
   assert( from < to );
 
   for ( long lag = from; lag < to; ++lag )
@@ -358,9 +380,10 @@ nest::iaf_cond_exp::update( Time const& origin, const long from, const long to )
         B_.step_,             // to t <= step
         &B_.IntegrationStep_, // integration step size
         S_.y_ );              // neuronal state
-
       if ( status != GSL_SUCCESS )
+      {
         throw GSLSolverFailure( get_name(), status );
+      }
     }
 
     S_.y_[ State_::G_EXC ] += B_.spike_exc_.get_value( lag );
@@ -396,31 +419,29 @@ nest::iaf_cond_exp::update( Time const& origin, const long from, const long to )
 void
 nest::iaf_cond_exp::handle( SpikeEvent& e )
 {
-  assert( e.get_delay() > 0 );
+  assert( e.get_delay_steps() > 0 );
 
   if ( e.get_weight() > 0.0 )
-    B_.spike_exc_.add_value( e.get_rel_delivery_steps(
-                               kernel().simulation_manager.get_slice_origin() ),
+  {
+    B_.spike_exc_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
       e.get_weight() * e.get_multiplicity() );
+  }
   else
-    B_.spike_inh_.add_value( e.get_rel_delivery_steps(
-                               kernel().simulation_manager.get_slice_origin() ),
-      -e.get_weight()
-        * e.get_multiplicity() ); // ensure conductance is positive
+  {
+    B_.spike_inh_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
+      -e.get_weight() * e.get_multiplicity() );
+  }
 }
 
 void
 nest::iaf_cond_exp::handle( CurrentEvent& e )
 {
-  assert( e.get_delay() > 0 );
+  assert( e.get_delay_steps() > 0 );
 
   const double c = e.get_current();
   const double w = e.get_weight();
 
-  // add weighted current; HEP 2002-10-04
-  B_.currents_.add_value(
-    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
-    w * c );
+  B_.currents_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), w * c );
 }
 
 void

@@ -71,30 +71,28 @@ void
 nest::music_message_in_proxy::Parameters_::get( DictionaryDatum& d ) const
 {
   ( *d )[ names::port_name ] = port_name_;
-  ( *d )[ "acceptable_latency" ] = acceptable_latency_;
+  ( *d )[ names::acceptable_latency ] = acceptable_latency_;
 }
 
 void
-nest::music_message_in_proxy::Parameters_::set( const DictionaryDatum& d,
-  State_& s )
+nest::music_message_in_proxy::Parameters_::set( const DictionaryDatum& d, State_& s, Node* node )
 {
-  if ( !s.published_ )
+  if ( not s.published_ )
   {
     updateValue< string >( d, names::port_name, port_name_ );
-    updateValue< double >( d, "acceptable_latency", acceptable_latency_ );
+    updateValueParam< double >( d, names::acceptable_latency, acceptable_latency_, node );
   }
 }
 
 void
 nest::music_message_in_proxy::State_::get( DictionaryDatum& d ) const
 {
-  ( *d )[ "published" ] = published_;
-  ( *d )[ "port_width" ] = port_width_;
+  ( *d )[ names::published ] = published_;
+  ( *d )[ names::port_width ] = port_width_;
 }
 
 void
-nest::music_message_in_proxy::State_::set( const DictionaryDatum&,
-  const Parameters_& )
+nest::music_message_in_proxy::State_::set( const DictionaryDatum&, const Parameters_&, Node* node )
 {
 }
 
@@ -104,15 +102,14 @@ nest::music_message_in_proxy::State_::set( const DictionaryDatum&,
  * ---------------------------------------------------------------- */
 
 nest::music_message_in_proxy::music_message_in_proxy()
-  : Node()
+  : DeviceNode()
   , P_()
   , S_()
 {
 }
 
-nest::music_message_in_proxy::music_message_in_proxy(
-  const music_message_in_proxy& n )
-  : Node( n )
+nest::music_message_in_proxy::music_message_in_proxy( const music_message_in_proxy& n )
+  : DeviceNode( n )
   , P_( n.P_ )
   , S_( n.S_ )
 {
@@ -126,8 +123,7 @@ nest::music_message_in_proxy::music_message_in_proxy(
 void
 nest::music_message_in_proxy::init_state_( const Node& proto )
 {
-  const music_message_in_proxy& pr =
-    downcast< music_message_in_proxy >( proto );
+  const music_message_in_proxy& pr = downcast< music_message_in_proxy >( proto );
 
   S_ = pr.S_;
 }
@@ -141,19 +137,25 @@ void
 nest::music_message_in_proxy::calibrate()
 {
   // only publish the port once,
-  if ( !S_.published_ )
+  if ( not S_.published_ )
   {
     MUSIC::Setup* s = kernel().music_manager.get_music_setup();
     if ( s == 0 )
+    {
       throw MUSICSimulationHasRun( get_name() );
+    }
 
     V_.MP_ = s->publishMessageInput( P_.port_name_ );
 
-    if ( !V_.MP_->isConnected() )
+    if ( not V_.MP_->isConnected() )
+    {
       throw MUSICPortUnconnected( get_name(), P_.port_name_ );
+    }
 
-    if ( !V_.MP_->hasWidth() )
+    if ( not V_.MP_->hasWidth() )
+    {
       throw MUSICPortHasNoWidth( get_name(), P_.port_name_ );
+    }
 
     S_.port_width_ = V_.MP_->width();
 

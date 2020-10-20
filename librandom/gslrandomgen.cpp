@@ -26,8 +26,7 @@
 
 // nothing if GSL 1.2 or later not available
 
-librandom::GslRandomGen::GslRandomGen( const gsl_rng_type* type,
-  unsigned long seed )
+librandom::GslRandomGen::GslRandomGen( const gsl_rng_type* type, unsigned long seed )
   : RandomGen()
 {
   rng_ = gsl_rng_alloc( type );
@@ -53,12 +52,12 @@ librandom::GslRandomGen::add_gsl_rngs( Dictionary& rngdict )
     assert( *t != NULL );
     const std::string name = std::string( "gsl_" ) + ( *t )->name;
 
-    if ( !rngdict.known( name ) ) // avoid multiple insertion
+    if ( not rngdict.known( name ) ) // avoid multiple insertion
     {
       GslRNGFactory* f = new GslRNGFactory( *t );
       assert( f != NULL );
 
-      Token rngfactory = new librandom::RngFactoryDatum( *f );
+      Token rngfactory = new librandom::RngFactoryDatum( f );
       rngdict.insert_move( Name( name ), rngfactory );
     }
   }

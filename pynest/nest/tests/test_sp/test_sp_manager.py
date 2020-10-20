@@ -37,7 +37,13 @@ class TestStructuralPlasticityManager(unittest.TestCase):
             'stdp_dopamine_synapse_hpc',
             'stdp_dopamine_synapse_hpc_lbl',
             'gap_junction',
-            'gap_junction_lbl'
+            'gap_junction_lbl',
+            'diffusion_connection',
+            'diffusion_connection_lbl',
+            'rate_connection_instantaneous',
+            'rate_connection_instantaneous_lbl',
+            'rate_connection_delayed',
+            'rate_connection_delayed_lbl'
         ]
 
     def test_register_synapses(self):
@@ -46,7 +52,7 @@ class TestStructuralPlasticityManager(unittest.TestCase):
                 nest.ResetKernel()
                 nest.SetDefaults(syn_model, {'delay': 0.5})
                 syn_dict = {
-                    'model': syn_model,
+                    'synapse_model': syn_model,
                     'pre_synaptic_element': 'SE1',
                     'post_synaptic_element': 'SE2'
                 }
@@ -69,7 +75,7 @@ class TestStructuralPlasticityManager(unittest.TestCase):
             {
                 'structural_plasticity_synapses': {
                     'syn1': {
-                        'model': syn_model,
+                        'synapse_model': syn_model,
                         'pre_synaptic_element': 'SE1',
                         'post_synaptic_element': 'SE2',
                     }
@@ -84,14 +90,14 @@ class TestStructuralPlasticityManager(unittest.TestCase):
             if syn_model not in self.exclude_synapse_model:
                 nest.ResetKernel()
                 syn_dict = {
-                    'model': syn_model,
+                    'synapse_model': syn_model,
                     'pre_synaptic_element': 'SE1',
                     'post_synaptic_element': 'SE2'
                 }
                 nest.SetStructuralPlasticityStatus({
                     'structural_plasticity_synapses': {'syn1': syn_dict}
                 })
-                neurons = nest.Create('iaf_neuron', 2, {
+                neurons = nest.Create('iaf_psc_alpha', 2, {
                     'synaptic_elements': {
                         'SE1': {'z': 10.0, 'growth_rate': 0.0},
                         'SE2': {'z': 10.0, 'growth_rate': 0.0}

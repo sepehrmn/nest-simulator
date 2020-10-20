@@ -21,35 +21,6 @@
  */
 
 
-/*BeginDocumentation
-Name: dc_generator - provides DC input current
-
-Description: The DC-Generator provides a constant DC Input
-to the connected node. The unit of the current is pA.
-
-Parameters:
-  The following parameters can be set in the status dictionary:
-  amplitude  double - Amplitude of current in pA
-
-Examples: The dc current can be altered in the following way:
-   /dc_generator Create /dc_gen Set    % Creates a dc_generator, which is a node
-   dc_gen GetStatus info                    % View properties (amplitude is 0)
-   dc_gen << /amplitude 1500. >> SetStatus
-   dc_gen GetStatus info                    % amplitude is now 1500.0
-
-Remarks: The dc_generator is rather inefficient, since it needs to
-      send the same current information on each time step. If you
-      only need a constant bias current into a neuron, you should
-      set it directly in the neuron, e.g., dc_generator.
-
-Sends: CurrentEvent
-
-Author: docu by Sirko Straube
-
-SeeAlso: Device, StimulatingDevice
-
-*/
-
 #ifndef DC_GENERATOR_H
 #define DC_GENERATOR_H
 
@@ -58,20 +29,56 @@ SeeAlso: Device, StimulatingDevice
 
 // Includes from nestkernel:
 #include "connection.h"
+#include "device_node.h"
 #include "event.h"
 #include "nest_types.h"
-#include "node.h"
 #include "ring_buffer.h"
 #include "stimulating_device.h"
+#include "universal_data_logger.h"
 
 namespace nest
 {
-/**
- * DC current generator.
- *
- * @ingroup Devices
- */
-class dc_generator : public Node
+
+/* BeginUserDocs: device, generator
+
+Short description
++++++++++++++++++
+
+provides direct current (DC) input
+
+Description
++++++++++++
+
+The dc_generator provides a constant DC input to the connected
+node. The unit of the current is pA.
+
+The dc_generator is rather inefficient, since it needs to send the
+same current information on each time step. If you only need a
+constant bias current into a neuron, you could instead directly set
+the property *I_e*, which is available in many neuron models.
+
+Parameters
+++++++++++
+
+The following parameters can be set in the status dictionary:
+
+========== ======  =============================
+ amplitude pA      Amplitude of current
+========== ======  =============================
+
+Sends
++++++
+
+CurrentEvent
+
+See also
+++++++++
+
+ac_generator, noise_generator, step_current_generator
+
+EndUserDocs */
+
+class dc_generator : public DeviceNode
 {
 
 public:
@@ -84,7 +91,27 @@ public:
     return false;
   }
 
+  //! Allow multimeter to connect to local instances
+  bool
+  local_receiver() const
+  {
+    return true;
+  }
+
+  Name
+  get_element_type() const
+  {
+    return names::stimulator;
+  }
+
   port send_test_event( Node&, rport, synindex, bool );
+
+  using Node::handle;
+  using Node::handles_test_event;
+
+  void handle( DataLoggingRequest& );
+
+  port handles_test_event( DataLoggingRequest&, rport );
 
   void get_status( DictionaryDatum& ) const;
   void set_status( const DictionaryDatum& );
@@ -106,22 +133,62 @@ private:
     double amp_; //!< stimulation amplitude, in pA
 
     Parameters_(); //!< Sets default parameter values
+    Parameters_( const Parameters_& );
+    Parameters_& operator=( const Parameters_& p );
 
-    void get( DictionaryDatum& ) const; //!< Store current values in dictionary
-    void set( const DictionaryDatum& ); //!< Set values from dicitonary
+    void get( DictionaryDatum& ) const;             //!< Store current values in dictionary
+    void set( const DictionaryDatum&, Node* node ); //!< Set values from dictionary
   };
 
   // ------------------------------------------------------------
 
+  struct State_
+  {
+    double I_; //!< Instantaneous current value; used for recording current
+               //!< Required to handle current values when device is inactive
+
+    State_(); //!< Sets default parameter values
+
+    void get( DictionaryDatum& ) const; //!< Store current values in dictionary
+  };
+
+  // ------------------------------------------------------------
+
+  // The next two classes need to be friends to access the State_ class/member
+  friend class RecordablesMap< dc_generator >;
+  friend class UniversalDataLogger< dc_generator >;
+
+  // ------------------------------------------------------------
+
+  /**
+   * Buffers of the model.
+   */
+  struct Buffers_
+  {
+    Buffers_( dc_generator& );
+    Buffers_( const Buffers_&, dc_generator& );
+    UniversalDataLogger< dc_generator > logger_;
+  };
+
+  // ------------------------------------------------------------
+
+  double
+  get_I_() const
+  {
+    return S_.I_;
+  }
+
+  // ------------------------------------------------------------
+
   StimulatingDevice< CurrentEvent > device_;
+  static RecordablesMap< dc_generator > recordablesMap_;
   Parameters_ P_;
+  State_ S_;
+  Buffers_ B_;
 };
 
 inline port
-dc_generator::send_test_event( Node& target,
-  rport receptor_type,
-  synindex syn_id,
-  bool )
+dc_generator::send_test_event( Node& target, rport receptor_type, synindex syn_id, bool )
 {
   device_.enforce_single_syn_type( syn_id );
 
@@ -131,18 +198,30 @@ dc_generator::send_test_event( Node& target,
   return target.handles_test_event( e, receptor_type );
 }
 
+inline port
+dc_generator::handles_test_event( DataLoggingRequest& dlr, rport receptor_type )
+{
+  if ( receptor_type != 0 )
+  {
+    throw UnknownReceptorType( receptor_type, get_name() );
+  }
+  return B_.logger_.connect_logging_device( dlr, recordablesMap_ );
+}
+
 inline void
 dc_generator::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   device_.get_status( d );
+
+  ( *d )[ names::recordables ] = recordablesMap_.get_list();
 }
 
 inline void
 dc_generator::set_status( const DictionaryDatum& d )
 {
   Parameters_ ptmp = P_; // temporary copy in case of errors
-  ptmp.set( d );         // throws if BadProperty
+  ptmp.set( d, this );   // throws if BadProperty
 
   // We now know that ptmp is consistent. We do not write it back
   // to P_ before we are also sure that the properties to be set
@@ -152,7 +231,6 @@ dc_generator::set_status( const DictionaryDatum& d )
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;
 }
-
 
 } // namespace
 

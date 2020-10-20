@@ -48,6 +48,7 @@ if ( HAVE_PYTHON )
     if ( APPLE )
       set_target_properties( pynestkernel PROPERTIES LINK_FLAGS "-undefined dynamic_lookup" )
     else ()
+      set_target_properties( pynestkernel PROPERTIES LINK_FLAGS "-Wl,--no-as-needed")
       target_link_libraries( pynestkernel ${PYTHON_LIBRARIES} )
     endif ()
   endif ()
@@ -62,6 +63,7 @@ if ( HAVE_PYTHON )
       ${PROJECT_SOURCE_DIR}/libnestutil
       ${PROJECT_SOURCE_DIR}/nest
       ${PROJECT_SOURCE_DIR}/nestkernel
+      ${PROJECT_SOURCE_DIR}/nestkernel/spatial
       ${PROJECT_SOURCE_DIR}/librandom
       ${PROJECT_SOURCE_DIR}/sli
       ${SLI_MODULE_INCLUDE_DIRS}
@@ -81,12 +83,33 @@ if ( HAVE_PYTHON )
     WORKING_DIRECTORY \"${CMAKE_CURRENT_BINARY_DIR}\")"
       )
   install( TARGETS pynestkernel DESTINATION ${PYEXECDIR}/nest/ )
-  install( FILES ${PROJECT_BINARY_DIR}/pynest/do_tests.py
-      DESTINATION ${CMAKE_INSTALL_DATADIR}/extras
-      )
 
   install( DIRECTORY examples/
       DESTINATION ${CMAKE_INSTALL_DOCDIR}/examples/pynest
+      )
+
+  install( DIRECTORY nest/random/
+      DESTINATION ${CMAKE_INSTALL_PREFIX}/${PYEXECDIR}/nest/random
+      )
+
+  install( DIRECTORY nest/spatial/
+      DESTINATION ${CMAKE_INSTALL_PREFIX}/${PYEXECDIR}/nest/spatial
+      )
+
+  install( DIRECTORY nest/math/
+      DESTINATION ${CMAKE_INSTALL_PREFIX}/${PYEXECDIR}/nest/math
+      )
+
+  install( DIRECTORY nest/logic/
+      DESTINATION ${CMAKE_INSTALL_PREFIX}/${PYEXECDIR}/nest/logic
+      )
+
+  install( DIRECTORY nest/spatial_distributions/
+      DESTINATION ${CMAKE_INSTALL_PREFIX}/${PYEXECDIR}/nest/spatial_distributions
+      )
+
+  install( DIRECTORY nest/server/
+      DESTINATION ${CMAKE_INSTALL_PREFIX}/${PYEXECDIR}/nest/server
       )
 
   find_program( NOSETESTS nosetests )

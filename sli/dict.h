@@ -60,14 +60,12 @@ class Dictionary : private TokenMap
     static bool nocase_compare( char c1, char c2 );
 
   public:
-    bool operator()( const std::pair< Name, Token >& lhs,
-      const std::pair< Name, Token >& rhs ) const
+    bool operator()( const std::pair< Name, Token >& lhs, const std::pair< Name, Token >& rhs ) const
     {
       const std::string& ls = lhs.first.toString();
       const std::string& rs = rhs.first.toString();
 
-      return std::lexicographical_compare(
-        ls.begin(), ls.end(), rs.begin(), rs.end(), nocase_compare );
+      return std::lexicographical_compare( ls.begin(), ls.end(), rs.begin(), rs.end(), nocase_compare );
     }
   };
 
@@ -268,9 +266,13 @@ Dictionary::lookup( const Name& n ) const
 {
   TokenMap::const_iterator where = find( n );
   if ( where != end() )
+  {
     return ( *where ).second;
+  }
   else
+  {
     return Dictionary::VoidToken;
+  }
 }
 
 inline const Token&
@@ -278,9 +280,13 @@ Dictionary::lookup2( const Name& n ) const
 {
   TokenMap::const_iterator where = find( n );
   if ( where != end() )
+  {
     return ( *where ).second;
+  }
   else
+  {
     throw UndefinedName( n.toString() );
+  }
 }
 
 inline bool
@@ -288,9 +294,13 @@ Dictionary::known( const Name& n ) const
 {
   TokenMap::const_iterator where = find( n );
   if ( where != end() )
+  {
     return true;
+  }
   else
+  {
     return false;
+  }
 }
 
 inline bool
@@ -298,9 +308,13 @@ Dictionary::known_but_not_accessed( const Name& n ) const
 {
   TokenMap::const_iterator where = find( n );
   if ( where != end() )
+  {
     return not where->second.accessed();
+  }
   else
+  {
     return false;
+  }
 }
 
 inline Token&
@@ -314,9 +328,13 @@ inline const Token& Dictionary::operator[]( const Name& n ) const
 {
   TokenMap::const_iterator where = find( n );
   if ( where != end() )
+  {
     return ( *where ).second;
+  }
   else
+  {
     throw UndefinedName( n.toString() );
+  }
 }
 
 

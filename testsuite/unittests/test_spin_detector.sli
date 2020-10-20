@@ -20,7 +20,7 @@
  *
  */
 
-/* BeginDocumentation
+/** @BeginDocumentation
     Name: testsuite::test_spin_detector - test decoding mechanism of binary events by spin_detector
 
     Synopsis: (test_spin_detector) run -> test decoding mechanism of binary events by spin_detector
@@ -28,8 +28,10 @@
     Description:
     Test, whether the communication mechanism for binary neurons
     works and whether the spin detector correctly decodes binary transitions.
+    Finally, setting the precision is tested.
 
-    Author:  March 2013, Helias
+    FirstVersion: March 2013
+    Author: Mortiz Helias, Sepehr Mahmoudian
 */
 
 (unittest) run
@@ -43,43 +45,37 @@
 
     ResetKernel
 
-    0 <<
+    <<
 	/local_num_threads 1 
 	/resolution h
-    >> SetStatus
+    >> SetKernelStatus
     
     % check, if double spikes are correctly interpreted as up transition
     % and single spikes are interpreted as down transition
-    
+
     /sp /spin_detector Create def
 
     /sg /spike_generator Create def
 
-        
+
     sg << /spike_times [10. 10. 15.] >> SetStatus
 
-    sg sp 1. 1. Connect	
+    sg sp 1. 1. Connect
 
     20. Simulate
 
     % check if right state is decoded
-    sp /events get /weights get /w Set
-    w 0 get 1.0 eq assert_or_die
-    w 1 get 0.0 eq assert_or_die
-    
-    
+
+    sp /events get /state get /s Set
+    s 0 get 1 eq assert_or_die
+    s 1 get 0 eq assert_or_die
+
+    % check if recorded at the right times
     sp /events get /times get /times Set
     times cva
     [ 10. 15.] eq
     assert_or_die
-    
+
 } def
 
 run_test
-
-
-
-
-
-
-

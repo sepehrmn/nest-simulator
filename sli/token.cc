@@ -69,6 +69,13 @@ Token::Token( unsigned long value )
   p = new IntegerDatum( value );
 }
 
+#ifdef HAVE_32BIT_ARCH
+Token::Token( uint64_t value )
+{
+  p = new IntegerDatum( value );
+}
+#endif
+
 Token::Token( double value )
 {
   p = new DoubleDatum( value );
@@ -155,25 +162,35 @@ Token::info( std::ostream& out ) const
     p->info( out );
   }
   else
+  {
     out << "<NULL token>\n";
+  }
 }
 
 void
 Token::pprint( std::ostream& out ) const
 {
-  if ( !p )
+  if ( not p )
+  {
     out << "<Null token>";
+  }
   else
+  {
     p->pprint( out );
+  }
 }
 
-std::ostream& operator<<( std::ostream& o, const Token& c )
+std::ostream& operator<<( std::ostream& out, const Token& c )
 {
-  if ( !c )
-    o << "<Null token>";
+  if ( not c )
+  {
+    out << "<Null token>";
+  }
   else
-    c->print( o );
-  return o;
+  {
+    c->print( out );
+  }
+  return out;
 }
 
 bool
@@ -185,7 +202,7 @@ Token::matches_as_string( const Token& rhs ) const
     const std::string& right = getValue< std::string >( rhs );
     return left == right;
   }
-  catch ( TypeMismatch )
+  catch ( TypeMismatch& )
   {
     return false;
   }

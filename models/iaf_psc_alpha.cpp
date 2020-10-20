@@ -26,6 +26,7 @@
 #include <limits>
 
 // Includes from libnestutil:
+#include "dict_util.h"
 #include "numerics.h"
 #include "propagator_stability.h"
 
@@ -40,8 +41,7 @@
 #include "doubledatum.h"
 #include "integerdatum.h"
 
-nest::RecordablesMap< nest::iaf_psc_alpha >
-  nest::iaf_psc_alpha::recordablesMap_;
+nest::RecordablesMap< nest::iaf_psc_alpha > nest::iaf_psc_alpha::recordablesMap_;
 
 namespace nest
 {
@@ -111,50 +111,71 @@ iaf_psc_alpha::Parameters_::get( DictionaryDatum& d ) const
 }
 
 double
-iaf_psc_alpha::Parameters_::set( const DictionaryDatum& d )
+iaf_psc_alpha::Parameters_::set( const DictionaryDatum& d, Node* node )
 {
   // if E_L_ is changed, we need to adjust all variables defined relative to
   // E_L_
   const double ELold = E_L_;
-  updateValue< double >( d, names::E_L, E_L_ );
+  updateValueParam< double >( d, names::E_L, E_L_, node );
   const double delta_EL = E_L_ - ELold;
 
-  if ( updateValue< double >( d, names::V_reset, V_reset_ ) )
+  if ( updateValueParam< double >( d, names::V_reset, V_reset_, node ) )
+  {
     V_reset_ -= E_L_;
+  }
   else
+  {
     V_reset_ -= delta_EL;
+  }
 
-  if ( updateValue< double >( d, names::V_th, Theta_ ) )
+  if ( updateValueParam< double >( d, names::V_th, Theta_, node ) )
+  {
     Theta_ -= E_L_;
+  }
   else
+  {
     Theta_ -= delta_EL;
+  }
 
-  if ( updateValue< double >( d, names::V_min, LowerBound_ ) )
+  if ( updateValueParam< double >( d, names::V_min, LowerBound_, node ) )
+  {
     LowerBound_ -= E_L_;
+  }
   else
+  {
     LowerBound_ -= delta_EL;
+  }
 
-  updateValue< double >( d, names::I_e, I_e_ );
-  updateValue< double >( d, names::C_m, C_ );
-  updateValue< double >( d, names::tau_m, Tau_ );
-  updateValue< double >( d, names::tau_syn_ex, tau_ex_ );
-  updateValue< double >( d, names::tau_syn_in, tau_in_ );
-  updateValue< double >( d, names::t_ref, TauR_ );
+  updateValueParam< double >( d, names::I_e, I_e_, node );
+  updateValueParam< double >( d, names::C_m, C_, node );
+  updateValueParam< double >( d, names::tau_m, Tau_, node );
+  updateValueParam< double >( d, names::tau_syn_ex, tau_ex_, node );
+  updateValueParam< double >( d, names::tau_syn_in, tau_in_, node );
+  updateValueParam< double >( d, names::t_ref, TauR_, node );
 
   if ( C_ <= 0.0 )
+  {
     throw BadProperty( "Capacitance must be > 0." );
+  }
 
   if ( Tau_ <= 0.0 )
+  {
     throw BadProperty( "Membrane time constant must be > 0." );
+  }
 
   if ( tau_ex_ <= 0.0 || tau_in_ <= 0.0 )
+  {
     throw BadProperty( "All synaptic time constants must be > 0." );
+  }
 
   if ( TauR_ < 0.0 )
+  {
     throw BadProperty( "The refractory time t_ref can't be negative." );
-
+  }
   if ( V_reset_ >= Theta_ )
+  {
     throw BadProperty( "Reset potential must be smaller than threshold." );
+  }
 
   return delta_EL;
 }
@@ -166,14 +187,16 @@ iaf_psc_alpha::State_::get( DictionaryDatum& d, const Parameters_& p ) const
 }
 
 void
-iaf_psc_alpha::State_::set( const DictionaryDatum& d,
-  const Parameters_& p,
-  double delta_EL )
+iaf_psc_alpha::State_::set( const DictionaryDatum& d, const Parameters_& p, double delta_EL, Node* node )
 {
-  if ( updateValue< double >( d, names::V_m, y3_ ) )
+  if ( updateValueParam< double >( d, names::V_m, y3_, node ) )
+  {
     y3_ -= p.E_L_;
+  }
   else
+  {
     y3_ -= delta_EL;
+  }
 }
 
 iaf_psc_alpha::Buffers_::Buffers_( iaf_psc_alpha& n )
@@ -293,8 +316,7 @@ iaf_psc_alpha::calibrate()
 void
 iaf_psc_alpha::update( Time const& origin, const long from, const long to )
 {
-  assert(
-    to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
+  assert( to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
   assert( from < to );
 
   for ( long lag = from; lag < to; ++lag )
@@ -302,15 +324,17 @@ iaf_psc_alpha::update( Time const& origin, const long from, const long to )
     if ( S_.r_ == 0 )
     {
       // neuron not refractory
-      S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P31_ex_ * S_.dI_ex_
-        + V_.P32_ex_ * S_.I_ex_ + V_.P31_in_ * S_.dI_in_ + V_.P32_in_ * S_.I_in_
-        + V_.expm1_tau_m_ * S_.y3_ + S_.y3_;
+      S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P31_ex_ * S_.dI_ex_ + V_.P32_ex_ * S_.I_ex_ + V_.P31_in_ * S_.dI_in_
+        + V_.P32_in_ * S_.I_in_ + V_.expm1_tau_m_ * S_.y3_ + S_.y3_;
 
       // lower bound of membrane potential
       S_.y3_ = ( S_.y3_ < P_.LowerBound_ ? P_.LowerBound_ : S_.y3_ );
     }
-    else // neuron is absolute refractory
+    else
+    {
+      // neuron is absolute refractory
       --S_.r_;
+    }
 
     // alpha shape EPSCs
     S_.I_ex_ = V_.P21_ex_ * S_.dI_ex_ + V_.P22_ex_ * S_.I_ex_;
@@ -356,31 +380,29 @@ iaf_psc_alpha::update( Time const& origin, const long from, const long to )
 void
 iaf_psc_alpha::handle( SpikeEvent& e )
 {
-  assert( e.get_delay() > 0 );
+  assert( e.get_delay_steps() > 0 );
 
   const double s = e.get_weight() * e.get_multiplicity();
 
   if ( e.get_weight() > 0.0 )
-    B_.ex_spikes_.add_value( e.get_rel_delivery_steps(
-                               kernel().simulation_manager.get_slice_origin() ),
-      s );
+  {
+    B_.ex_spikes_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), s );
+  }
   else
-    B_.in_spikes_.add_value( e.get_rel_delivery_steps(
-                               kernel().simulation_manager.get_slice_origin() ),
-      s );
+  {
+    B_.in_spikes_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), s );
+  }
 }
 
 void
 iaf_psc_alpha::handle( CurrentEvent& e )
 {
-  assert( e.get_delay() > 0 );
+  assert( e.get_delay_steps() > 0 );
 
   const double I = e.get_current();
   const double w = e.get_weight();
 
-  B_.currents_.add_value(
-    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
-    w * I );
+  B_.currents_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), w * I );
 }
 
 void

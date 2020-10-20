@@ -27,15 +27,14 @@ import unittest
 import nest
 
 
-@nest.check_stack
+@nest.ll_api.check_stack
 class ThreadTestCase(unittest.TestCase):
     """Tests for multi-threading"""
 
     def nest_multithreaded(self):
         """Return True, if we have a thread-enabled NEST, False otherwise"""
 
-        nest.sr("statusdict/threading :: (no) eq not")
-        return nest.spp()
+        return nest.ll_api.sli_func("statusdict/threading :: (no) eq not")
 
     def test_Threads(self):
         """Multiple threads"""
@@ -47,7 +46,7 @@ class ThreadTestCase(unittest.TestCase):
         self.assertEqual(nest.GetKernelStatus()['local_num_threads'], 1)
 
         nest.SetKernelStatus({'local_num_threads': 8})
-        n = nest.Create('iaf_neuron', 8)
+        n = nest.Create('iaf_psc_alpha', 8)
         st = list(nest.GetStatus(n, 'vp'))
         st.sort()
         self.assertEqual(st, [0, 1, 2, 3, 4, 5, 6, 7])
@@ -60,18 +59,18 @@ class ThreadTestCase(unittest.TestCase):
 
         nest.ResetKernel()
         nest.SetKernelStatus({'local_num_threads': 8})
-        pre = nest.Create("iaf_neuron")
-        post = nest.Create("iaf_neuron", 6)
+        pre = nest.Create("iaf_psc_alpha")
+        post = nest.Create("iaf_psc_alpha", 6)
 
         nest.Connect(pre, post)
 
         conn = nest.GetConnections(pre)
         # Because of threading, targets may be in a different order than
         # in post, so we sort the vector.
-        targets = list(nest.GetStatus(conn, "target"))
+        targets = list(conn.get("target"))
         targets.sort()
 
-        self.assertEqual(targets, list(post))
+        self.assertEqual(targets, post.tolist())
 
     def test_ThreadsGetEvents(self):
         """ Gathering events across threads """

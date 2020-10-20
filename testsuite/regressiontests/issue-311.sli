@@ -20,7 +20,7 @@
  *
  */
 
-/* BeginDocumentation
+/** @BeginDocumentation
 
 Name: testsuite::issue-311 Ensure NEST behaves well after exception during update
 
@@ -38,7 +38,7 @@ Author: Hans Ekkehard Plesser, 2016-11-02
 
 M_ERROR setverbosity
 
-modeldict /aeif_cond_alpha known not { exit_test_gracefully } if
+modeldict /aeif_cond_alpha known not { /skipped exit_test_gracefully } if
 
 % Execute in stopped context so exception does not propagate out
 % pathological parameters to trigger numerical exception
@@ -57,7 +57,7 @@ clear
 % Test 1: We can still inspect the kernel after an exception
 {  
   % this calls get_time() and triggers assertion prior to fix for #311
-  0 GetStatus ;
+  GetKernelStatus ;
 } pass_or_die
 
 % Test 2: We cannot continue simulation after an exception

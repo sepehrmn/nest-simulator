@@ -84,11 +84,7 @@ getValue( const DictionaryDatum& d, Name const n )
  * @throws RangeCheck if a value is outside the range
  */
 inline double
-get_double_in_range( const DictionaryDatum& d,
-  Name const n,
-  double min,
-  double max,
-  int mode = 2 )
+get_double_in_range( const DictionaryDatum& d, Name const n, double min, double max, int mode = 2 )
 {
   // We must take a reference, so that access information can be stored in the
   // token.
@@ -114,15 +110,21 @@ get_double_in_range( const DictionaryDatum& d,
   {
   case 0:
     if ( min < x and x < max )
+    {
       return x;
+    }
     break;
   case 1:
     if ( min <= x and x < max )
+    {
       return x;
+    }
     break;
   case 2:
     if ( min <= x and x <= max )
+    {
       return x;
+    }
     break;
   default:
     return x;
@@ -146,11 +148,7 @@ get_double_in_range( const DictionaryDatum& d,
  * @throws RangeCheck if a value is outside the range
  */
 inline long
-get_long_in_range( const DictionaryDatum& d,
-  Name const n,
-  long min,
-  long max,
-  int mode = 2 )
+get_long_in_range( const DictionaryDatum& d, Name const n, long min, long max, int mode = 2 )
 {
   // We must take a reference, so that access information can be stored in the
   // token.
@@ -176,15 +174,21 @@ get_long_in_range( const DictionaryDatum& d,
   {
   case 0:
     if ( min < x and x < max )
+    {
       return x;
+    }
     break;
   case 1:
     if ( min <= x and x < max )
+    {
       return x;
+    }
     break;
   case 2:
     if ( min <= x and x <= max )
+    {
       return x;
+    }
     break;
   default:
     return x;
@@ -240,7 +244,9 @@ updateValue( DictionaryDatum const& d, Name const n, VT& value )
   const Token& t = d->lookup( n );
 
   if ( t.empty() )
+  {
     return false;
+  }
 
   value = getValue< FT >( t );
   return true;
@@ -253,10 +259,7 @@ updateValue( DictionaryDatum const& d, Name const n, VT& value )
  */
 template < typename FT, typename VT, class C >
 void
-updateValue2( DictionaryDatum const& d,
-  Name const n,
-  C& obj,
-  void ( C::*setfunc )( VT ) )
+updateValue2( DictionaryDatum const& d, Name const n, C& obj, void ( C::*setfunc )( VT ) )
 {
   if ( d->known( n ) ) // Does name exist in the dictionary?
   {
@@ -296,7 +299,7 @@ inline void
 append_property( DictionaryDatum& d, Name propname, const PropT& prop )
 {
   Token t = d->lookup( propname );
-  assert( !t.empty() );
+  assert( not t.empty() );
 
   ArrayDatum* arrd = dynamic_cast< ArrayDatum* >( t.datum() );
   assert( arrd != 0 );
@@ -311,12 +314,10 @@ append_property( DictionaryDatum& d, Name propname, const PropT& prop )
  */
 template <>
 inline void
-append_property< std::vector< double > >( DictionaryDatum& d,
-  Name propname,
-  const std::vector< double >& prop )
+append_property< std::vector< double > >( DictionaryDatum& d, Name propname, const std::vector< double >& prop )
 {
   Token t = d->lookup( propname );
-  assert( !t.empty() );
+  assert( not t.empty() );
 
   DoubleVectorDatum* arrd = dynamic_cast< DoubleVectorDatum* >( t.datum() );
   assert( arrd != 0 );
@@ -331,12 +332,10 @@ append_property< std::vector< double > >( DictionaryDatum& d,
  */
 template <>
 inline void
-append_property< std::vector< long > >( DictionaryDatum& d,
-  Name propname,
-  const std::vector< long >& prop )
+append_property< std::vector< long > >( DictionaryDatum& d, Name propname, const std::vector< long >& prop )
 {
   Token t = d->lookup( propname );
-  assert( !t.empty() );
+  assert( not t.empty() );
 
   IntVectorDatum* arrd = dynamic_cast< IntVectorDatum* >( t.datum() );
   assert( arrd != 0 );
@@ -370,7 +369,6 @@ void provide_property( DictionaryDatum&, Name, const std::vector< long >& );
  * threads when multimeter is running in accumulation mode.
  * @ingroup DictUtils
  */
-void
-accumulate_property( DictionaryDatum&, Name, const std::vector< double >& );
+void accumulate_property( DictionaryDatum&, Name, const std::vector< double >& );
 
 #endif

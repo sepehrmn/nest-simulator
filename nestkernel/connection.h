@@ -26,6 +26,7 @@
 // Includes from nestkernel:
 #include "common_synapse_properties.h"
 #include "connection_label.h"
+#include "connector_base_impl.h"
 #include "delay_checker.h"
 #include "event.h"
 #include "kernel_manager.h"
@@ -150,6 +151,18 @@ public:
   void set_status( const DictionaryDatum& d, ConnectorModel& cm );
 
   /**
+   * Check syn_spec dictionary for parameters that are not allowed with the
+   * given connection.
+   *
+   * Will issue warning or throw error if an illegal parameter is found. The
+   * method does nothing if no illegal parameter is found.
+   *
+   * @note Classes requiring checks need to override the function with their own
+   * implementation, as this base class implementation does not do anything.
+   */
+  void check_synapse_params( const DictionaryDatum& d ) const;
+
+  /**
    * Calibrate the delay of this connection to the desired resolution.
    */
   void calibrate( const TimeConverter& );
@@ -224,14 +237,60 @@ public:
     const CommonSynapseProperties& );
 
   Node*
-  get_target( thread t ) const
+  get_target( const thread tid ) const
   {
-    return target_.get_target_ptr( t );
+    return target_.get_target_ptr( tid );
   }
   rport
   get_rport() const
   {
     return target_.get_rport();
+  }
+
+  /**
+   * Sets a flag in the connection to signal that the following connection has
+   * the same source.
+   *
+   * @see source_has_more_targets
+   */
+  void
+  set_source_has_more_targets( const bool more_targets )
+  {
+    syn_id_delay_.set_source_has_more_targets( more_targets );
+  }
+
+  /**
+   * Returns a flag denoting whether the connection has source subsequent
+   * targets.
+   *
+   * @see set_source_has_more_targets
+   */
+  bool
+  source_has_more_targets() const
+  {
+    return syn_id_delay_.source_has_more_targets();
+  }
+
+  /**
+   * Disables the connection.
+   *
+   * @see is_disabled
+   */
+  void
+  disable()
+  {
+    syn_id_delay_.disable();
+  }
+
+  /**
+   * Returns a flag denoting if the connection is disabled.
+   *
+   * @see disable
+   */
+  bool
+  is_disabled() const
+  {
+    return syn_id_delay_.is_disabled();
   }
 
 protected:
@@ -245,10 +304,7 @@ protected:
    * \param the last spike produced by the presynaptic neuron (for STDP and
    * maturing connections)
    */
-  void check_connection_( Node& dummy_target,
-    Node& source,
-    Node& target,
-    rport receptor_type );
+  void check_connection_( Node& dummy_target, Node& source, Node& target, const rport receptor_type );
 
   /* the order of the members below is critical
      as it influcences the size of the object. Please leave unchanged
@@ -269,7 +325,7 @@ inline void
 Connection< targetidentifierT >::check_connection_( Node& dummy_target,
   Node& source,
   Node& target,
-  rport receptor_type )
+  const rport receptor_type )
 {
   // 1. does this connection support the event type sent by source
   // try to send event from source to dummy_target
@@ -281,15 +337,16 @@ Connection< targetidentifierT >::check_connection_( Node& dummy_target,
   // this returns the port of the incoming connection
   // p must be stored in the base class connection
   // this line might throw an exception
-  target_.set_rport(
-    source.send_test_event( target, receptor_type, get_syn_id(), false ) );
+  target_.set_rport( source.send_test_event( target, receptor_type, get_syn_id(), false ) );
 
   // 3. do the events sent by source mean the same thing as they are
   // interpreted in target?
   // note that we here use a bitwise and operation (&), because we interpret
   // each bit in the signal type as a collection of individual flags
-  if ( !( source.sends_signal() & target.receives_signal() ) )
-    throw IllegalConnection();
+  if ( not( source.sends_signal() & target.receives_signal() ) )
+  {
+    throw IllegalConnection( "Source and target neuron are not compatible (e.g., spiking vs binary neuron)." );
+  }
 
   target_.set_target( &target );
 }
@@ -304,17 +361,21 @@ Connection< targetidentifierT >::get_status( DictionaryDatum& d ) const
 
 template < typename targetidentifierT >
 inline void
-Connection< targetidentifierT >::set_status( const DictionaryDatum& d,
-  ConnectorModel& )
+Connection< targetidentifierT >::set_status( const DictionaryDatum& d, ConnectorModel& )
 {
   double delay;
   if ( updateValue< double >( d, names::delay, delay ) )
   {
-    kernel().connection_manager.get_delay_checker().assert_valid_delay_ms(
-      delay );
+    kernel().connection_manager.get_delay_checker().assert_valid_delay_ms( delay );
     syn_id_delay_.set_delay_ms( delay );
   }
   // no call to target_.set_status() because target and rport cannot be changed
+}
+
+template < typename targetidentifierT >
+inline void
+Connection< targetidentifierT >::check_synapse_params( const DictionaryDatum& d ) const
+{
 }
 
 template < typename targetidentifierT >
@@ -325,7 +386,9 @@ Connection< targetidentifierT >::calibrate( const TimeConverter& tc )
   syn_id_delay_.delay = t.get_steps();
 
   if ( syn_id_delay_.delay == 0 )
+  {
     syn_id_delay_.delay = 1;
+  }
 }
 
 template < typename targetidentifierT >
@@ -335,10 +398,7 @@ Connection< targetidentifierT >::trigger_update_weight( const thread,
   const double,
   const CommonSynapseProperties& )
 {
-  throw IllegalConnection(
-    "Connection::trigger_update_weight: "
-    "Connection does not support updates that are triggered by the volume "
-    "transmitter." );
+  throw IllegalConnection( "Connection does not support updates that are triggered by a volume transmitter." );
 }
 
 } // namespace nest

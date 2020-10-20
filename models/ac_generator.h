@@ -23,45 +23,74 @@
 #ifndef AC_GENERATOR_H
 #define AC_GENERATOR_H
 
-// provides AC input current
-
 // Includes from nestkernel:
 #include "connection.h"
+#include "device_node.h"
 #include "event.h"
 #include "nest_types.h"
-#include "node.h"
 #include "stimulating_device.h"
+#include "universal_data_logger.h"
 
-/* BeginDocumentation
-   Name: ac_generator - provides AC input current
-   Description:
+/* BeginUserDocs: device, generator
 
-   This device produce an ac-current which are sent by a current event.
-   The parameters are
-   amplitude   double -  Amplitude of sine current in pA
-   offset      double -  Constant amplitude offset in pA
-   phase       double -  Phase of sine current (0-360 deg)
-   frequency   double -  Frequency in Hz
-   4) The
+Short description
++++++++++++++++++
 
-   The currents are updated every time step by exact integration schemes from
-   [1]
+Produce an alternating current (AC) input
 
-   References:
-   [1] S. Rotter and M. Diesmann, Exact digital simulation of time-
-   invariant linear systems with applications to neuronal modeling,
-   Biol. Cybern. 81, 381-402 (1999)
+Description
++++++++++++
 
-   Sends: CurrentEvent
+This device produces an AC input sent by CurrentEvents. The
+current is given by
 
-   Author: Johan Hake, Spring 2003
+.. math::
 
-   SeeAlso: Device, StimulatingDevice, dc_generator
-*/
+        I(t) = offset + amplitude * \sin ( om * t + \phi )
+
+where
+
+.. math::
+
+    om  = 2 * \pi * frequency \\
+    \phi = phase / 180 * \pi
+
+Parameters
+++++++++++
+
+==========   ======   ====================================
+ amplitude   pA       Amplitude of sine current
+ offset      pA       Constant amplitude offset
+ frequency   Hz       Frequency
+ phase       degree   Phase of sine current (0-360 deg)
+==========   ======   ====================================
+
+Setting start and stop only windows the current as defined above. It does not shift
+the time axis. See :doc:`stimulating_the_network` for details.
+
+References
+++++++++++
+
+.. [1] Rotter S and Diesmann M (1999). Exact digital simulation of time-
+       invariant linear systems with applications to neuronal modeling,
+       Biol. Cybern. 81, 381-402. DOI: https://doi.org/10.1007/s004220050570
+
+Sends
++++++
+
+CurrentEvent
+
+See also
+++++++++
+
+dc_generator, noise_generator, step_current_generator
+
+EndUserDocs */
 
 namespace nest
 {
-class ac_generator : public Node
+
+class ac_generator : public DeviceNode
 {
 
 public:
@@ -74,7 +103,27 @@ public:
     return false;
   }
 
+  //! Allow multimeter to connect to local instances
+  bool
+  local_receiver() const
+  {
+    return true;
+  }
+
+  Name
+  get_element_type() const
+  {
+    return names::stimulator;
+  }
+
   port send_test_event( Node&, rport, synindex, bool );
+
+  using Node::handle;
+  using Node::handles_test_event;
+
+  void handle( DataLoggingRequest& );
+
+  port handles_test_event( DataLoggingRequest&, rport );
 
   void get_status( DictionaryDatum& ) const;
   void set_status( const DictionaryDatum& );
@@ -97,9 +146,11 @@ private:
     double phi_deg_; //!< Phase of sine current (0-360 deg)
 
     Parameters_(); //!< Sets default parameter values
+    Parameters_( const Parameters_& );
+    Parameters_& operator=( const Parameters_& p );
 
-    void get( DictionaryDatum& ) const; //!< Store current values in dictionary
-    void set( const DictionaryDatum& ); //!< Set values from dicitonary
+    void get( DictionaryDatum& ) const;             //!< Store current values in dictionary
+    void set( const DictionaryDatum&, Node* node ); //!< Set values from dictionary
   };
 
   // ------------------------------------------------------------
@@ -108,10 +159,30 @@ private:
   {
     double y_0_;
     double y_1_;
+    double I_; //!< Instantaneous current value; used for recording current
+               //!< Required to handle current values when device is inactive
 
     State_(); //!< Sets default parameter values
 
     void get( DictionaryDatum& ) const; //!< Store current values in dictionary
+  };
+
+  // ------------------------------------------------------------
+
+  // The next two classes need to be friends to access the State_ class/member
+  friend class RecordablesMap< ac_generator >;
+  friend class UniversalDataLogger< ac_generator >;
+
+  // ------------------------------------------------------------
+
+  /**
+   * Buffers of the model.
+   */
+  struct Buffers_
+  {
+    Buffers_( ac_generator& );
+    Buffers_( const Buffers_&, ac_generator& );
+    UniversalDataLogger< ac_generator > logger_;
   };
 
   // ------------------------------------------------------------
@@ -128,19 +199,24 @@ private:
     double A_11_;
   };
 
+  double
+  get_I_() const
+  {
+    return S_.I_;
+  }
+
   // ------------------------------------------------------------
 
   StimulatingDevice< CurrentEvent > device_;
+  static RecordablesMap< ac_generator > recordablesMap_;
   Parameters_ P_;
   State_ S_;
   Variables_ V_;
+  Buffers_ B_;
 };
 
 inline port
-ac_generator::send_test_event( Node& target,
-  rport receptor_type,
-  synindex syn_id,
-  bool )
+ac_generator::send_test_event( Node& target, rport receptor_type, synindex syn_id, bool )
 {
   device_.enforce_single_syn_type( syn_id );
 
@@ -150,19 +226,31 @@ ac_generator::send_test_event( Node& target,
   return target.handles_test_event( e, receptor_type );
 }
 
+inline port
+ac_generator::handles_test_event( DataLoggingRequest& dlr, rport receptor_type )
+{
+  if ( receptor_type != 0 )
+  {
+    throw UnknownReceptorType( receptor_type, get_name() );
+  }
+  return B_.logger_.connect_logging_device( dlr, recordablesMap_ );
+}
+
 inline void
 ac_generator::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d );
   device_.get_status( d );
+
+  ( *d )[ names::recordables ] = recordablesMap_.get_list();
 }
 
 inline void
 ac_generator::set_status( const DictionaryDatum& d )
 {
   Parameters_ ptmp = P_; // temporary copy in case of errors
-  ptmp.set( d );         // throws if BadProperty
+  ptmp.set( d, this );   // throws if BadProperty
 
   // State_ is read-only
 
@@ -174,5 +262,7 @@ ac_generator::set_status( const DictionaryDatum& d )
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;
 }
-}
+
+} // namespace
+
 #endif // AC_GENERATOR_H

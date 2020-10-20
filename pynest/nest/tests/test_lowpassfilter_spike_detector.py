@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# test_lowpassfilter_spike_detector.py
+# test_fast_trace_computer.py
 #
 # This file is part of NEST.
 #
@@ -126,7 +126,7 @@ class LowpassFilterSpikeDetector(unittest.TestCase):
     def test_Defaults(self):
         """ 1) Checking default values. """
 
-        lpfsd = nest.Create('lowpassfilter_spike_detector')
+        lpfsd = nest.Create('fast_trace_computer')
         st = nest.GetStatus(lpfsd)[0]
         self.assertAlmostEquals(st['tau_filter'], 30.)
         self.assertEquals(st['record_spikes'], False)
@@ -138,7 +138,7 @@ class LowpassFilterSpikeDetector(unittest.TestCase):
         nest.ResetKernel()
         set_start_times = [0., 4.]
         set_stop_times = [2., 6.]
-        lpfsd = nest.Create('lowpassfilter_spike_detector', 1,
+        lpfsd = nest.Create('fast_trace_computer', 1,
                             params={'filter_start_times': set_start_times,
                                     'filter_stop_times': set_stop_times,
                                     'filter_report_interval': 2.,
@@ -164,7 +164,7 @@ class LowpassFilterSpikeDetector(unittest.TestCase):
         nest.ResetKernel()
         set_start_times = [0.0, 5.5, 9.0]
         set_stop_times = [1.0, 8.5, 10.0]
-        lpfsd = nest.Create('lowpassfilter_spike_detector', 1,
+        lpfsd = nest.Create('fast_trace_computer', 1,
                             params={'filter_start_times': set_start_times,
                                     'filter_stop_times': set_stop_times,
                                     'filter_report_interval': 2.})
@@ -191,7 +191,7 @@ class LowpassFilterSpikeDetector(unittest.TestCase):
 
         nest.ResetKernel()
         nest.SetKernelStatus({'local_num_threads': 1, 'resolution': 0.1})
-        lpfsd = nest.Create('lowpassfilter_spike_detector', 1,
+        lpfsd = nest.Create('fast_trace_computer', 1,
                             params={'filter_start_times': start_times,
                                     'filter_stop_times': stop_times,
                                     'filter_report_interval': 1.})
@@ -230,7 +230,7 @@ class LowpassFilterSpikeDetector(unittest.TestCase):
                 nest.ResetKernel()
                 nest.SetKernelStatus({'local_num_threads': 1,
                                       'resolution': 0.1})
-                lpfsd = nest.Create('lowpassfilter_spike_detector', 1,
+                lpfsd = nest.Create('fast_trace_computer', 1,
                                     params={'filter_start_times': start_times,
                                             'filter_stop_times': stop_times,
                                             'filter_report_interval':
@@ -293,7 +293,7 @@ class LowpassFilterSpikeDetector(unittest.TestCase):
             nest.ResetKernel()
             nest.SetKernelStatus({'local_num_threads': threads,
                                   'resolution': 0.1})
-            lpfsd = nest.Create('lowpassfilter_spike_detector', 1,
+            lpfsd = nest.Create('fast_trace_computer', 1,
                                 params={'filter_start_times': start_times,
                                         'filter_stop_times': stop_times,
                                         'filter_report_interval':

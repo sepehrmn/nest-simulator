@@ -20,7 +20,7 @@
  *
  */
 
-/* BeginDocumentation
+/** @BeginDocumentation
 
 Name: testsuite::ticket-683 - Ensure that NEST raises error when number of threads changed too late.
 
@@ -40,9 +40,9 @@ Author: Maximilian Schmidt, 2014-10-08
 M_ERROR setverbosity
 
 [
-  { /iaf_neuron /test_neuron CopyModel }
+  { /iaf_psc_alpha /test_neuron CopyModel }
   { /static_synapse /test_synapse CopyModel }
-  { /iaf_neuron << /V_reset -100. >> SetDefaults }
+  { /iaf_psc_alpha << /V_reset -100. >> SetDefaults }
   { /static_synapse << /weight 10. >> SetDefaults }  
 ]
 {
@@ -59,14 +59,14 @@ M_ERROR setverbosity
      { 
        ResetKernel
        task        % this executes the task
-       0 kstatdict SetStatus
+       kstatdict SetKernelStatus
      } fail_or_die
 
 	 % copying/setting defaults after setting threads
 	 % this should pass
      { 
        ResetKernel
-       0 kstatdict SetStatus
+       kstatdict SetKernelStatus
        task        % this executes the task
      } pass_or_die
 

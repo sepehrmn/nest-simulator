@@ -17,10 +17,7 @@
 # You should have received a copy of the GNU General Public License
 # along with NEST.  If not, see <http://www.gnu.org/licenses/>.
 set( conngen_sources
-    conngenmodule.h
-    conngenmodule.cpp
-    cg_connect.h
-    cg_connect.cpp
+    conngenmodule.h conngenmodule.cpp
     conngendatum.h conngendatum.cpp
     conngen.h conngen.cpp
     )
@@ -38,10 +35,14 @@ target_include_directories( conngen PRIVATE
     )
 
 install( TARGETS conngen
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}
+    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/nest
+    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/nest
     RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
     )
 
 install( DIRECTORY sli
     DESTINATION ${CMAKE_INSTALL_DATADIR} )
+
+FILTER_HEADERS("${conngen_sources}" install_headers )
+install( FILES ${install_headers}
+    DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/nest)

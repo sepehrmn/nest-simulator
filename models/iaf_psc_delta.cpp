@@ -28,6 +28,7 @@
 #include <limits>
 
 // Includes from libnestutil:
+#include "dict_util.h"
 #include "numerics.h"
 
 // Includes from nestkernel:
@@ -100,71 +101,88 @@ nest::iaf_psc_delta::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::C_m, c_m_ );
   def< double >( d, names::tau_m, tau_m_ );
   def< double >( d, names::t_ref, t_ref_ );
-  def< bool >( d, "refractory_input", with_refr_input_ );
+  def< bool >( d, names::refractory_input, with_refr_input_ );
 }
 
 double
-nest::iaf_psc_delta::Parameters_::set( const DictionaryDatum& d )
+nest::iaf_psc_delta::Parameters_::set( const DictionaryDatum& d, Node* node )
 {
   // if E_L_ is changed, we need to adjust all variables defined relative to
   // E_L_
   const double ELold = E_L_;
-  updateValue< double >( d, names::E_L, E_L_ );
+  updateValueParam< double >( d, names::E_L, E_L_, node );
   const double delta_EL = E_L_ - ELold;
 
-  if ( updateValue< double >( d, names::V_reset, V_reset_ ) )
+  if ( updateValueParam< double >( d, names::V_reset, V_reset_, node ) )
+  {
     V_reset_ -= E_L_;
+  }
   else
+  {
     V_reset_ -= delta_EL;
+  }
 
-  if ( updateValue< double >( d, names::V_th, V_th_ ) )
+  if ( updateValueParam< double >( d, names::V_th, V_th_, node ) )
+  {
     V_th_ -= E_L_;
+  }
   else
+  {
     V_th_ -= delta_EL;
+  }
 
-  if ( updateValue< double >( d, names::V_min, V_min_ ) )
+  if ( updateValueParam< double >( d, names::V_min, V_min_, node ) )
+  {
     V_min_ -= E_L_;
+  }
   else
+  {
     V_min_ -= delta_EL;
+  }
 
-  updateValue< double >( d, names::I_e, I_e_ );
-  updateValue< double >( d, names::C_m, c_m_ );
-  updateValue< double >( d, names::tau_m, tau_m_ );
-  updateValue< double >( d, names::t_ref, t_ref_ );
-
+  updateValueParam< double >( d, names::I_e, I_e_, node );
+  updateValueParam< double >( d, names::C_m, c_m_, node );
+  updateValueParam< double >( d, names::tau_m, tau_m_, node );
+  updateValueParam< double >( d, names::t_ref, t_ref_, node );
   if ( V_reset_ >= V_th_ )
+  {
     throw BadProperty( "Reset potential must be smaller than threshold." );
-
+  }
   if ( c_m_ <= 0 )
+  {
     throw BadProperty( "Capacitance must be >0." );
-
+  }
   if ( t_ref_ < 0 )
+  {
     throw BadProperty( "Refractory time must not be negative." );
-
+  }
   if ( tau_m_ <= 0 )
+  {
     throw BadProperty( "Membrane time constant must be > 0." );
+  }
 
-  updateValue< bool >( d, "refractory_input", with_refr_input_ );
+  updateValueParam< bool >( d, names::refractory_input, with_refr_input_, node );
 
   return delta_EL;
 }
 
 void
-nest::iaf_psc_delta::State_::get( DictionaryDatum& d,
-  const Parameters_& p ) const
+nest::iaf_psc_delta::State_::get( DictionaryDatum& d, const Parameters_& p ) const
 {
   def< double >( d, names::V_m, y3_ + p.E_L_ ); // Membrane potential
 }
 
 void
-nest::iaf_psc_delta::State_::set( const DictionaryDatum& d,
-  const Parameters_& p,
-  double delta_EL )
+nest::iaf_psc_delta::State_::set( const DictionaryDatum& d, const Parameters_& p, double delta_EL, Node* node )
 {
-  if ( updateValue< double >( d, names::V_m, y3_ ) )
+  if ( updateValueParam< double >( d, names::V_m, y3_, node ) )
+  {
     y3_ -= p.E_L_;
+  }
   else
+  {
     y3_ -= delta_EL;
+  }
 }
 
 nest::iaf_psc_delta::Buffers_::Buffers_( iaf_psc_delta& n )
@@ -230,23 +248,20 @@ nest::iaf_psc_delta::calibrate()
   V_.P30_ = 1 / P_.c_m_ * ( 1 - V_.P33_ ) * P_.tau_m_;
 
 
-  // TauR specifies the length of the absolute refractory period as
+  // t_ref_ specifies the length of the absolute refractory period as
   // a double in ms. The grid based iaf_psp_delta can only handle refractory
   // periods that are integer multiples of the computation step size (h).
   // To ensure consistency with the overall simulation scheme such conversion
   // should be carried out via objects of class nest::Time. The conversion
   // requires 2 steps:
-  //     1. A time object r is constructed defining  representation of
-  //        TauR in tics. This representation is then converted to computation
+  //     1. A time object r is constructed, defining representation of
+  //        t_ref_ in tics. This representation is then converted to computation
   //        time steps again by a strategy defined by class nest::Time.
   //     2. The refractory time in units of steps is read out get_steps(), a
   //        member function of class nest::Time.
   //
-  // The definition of the refractory period of the iaf_psc_delta is consistent
-  // the one of iaf_neuron_ps.
-  //
-  // Choosing a TauR that is not an integer multiple of the computation time
-  // step h will leed to accurate (up to the resolution h) and self-consistent
+  // Choosing a t_ref_ that is not an integer multiple of the computation time
+  // step h will lead to accurate (up to the resolution h) and self-consistent
   // results. However, a neuron model capable of operating with real valued
   // spike time may exhibit a different effective refractory time.
 
@@ -260,12 +275,9 @@ nest::iaf_psc_delta::calibrate()
  */
 
 void
-nest::iaf_psc_delta::update( Time const& origin,
-  const long from,
-  const long to )
+nest::iaf_psc_delta::update( Time const& origin, const long from, const long to )
 {
-  assert(
-    to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
+  assert( to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
   assert( from < to );
 
   const double h = Time::get_resolution().get_ms();
@@ -274,8 +286,7 @@ nest::iaf_psc_delta::update( Time const& origin,
     if ( S_.r_ == 0 )
     {
       // neuron not refractory
-      S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_
-        + B_.spikes_.get_value( lag );
+      S_.y3_ = V_.P30_ * ( S_.y0_ + P_.I_e_ ) + V_.P33_ * S_.y3_ + B_.spikes_.get_value( lag );
 
       // if we have accumulated spikes from refractory period,
       // add and reset accumulator
@@ -293,10 +304,14 @@ nest::iaf_psc_delta::update( Time const& origin,
       // read spikes from buffer and accumulate them, discounting
       // for decay until end of refractory period
       if ( P_.with_refr_input_ )
-        S_.refr_spikes_buffer_ +=
-          B_.spikes_.get_value( lag ) * std::exp( -S_.r_ * h / P_.tau_m_ );
+      {
+        S_.refr_spikes_buffer_ += B_.spikes_.get_value( lag ) * std::exp( -S_.r_ * h / P_.tau_m_ );
+      }
       else
-        B_.spikes_.get_value( lag ); // clear buffer entry, ignore spike
+      {
+        // clear buffer entry, ignore spike
+        B_.spikes_.get_value( lag );
+      }
 
       --S_.r_;
     }
@@ -325,29 +340,26 @@ nest::iaf_psc_delta::update( Time const& origin,
 void
 nest::iaf_psc_delta::handle( SpikeEvent& e )
 {
-  assert( e.get_delay() > 0 );
+  assert( e.get_delay_steps() > 0 );
 
   // EX: We must compute the arrival time of the incoming spike
   //     explicity, since it depends on delay and offset within
   //     the update cycle.  The way it is done here works, but
   //     is clumsy and should be improved.
   B_.spikes_.add_value(
-    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
-    e.get_weight() * e.get_multiplicity() );
+    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() * e.get_multiplicity() );
 }
 
 void
 nest::iaf_psc_delta::handle( CurrentEvent& e )
 {
-  assert( e.get_delay() > 0 );
+  assert( e.get_delay_steps() > 0 );
 
   const double c = e.get_current();
   const double w = e.get_weight();
 
   // add weighted current; HEP 2002-10-04
-  B_.currents_.add_value(
-    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
-    w * c );
+  B_.currents_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), w * c );
 }
 
 void

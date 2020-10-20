@@ -21,6 +21,7 @@
 
 import re
 import os
+import shutil
 import errno
 
 
@@ -38,23 +39,23 @@ def cut_it(separator, text):
 
 
 def check_ifdef(item, filetext, docstring):
-        """
-        Check the 'ifdef' context
-        -------------------------
+    """
+    Check the 'ifdef' context
+    -------------------------
 
-        If there is an 'ifdef' requirement write it to the data.
-        """
-        ifdefstring = r'(\#ifdef((.*?)\n(.*?)\n*))\#endif'
-        require_reg = re.compile('HAVE\_((.*?)*)\n')
-        # every doc in an #ifdef
-        ifdefs = re.findall(ifdefstring, filetext, re.DOTALL)
-        for ifitem in ifdefs:
-            for str_ifdef in ifitem:
-                initems = re.findall(docstring, str_ifdef, re.DOTALL)
-                for initem in initems:
-                    if item == initem:
-                        features = require_reg.search(str_ifdef)
-                        return features.group()
+    If there is an 'ifdef' requirement write it to the data.
+    """
+    ifdefstring = r'(\#ifdef((.*?)\n(.*?)\n*))\#endif'
+    require_reg = re.compile('HAVE\_((.*?)*)\n')
+    # every doc in an #ifdef
+    ifdefs = re.findall(ifdefstring, filetext, re.DOTALL)
+    for ifitem in ifdefs:
+        for str_ifdef in ifitem:
+            initems = re.findall(docstring, str_ifdef, re.DOTALL)
+            for initem in initems:
+                if item == initem:
+                    features = require_reg.search(str_ifdef)
+                    return features.group()
 
 
 def makedirs(path):
@@ -67,7 +68,7 @@ def makedirs(path):
     try:
         os.makedirs(path)
     except OSError as exc:
-        if exc.errno != errno.EEXIST or os.path.isdir(path):
+        if exc.errno != errno.EEXIST or not os.path.isdir(path):
             raise
 
 
@@ -75,6 +76,41 @@ def create_helpdirs(path):
     """
     Create the directories for the help files.
     """
-
     makedirs(os.path.join(path, 'sli'))
     makedirs(os.path.join(path, 'cc'))
+
+
+def delete_helpdir(path):
+    """
+    Delete the directories for the help files.
+    """
+    try:
+        shutil.rmtree(path)
+    except OSError as exc:
+        if exc.errno != errno.ENOENT:
+            raise
+
+
+def help_generation_required():
+    """
+    Check whether help extraction/installation is required.
+
+    The check is based on the setting of the environment variable
+    NEST_INSTALL_NODOC. If the variable is set, this function returns
+    False, if not, it returns True.
+
+    A corresponding message is printed if print_msg is True. The
+    message is omitted if print_msg is set to False.
+    """
+
+    blue = "\033[94m"
+    noblue = "\033[0m"
+
+    if "NEST_INSTALL_NODOC" in os.environ:
+        msg = "Not extracting help information for target 'install-nodoc'."
+        print(blue + msg + noblue)
+        return False
+    else:
+        msg = "Extracting help information. This may take a little while."
+        print(blue + msg + noblue)
+        return True

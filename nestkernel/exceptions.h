@@ -345,9 +345,7 @@ class IncompatibleReceptorType : public KernelException
   std::string event_type_;
 
 public:
-  IncompatibleReceptorType( long receptor_type,
-    std::string name,
-    std::string event )
+  IncompatibleReceptorType( long receptor_type, std::string name, std::string event )
     : KernelException( "IncompatibleReceptorType" )
     , receptor_type_( receptor_type )
     , name_( name )
@@ -509,12 +507,22 @@ public:
   {
   }
 
+  UnexpectedEvent( std::string msg )
+    : KernelException( "UnexpectedEvent" )
+    , msg_( msg )
+  {
+  }
+
   ~UnexpectedEvent() throw()
   {
   }
 
   std::string message() const;
+
+private:
+  std::string msg_;
 };
+
 
 /**
  * Exception to be thrown by a Connection object if
@@ -606,12 +614,14 @@ class DimensionMismatch : public KernelException
 {
   int expected_;
   int provided_;
+  std::string msg_;
 
 public:
   DimensionMismatch()
     : KernelException( "DimensionMismatch" )
-    , expected_()
-    , provided_()
+    , expected_( -1 )
+    , provided_( -1 )
+    , msg_( "" )
   {
   }
 
@@ -619,8 +629,18 @@ public:
     : KernelException( "DimensionMismatch" )
     , expected_( expected )
     , provided_( provided )
+    , msg_( "" )
   {
   }
+
+  DimensionMismatch( const std::string& msg )
+    : KernelException( "DimensionMismatch" )
+    , expected_( -1 )
+    , provided_( -1 )
+    , msg_( msg )
+  {
+  }
+
 
   ~DimensionMismatch() throw()
   {
@@ -642,25 +662,6 @@ public:
   {
   }
   ~DistributionError() throw()
-  {
-  }
-
-  std::string message() const;
-};
-
-/**
- * Exception to be thrown if the wrong argument type
- * is given to a function
- * @ingroup KernelExceptions
- */
-class SubnetExpected : public KernelException
-{
-public:
-  SubnetExpected()
-    : KernelException( "SubnetExpected" )
-  {
-  }
-  ~SubnetExpected() throw()
   {
   }
 
@@ -703,9 +704,7 @@ public:
    * @param property  name of property conflicting
    * @param value     value of property conflicting
    */
-  InvalidDefaultResolution( const std::string& model,
-    const Name& property,
-    const Time& value )
+  InvalidDefaultResolution( const std::string& model, const Name& property, const Time& value )
     : KernelException( "InvalidDefaultResolution" )
     , model_( model )
     , prop_( property )
@@ -741,9 +740,7 @@ public:
    * @param property  name of property conflicting
    * @param value     value of property conflicting
    */
-  InvalidTimeInModel( const std::string& model,
-    const Name& property,
-    const Time& value )
+  InvalidTimeInModel( const std::string& model, const Name& property, const Time& value )
     : KernelException( "InvalidTimeInModel" )
     , model_( model )
     , prop_( property )
@@ -777,9 +774,7 @@ public:
    * @param property  name of property conflicting
    * @param value     value of property conflicting
    */
-  StepMultipleRequired( const std::string& model,
-    const Name& property,
-    const Time& value )
+  StepMultipleRequired( const std::string& model, const Name& property, const Time& value )
     : KernelException( "StepMultipleRequired" )
     , model_( model )
     , prop_( property )
@@ -899,6 +894,61 @@ private:
   const std::string model_;
 };
 
+/**
+ * Exception to be thrown if when trying to delete an entry from
+ * DynamicRecordablesMap that does not exist.
+ * @ingroup KernelExceptions
+ */
+class KeyError : public KernelException
+{
+  const Name key_;
+  const std::string map_type_;
+  const std::string map_op_;
+
+public:
+  KeyError( const Name& key, const std::string& map_type, const std::string& map_op )
+    : KernelException( "KeyError" )
+    , key_( key )
+    , map_type_( map_type )
+    , map_op_( map_op )
+  {
+  }
+
+  ~KeyError() throw()
+  {
+  }
+  std::string message() const;
+};
+
+/**
+ * Exception to be thrown if an internal error occures.
+ * @ingroup KernelExceptions
+*/
+class InternalError : public KernelException
+{
+  std::string msg_;
+
+public:
+  //! @param detailed error message
+  InternalError()
+    : KernelException( "InternalError" )
+    , msg_()
+  {
+  }
+  InternalError( std::string msg )
+    : KernelException( "InternalError" )
+    , msg_( msg )
+  {
+  }
+
+  ~InternalError() throw()
+  {
+  }
+
+  std::string message() const;
+};
+
+
 #ifdef HAVE_MUSIC
 /**
  * Exception to be thrown if a music_event_out_proxy is generated, but the music
@@ -976,8 +1026,7 @@ public:
    *             names of copied models are reported correctly.
    * @param model     name of model causing problem
    */
-  MUSICPortAlreadyPublished( const std::string& model,
-    const std::string& portname )
+  MUSICPortAlreadyPublished( const std::string& model, const std::string& portname )
     : KernelException( "MUSICPortAlreadyPublished" )
     , model_( model )
     , portname_( portname )
@@ -1036,9 +1085,7 @@ public:
   *             names of copied models are reported correctly.
    * @param model     name of model causing problem
    */
-  MUSICChannelUnknown( const std::string& model,
-    const std::string& portname,
-    int channel )
+  MUSICChannelUnknown( const std::string& model, const std::string& portname, int channel )
     : KernelException( "MUSICChannelUnknown" )
     , portname_( portname )
     , channel_( channel )
@@ -1093,9 +1140,7 @@ public:
   *             names of copied models are reported correctly.
    * @param model     name of model causing problem
    */
-  MUSICChannelAlreadyMapped( const std::string& model,
-    const std::string& portname,
-    int channel )
+  MUSICChannelAlreadyMapped( const std::string& model, const std::string& portname, int channel )
     : KernelException( "MUSICChannelAlreadyMapped" )
     , portname_( portname )
     , channel_( channel )
@@ -1113,6 +1158,92 @@ private:
   const int channel_;
   const std::string model_;
 };
+
 #endif
-}
+
+class UnmatchedSteps : public KernelException
+{
+public:
+  UnmatchedSteps( int steps_left, int total_steps )
+    : current_step_( total_steps - steps_left )
+    , total_steps_( total_steps )
+  {
+  }
+
+  std::string message() const;
+
+private:
+  const int current_step_;
+  const int total_steps_;
+};
+
+class BackendPrepared : public KernelException
+{
+public:
+  BackendPrepared( const std::string& backend )
+    : backend_( backend )
+  {
+  }
+
+  BackendPrepared( std::string&& backend )
+    : backend_( std::move( backend ) )
+  {
+  }
+
+
+  std::string message() const;
+
+private:
+  const std::string backend_;
+};
+
+class BackendNotPrepared : public KernelException
+{
+public:
+  BackendNotPrepared( const std::string& backend )
+    : backend_( backend )
+  {
+  }
+
+  BackendNotPrepared( std::string&& backend )
+    : backend_( std::move( backend ) )
+  {
+  }
+
+  std::string message() const;
+
+private:
+  const std::string backend_;
+};
+
+class LayerExpected : public KernelException
+{
+public:
+  LayerExpected()
+    : KernelException( "LayerExpected" )
+  {
+  }
+  ~LayerExpected() throw()
+  {
+  }
+
+  std::string message() const;
+};
+
+class LayerNodeExpected : public KernelException
+{
+public:
+  LayerNodeExpected()
+    : KernelException( "LayerNodeExpected" )
+  {
+  }
+  ~LayerNodeExpected() throw()
+  {
+  }
+
+  std::string message() const;
+};
+
+} // namespace nest
+
 #endif
