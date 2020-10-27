@@ -1,5 +1,5 @@
 /*
- *  fast_trace_recorder.cpp
+ *  fast_trace_computer.cpp
  *
  *  This file is part of NEST.
  *
@@ -20,7 +20,7 @@
  *
  */
 
-#include "fast_trace_recorder.h"
+#include "fast_trace_computer.h"
 
 // C++ includes:
 #include <numeric>
@@ -41,7 +41,7 @@
 #include "doubledatum.h"
 #include "integerdatum.h"
 
-nest::fast_trace_recorder::fast_trace_recorder()
+nest::fast_trace_computer::fast_trace_computer()
   : Node()
   , has_proxies_( false )
   , local_receiver_( true )

@@ -110,7 +110,7 @@
 #include "correlospinmatrix_detector.h"
 #include "fast_trace_computer.h"
 #include "multimeter.h"
-#include "spike_detector.h"
+#include "spike_recorder.h"
 #include "spin_detector.h"
 #include "volume_transmitter.h"
 #include "weight_recorder.h"
@@ -124,6 +124,7 @@
 #include "diffusion_connection.h"
 #include "gap_junction.h"
 #include "ht_connection.h"
+#include "jonke_connection.h"
 #include "quantal_stp_connection.h"
 #include "quantal_stp_connection_impl.h"
 #include "rate_connection_delayed.h"
@@ -183,13 +184,6 @@ const std::string
 ModelsModule::name( void ) const
 {
   return std::string( "NEST Standard Models Module" ); // Return name of the module
-}
-
-const std::string
-ModelsModule::commandstring( void ) const
-{
-  // TODO: Move models-init.sli to sli_neuron....
-  return std::string( "(models-init) run" );
 }
 
 //-------------------------------------------------------------------------------------
@@ -259,106 +253,10 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< ginzburg_neuron >( "ginzburg_neuron" );
   kernel().model_manager.register_node_model< mcculloch_pitts_neuron >( "mcculloch_pitts_neuron" );
   kernel().model_manager.register_node_model< izhikevich >( "izhikevich" );
-<<<<<<< HEAD
-  kernel().model_manager.register_node_model< spike_dilutor >(
-    "spike_dilutor" );
-
-  kernel().model_manager.register_node_model< fast_trace_computer >(
-    "fast_trace_computer" );
-  kernel().model_manager.register_node_model< spike_detector >(
-    "spike_detector" );
-  kernel().model_manager.register_node_model< weight_recorder >(
-    "weight_recorder" );
-  kernel().model_manager.register_node_model< spin_detector >(
-    "spin_detector" );
-  kernel().model_manager.register_node_model< Multimeter >( "multimeter" );
-  kernel().model_manager.register_node_model< correlation_detector >(
-    "correlation_detector" );
-  kernel().model_manager.register_node_model< correlomatrix_detector >(
-    "correlomatrix_detector" );
-  kernel().model_manager.register_node_model< correlospinmatrix_detector >(
-    "correlospinmatrix_detector" );
-  kernel().model_manager.register_node_model< volume_transmitter >(
-    "volume_transmitter" );
-
-  // Create voltmeter as a multimeter pre-configured to record V_m.
-  /*BeginDocumentation
-  Name: voltmeter - Device to record membrane potential from neurons.
-  Synopsis: voltmeter Create
-
-  Description:
-  A voltmeter records the membrane potential (V_m) of connected nodes
-  to memory, file or stdout.
-
-  By default, voltmeters record values once per ms. Set the parameter
-  /interval to change this. The recording interval cannot be smaller
-  than the resolution.
-
-  Results are returned in the /events entry of the status dictionary,
-  which contains membrane potential as vector /V_m and pertaining
-  times as vector /times and node GIDs as /senders, if /withtime and
-  /withgid are set, respectively.
-
-  Accumulator mode:
-  Voltmeter can operate in accumulator mode. In this case, values for all
-  recorded variables are added across all recorded nodes (but kept separate in
-  time). This can be useful to record average membrane potential in a
-  population.
-
-  To activate accumulator mode, either set /to_accumulator to true, or set
-  /record_to [ /accumulator ].  In accumulator mode, you cannot record to file,
-  to memory, to screen, with GID or with weight. You must activate accumulator
-  mode before simulating. Accumulator data is never written to file. You must
-  extract it from the device using GetStatus.
-
-  Remarks:
-   - The voltmeter model is implemented as a multimeter preconfigured to
-     record /V_m.
-   - The set of variables to record and the recording interval must be set
-     BEFORE the voltmeter is connected to any node, and cannot be changed
-     afterwards.
-   - A voltmeter cannot be frozen.
-   - If you record with voltmeter in accumulator mode and some of the nodes
-     you record from are frozen and others are not, data will only be collected
-     from the unfrozen nodes. Most likely, this will lead to confusing results,
-     so you should not use voltmeter with frozen nodes.
-
-  Parameters:
-       The following parameter can be set in the status dictionary:
-       interval     double - Recording interval in ms
-
-  Examples:
-  SLI ] /iaf_cond_alpha Create /n Set
-  SLI ] /voltmeter Create /vm Set
-  SLI ] vm << /interval 0.5 >> SetStatus
-  SLI ] vm n Connect
-  SLI ] 10 Simulate
-  SLI ] vm /events get info
-  --------------------------------------------------
-  Name                     Type                Value
-  --------------------------------------------------
-  senders                  intvectortype       <intvectortype>
-  times                    doublevectortype    <doublevectortype>
-  V_m                      doublevectortype    <doublevectortype>
-  --------------------------------------------------
-  Total number of entries: 3
-
-
-  Sends: DataLoggingRequest
-
-  SeeAlso: Device, RecordingDevice, multimeter
-  */
-  DictionaryDatum vmdict = DictionaryDatum( new Dictionary );
-  ArrayDatum ad;
-  ad.push_back( LiteralDatum( names::V_m.toString() ) );
-  ( *vmdict )[ names::record_from ] = ad;
-  const Name name = "voltmeter";
-  kernel().model_manager.register_preconf_node_model< Multimeter >(
-    name, vmdict, false );
-=======
   kernel().model_manager.register_node_model< spike_dilutor >( "spike_dilutor" );
 
-  kernel().model_manager.register_node_model< spike_detector >( "spike_detector" );
+  kernel().model_manager.register_node_model< fast_trace_computer >("fast_trace_computer" );
+  kernel().model_manager.register_node_model< spike_recorder >( "spike_recorder" );
   kernel().model_manager.register_node_model< weight_recorder >( "weight_recorder" );
   kernel().model_manager.register_node_model< spin_detector >( "spin_detector" );
   kernel().model_manager.register_node_model< multimeter >( "multimeter" );
@@ -367,7 +265,7 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< correlomatrix_detector >( "correlomatrix_detector" );
   kernel().model_manager.register_node_model< correlospinmatrix_detector >( "correlospinmatrix_detector" );
   kernel().model_manager.register_node_model< volume_transmitter >( "volume_transmitter" );
->>>>>>> master
+  
 
 #ifdef HAVE_GSL
   kernel().model_manager.register_node_model< iaf_chxk_2008 >( "iaf_chxk_2008" );
@@ -417,6 +315,7 @@ ModelsModule::init( SLIInterpreter* )
     "clopath_synapse", default_connection_model_flags | RegisterConnectionModelFlags::REQUIRES_CLOPATH_ARCHIVING );
   register_connection_model< ContDelayConnection >( "cont_delay_synapse" );
   register_connection_model< HTConnection >( "ht_synapse" );
+  register_connection_model< JonkeConnection >( "jonke_synapse" );
   register_connection_model< Quantal_StpConnection >( "quantal_stp_synapse" );
   register_connection_model< StaticConnection >( "static_synapse" );
   register_connection_model< StaticConnectionHomW >( "static_synapse_hom_w" );

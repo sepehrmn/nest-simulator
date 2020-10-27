@@ -108,8 +108,6 @@ extern const Name c;
 extern const Name c_1;
 extern const Name c_2;
 extern const Name c_3;
-extern const Name calibrate;
-extern const Name calibrate_node;
 extern const Name capacity;
 extern const Name center;
 extern const Name circular;
@@ -124,7 +122,6 @@ extern const Name continuous;
 extern const Name count_covariance;
 extern const Name count_histogram;
 extern const Name covariance;
-extern const Name currents;
 
 extern const Name Delta_T;
 extern const Name Delta_V;
@@ -187,39 +184,20 @@ extern const Name ellipsoidal;
 extern const Name elliptical;
 extern const Name eps;
 extern const Name equilibrate;
-extern const Name error;
 extern const Name eta;
 extern const Name events;
-extern const Name ex_spikes;
 extern const Name extent;
 
-<<<<<<< HEAD
-extern const Name F_lower;
-extern const Name F_mean;
-extern const Name F_std;
-extern const Name F_upper;
-extern const Name fbuffer_size;   //!< Recorder parameter
-extern const Name file;           //!< Recorder parameter
-extern const Name file_extension; //!< Recorder parameter
-extern const Name filename;       //!< Recorder parameter
-extern const Name
-  filenames; //!< Recorder parameter---keep, will disappear with NESTIO
-extern const Name filter_events; //!< Filter events for filtering device
-extern const Name filter_values; //!< Interval for filtering device
-extern const Name filter_report_interval; //!< Interval for filtering device
-extern const Name filter_start_times;     //!< Start times for filtering device
-extern const Name filter_stop_times;      //!< Stop times for filtering device
-extern const Name flush_after_simulate;   //!< Recorder parameter
-extern const Name flush_records;          //!< Recorder parameter
-extern const Name frequency;              //!< Signal modulation frequency
-extern const Name frozen;                 //!< Node parameter
-=======
 extern const Name file_extension;
 extern const Name filename;
 extern const Name filenames;
+extern const Name filter_events; 
+extern const Name filter_values; 
+extern const Name filter_report_interval; 
+extern const Name filter_start_times;     
+extern const Name filter_stop_times;      
 extern const Name frequency;
 extern const Name frozen;
->>>>>>> master
 
 extern const Name GABA_A;
 extern const Name GABA_B;
@@ -286,7 +264,6 @@ extern const Name I_syn_in;
 extern const Name Inact_h;
 extern const Name Inact_p;
 extern const Name Interpol_Order;
-extern const Name in_spikes;
 extern const Name indegree;
 extern const Name index_map;
 extern const Name individual_spike_trains;
@@ -452,7 +429,6 @@ extern const Name soma_inh;
 extern const Name sort_connections_by_source;
 extern const Name source;
 extern const Name spherical;
-extern const Name spike;
 extern const Name spike_dependent_threshold;
 extern const Name spike_multiplicities;
 extern const Name spike_times;
@@ -462,6 +438,7 @@ extern const Name state;
 extern const Name std;
 extern const Name std_mod;
 extern const Name stimulator;
+extern const Name step;
 extern const Name stop;
 extern const Name structural_plasticity_synapses;
 extern const Name structural_plasticity_update_interval;
@@ -479,8 +456,6 @@ extern const Name T_min;
 extern const Name Tstart;
 extern const Name Tstop;
 extern const Name t_clamp;
-extern const Name t_lag;
-extern const Name t_origin;
 extern const Name t_ref;
 extern const Name t_ref_abs;
 extern const Name t_ref_remaining;
@@ -569,33 +544,6 @@ extern const Name to_do;
 extern const Name total_num_virtual_procs;
 extern const Name type_id;
 
-<<<<<<< HEAD
-extern const Name
-  rate; //!< Specific to ppd_sup_generator and gamma_sup_generator
-extern const Name receptor_type;  //!< Connection parameter
-extern const Name receptor_types; //!< Publishing available types
-extern const Name record_from;    //!< Recorder parameter
-extern const Name record_spikes;  //!< Recorder parameter
-extern const Name record_to;      //!< Recorder parameter
-extern const Name
-  recordables; //!< List of recordable state data (Device parameters)
-extern const Name recorder; //!< Node type
-extern const Name
-  refractory_input; //!< Spikes arriving during refractory period are counted
-                    //!< (precise timing neurons)
-extern const Name registered; //!< Parameters for MUSIC devices
-extern const Name
-  relative_amplitude; //!< Signal modulation amplitude relative to mean
-extern const Name requires_symmetric; //!< Used in connector_model_impl
-extern const Name rho_0; //!< Specific to population point process model
-                         //!< (pp_pop_psc_delta)
-extern const Name rms;   //!< Root mean square
-extern const Name root_finding_epsilon; //!< Accuracy of the root of the
-//!< polynomial (precise timing neurons (Brette 2007))
-extern const Name rport;  //!< Connection parameters
-extern const Name rports; //!< Recorder parameter
-extern const Name rule;   //!< Connectivity-related
-=======
 extern const Name U;
 extern const Name U_m;
 extern const Name u;
@@ -603,11 +551,8 @@ extern const Name u_bar_bar;
 extern const Name u_bar_minus;
 extern const Name u_bar_plus;
 extern const Name u_ref_squared;
-extern const Name update;
-extern const Name update_node;
 extern const Name upper_right;
 extern const Name use_wfr;
->>>>>>> master
 
 extern const Name V_T;
 extern const Name V_T_star;
@@ -632,79 +577,6 @@ extern const Name voltage_reset_fraction;
 extern const Name vp;
 extern const Name vt;
 
-<<<<<<< HEAD
-extern const Name t_lag;     //!< Lag within a time slice
-extern const Name t_origin;  //!< Origin of a time-slice
-extern const Name t_ref;     //!< Refractory period
-extern const Name t_ref_abs; //!< Absolute refractory period, iaf_tum_2000
-extern const Name
-  t_ref_remaining;           //!< Time remaining till end of refractory state
-extern const Name t_ref_tot; //!< Total refractory period, iaf_tum_2000
-extern const Name t_spike;   //!< Time of last spike
-extern const Name target;    //!< Connection parameters
-extern const Name target_thread; //!< Connection parameters
-extern const Name targets;       //!< Connection parameters
-extern const Name tau_1;     //!< Specific to Kobayashi, Tsubo, Shinomoto 2009
-extern const Name tau_2;     //!< Specific to Kobayashi, Tsubo, Shinomoto 2009
-extern const Name tau_ahp;   //!< Specific to iaf_chxk_2008 neuron
-extern const Name tau_Ca;    //!< Rate of loss of calcium concentration
-extern const Name tau_D_KNa; //!< specific to Hill & Tononi 2005
-extern const Name tau_decay; //!< Synapse decay constant (beta fct decay)
-extern const Name tau_decay_AMPA;   //!< specific to Hill & Tononi 2005
-extern const Name tau_decay_GABA_A; //!< specific to Hill & Tononi 2005
-extern const Name tau_decay_GABA_B; //!< specific to Hill & Tononi 2005
-extern const Name tau_decay_NMDA;   //!< specific to Hill & Tononi 2005
-extern const Name tau_epsp;         //!< Specific to iaf_chs_2008 neuron
-extern const Name tau_eta; //!< Specific to population point process model
-                           //!< (pp_pop_psc_delta)
-extern const Name
-  tau_fac; //!< facilitation time constant (ms) (Tsodyks2_connection)
-extern const Name tau_filter; //!< filtering time constant (ms)
-extern const Name
-  tau_lcm;               //!< Least common multiple of tau_m, tau_ex and tau_in
-                         //!< (precise timing neurons (Brette 2007))
-extern const Name tau_m; //!< Membrane time constant
-extern const Name
-  tau_max; //!< Specific to correlation_and correlomatrix detector
-extern const Name tau_Mg_fast_NMDA;  //!< specific to Hill & Tononi 2005
-extern const Name tau_Mg_slow_NMDA;  //!< specific to Hill & Tononi 2005
-extern const Name tau_minus;         //!< used for ArchivingNode
-extern const Name tau_minus_triplet; //!< used for ArchivingNode
-extern const Name tau_P;             //!< specific to Hill & Tononi 2005
-extern const Name
-  tau_rec; //!< time constant for recovery (ms) (Tsodyks2_connection)
-extern const Name tau_reset;       //!< Specific to iaf_chs_2008 neuron
-extern const Name tau_rise;        //!< Synapse rise constant (beta fct rise)
-extern const Name tau_rise_AMPA;   //!< specific to Hill & Tononi 2005
-extern const Name tau_rise_GABA_A; //!< specific to Hill & Tononi 2005
-extern const Name tau_rise_GABA_B; //!< specific to Hill & Tononi 2005
-extern const Name tau_rise_NMDA;   //!< specific to Hill & Tononi 2005
-extern const Name tau_rr;          //!< Other adaptation
-extern const Name tau_sfa;         //!< Other adaptation
-extern const Name tau_spike;       //!< Specific to Hill-Tononi (2005)
-extern const Name tau_stc;         //!< Specific to gif models
-extern const Name tau_syn;         //!< Synapse time constant
-extern const Name tau_syn_ex;      //!< Excitatory synaptic time constant
-extern const Name tau_syn_in;      //!< Inhibitory synaptic time constant
-extern const Name tau_theta;       //!< Specific to Hill-Tononi (2005)
-extern const Name tau_v;           //!< Specific to amat2_*
-extern const Name tau_vacant;      //!< Parameter for MSP dynamics
-extern const Name tau_w; //!< Specific to Brette & Gerstner 2005 (aeif_cond-*)
-extern const Name theta; //!< Did not compile without (theta neuron problem)
-extern const Name theta_eq;        //!< specific to Hill & Tononi 2005
-extern const Name thread;          //!< Node parameter
-extern const Name thread_local_id; //!< Thead-local ID of node,
-                                   //!< see Kunkel et al 2014, Sec 3.3.2
-extern const Name time_in_steps;   //!< Recorder parameter
-extern const Name times;           //!< Recorder parameter
-extern const Name to_accumulator;  //!< Recorder parameter
-extern const Name to_file;         //!< Recorder parameter
-extern const Name to_memory;       //!< Recorder parameter
-extern const Name to_screen;       //!< Recorder parameter
-extern const Name Tstart;          //!< Specific to correlation and
-                                   //!< correlomatrix detector
-extern const Name Tstop; //!< Specific to correlation and correlomatrix detector
-=======
 extern const Name w;
 extern const Name weight;
 extern const Name weight_per_lut_entry;
@@ -719,7 +591,6 @@ extern const Name wfr_tol;
 extern const Name with_reset;
 extern const Name Wmax;
 extern const Name Wmin;
->>>>>>> master
 
 extern const Name x;
 extern const Name x_bar;
