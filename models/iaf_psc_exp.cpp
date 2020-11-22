@@ -26,6 +26,7 @@
 #include <limits>
 
 // Includes from libnestutil:
+#include "dict_util.h"
 #include "numerics.h"
 #include "propagator_stability.h"
 
@@ -78,11 +79,14 @@ nest::iaf_psc_exp::Parameters_::Parameters_()
   , V_reset_( -70.0 - E_L_ ) // in mV
   , tau_ex_( 2.0 )           // in ms
   , tau_in_( 2.0 )           // in ms
+  , rho_( 0.01 )             // in 1/s
+  , delta_( 0.0 )            // in mV
 {
 }
 
 nest::iaf_psc_exp::State_::State_()
   : i_0_( 0.0 )
+  , i_1_( 0.0 )
   , i_syn_ex_( 0.0 )
   , i_syn_in_( 0.0 )
   , V_m_( 0.0 )
@@ -106,46 +110,71 @@ nest::iaf_psc_exp::Parameters_::get( DictionaryDatum& d ) const
   def< double >( d, names::tau_syn_ex, tau_ex_ );
   def< double >( d, names::tau_syn_in, tau_in_ );
   def< double >( d, names::t_ref, t_ref_ );
+  def< double >( d, names::rho, rho_ );
+  def< double >( d, names::delta, delta_ );
 }
 
 double
-nest::iaf_psc_exp::Parameters_::set( const DictionaryDatum& d )
+nest::iaf_psc_exp::Parameters_::set( const DictionaryDatum& d, Node* node )
 {
   // if E_L_ is changed, we need to adjust all variables defined relative to
   // E_L_
   const double ELold = E_L_;
-  updateValue< double >( d, names::E_L, E_L_ );
+  updateValueParam< double >( d, names::E_L, E_L_, node );
   const double delta_EL = E_L_ - ELold;
 
-  if ( updateValue< double >( d, names::V_reset, V_reset_ ) )
+  if ( updateValueParam< double >( d, names::V_reset, V_reset_, node ) )
+  {
     V_reset_ -= E_L_;
+  }
   else
+  {
     V_reset_ -= delta_EL;
+  }
 
-  if ( updateValue< double >( d, names::V_th, Theta_ ) )
+  if ( updateValueParam< double >( d, names::V_th, Theta_, node ) )
+  {
     Theta_ -= E_L_;
+  }
   else
+  {
     Theta_ -= delta_EL;
+  }
 
-  updateValue< double >( d, names::I_e, I_e_ );
-  updateValue< double >( d, names::C_m, C_ );
-  updateValue< double >( d, names::tau_m, Tau_ );
-  updateValue< double >( d, names::tau_syn_ex, tau_ex_ );
-  updateValue< double >( d, names::tau_syn_in, tau_in_ );
-  updateValue< double >( d, names::t_ref, t_ref_ );
-
+  updateValueParam< double >( d, names::I_e, I_e_, node );
+  updateValueParam< double >( d, names::C_m, C_, node );
+  updateValueParam< double >( d, names::tau_m, Tau_, node );
+  updateValueParam< double >( d, names::tau_syn_ex, tau_ex_, node );
+  updateValueParam< double >( d, names::tau_syn_in, tau_in_, node );
+  updateValueParam< double >( d, names::t_ref, t_ref_, node );
   if ( V_reset_ >= Theta_ )
+  {
     throw BadProperty( "Reset potential must be smaller than threshold." );
-
+  }
   if ( C_ <= 0 )
+  {
     throw BadProperty( "Capacitance must be strictly positive." );
-
+  }
   if ( Tau_ <= 0 || tau_ex_ <= 0 || tau_in_ <= 0 )
-    throw BadProperty(
-      "Membrane and synapse time constants must be strictly positive." );
-
+  {
+    throw BadProperty( "Membrane and synapse time constants must be strictly positive." );
+  }
   if ( t_ref_ < 0 )
+  {
     throw BadProperty( "Refractory time must not be negative." );
+  }
+
+  updateValue< double >( d, "rho", rho_ );
+  if ( rho_ < 0 )
+  {
+    throw BadProperty( "Stochastic firing intensity must not be negative." );
+  }
+
+  updateValue< double >( d, "delta", delta_ );
+  if ( delta_ < 0 )
+  {
+    throw BadProperty( "Width of threshold region must not be negative." );
+  }
 
   return delta_EL;
 }
@@ -157,14 +186,16 @@ nest::iaf_psc_exp::State_::get( DictionaryDatum& d, const Parameters_& p ) const
 }
 
 void
-nest::iaf_psc_exp::State_::set( const DictionaryDatum& d,
-  const Parameters_& p,
-  double delta_EL )
+nest::iaf_psc_exp::State_::set( const DictionaryDatum& d, const Parameters_& p, double delta_EL, Node* node )
 {
-  if ( updateValue< double >( d, names::V_m, V_m_ ) )
+  if ( updateValueParam< double >( d, names::V_m, V_m_, node ) )
+  {
     V_m_ -= p.E_L_;
+  }
   else
+  {
     V_m_ -= delta_EL;
+  }
 }
 
 nest::iaf_psc_exp::Buffers_::Buffers_( iaf_psc_exp& n )
@@ -253,43 +284,51 @@ nest::iaf_psc_exp::calibrate()
   V_.P20_ = P_.Tau_ / P_.C_ * ( 1.0 - V_.P22_ );
   // P20_ = h/C_;
 
-  // TauR specifies the length of the absolute refractory period as
+  // t_ref_ specifies the length of the absolute refractory period as
   // a double in ms. The grid based iaf_psc_exp can only handle refractory
   // periods that are integer multiples of the computation step size (h).
   // To ensure consistency with the overall simulation scheme such conversion
   // should be carried out via objects of class nest::Time. The conversion
   // requires 2 steps:
-  //     1. A time object r is constructed defining  representation of
-  //        TauR in tics. This representation is then converted to computation
+  //     1. A time object r is constructed, defining representation of
+  //        t_ref_ in tics. This representation is then converted to computation
   //        time steps again by a strategy defined by class nest::Time.
   //     2. The refractory time in units of steps is read out get_steps(), a
   //        member function of class nest::Time.
   //
-  // Choosing a TauR that is not an integer multiple of the computation time
-  // step h will leed to accurate (up to the resolution h) and self-consistent
+  // Choosing a t_ref_ that is not an integer multiple of the computation time
+  // step h will lead to accurate (up to the resolution h) and self-consistent
   // results. However, a neuron model capable of operating with real valued
   // spike time may exhibit a different effective refractory time.
 
   V_.RefractoryCounts_ = Time( Time::ms( P_.t_ref_ ) ).get_steps();
   // since t_ref_ >= 0, this can only fail in error
   assert( V_.RefractoryCounts_ >= 0 );
+
+  V_.rng_ = kernel().rng_manager.get_rng( get_thread() );
 }
 
 void
 nest::iaf_psc_exp::update( const Time& origin, const long from, const long to )
 {
-  assert(
-    to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
+  assert( to >= 0 && ( delay ) from < kernel().connection_manager.get_min_delay() );
   assert( from < to );
+
+  const double h = Time::get_resolution().get_ms();
 
   // evolve from timestep 'from' to timestep 'to' with steps of h each
   for ( long lag = from; lag < to; ++lag )
   {
     if ( S_.r_ref_ == 0 ) // neuron not refractory, so evolve V
-      S_.V_m_ = S_.V_m_ * V_.P22_ + S_.i_syn_ex_ * V_.P21ex_
-        + S_.i_syn_in_ * V_.P21in_ + ( P_.I_e_ + S_.i_0_ ) * V_.P20_;
+    {
+      S_.V_m_ =
+        S_.V_m_ * V_.P22_ + S_.i_syn_ex_ * V_.P21ex_ + S_.i_syn_in_ * V_.P21in_ + ( P_.I_e_ + S_.i_0_ ) * V_.P20_;
+    }
     else
-      --S_.r_ref_; // neuron is absolute refractory
+    {
+      // neuron is absolute refractory
+      --S_.r_ref_;
+    }
 
     // exponential decaying PSCs
     S_.i_syn_ex_ *= V_.P11ex_;
@@ -307,7 +346,8 @@ nest::iaf_psc_exp::update( const Time& origin, const long from, const long to )
     S_.i_syn_ex_ += V_.weighted_spikes_ex_;
     S_.i_syn_in_ += V_.weighted_spikes_in_;
 
-    if ( S_.V_m_ >= P_.Theta_ ) // threshold crossing
+    if ( ( P_.delta_ < 1e-10 and S_.V_m_ >= P_.Theta_ )                   // deterministic threshold crossing
+      or ( P_.delta_ > 1e-10 and V_.rng_->drand() < phi_() * h * 1e-3 ) ) // stochastic threshold crossing
     {
       S_.r_ref_ = V_.RefractoryCounts_;
       S_.V_m_ = P_.V_reset_;
@@ -330,22 +370,24 @@ nest::iaf_psc_exp::update( const Time& origin, const long from, const long to )
 void
 nest::iaf_psc_exp::handle( SpikeEvent& e )
 {
-  assert( e.get_delay() > 0 );
+  assert( e.get_delay_steps() > 0 );
 
   if ( e.get_weight() >= 0.0 )
-    B_.spikes_ex_.add_value( e.get_rel_delivery_steps(
-                               kernel().simulation_manager.get_slice_origin() ),
+  {
+    B_.spikes_ex_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
       e.get_weight() * e.get_multiplicity() );
+  }
   else
-    B_.spikes_in_.add_value( e.get_rel_delivery_steps(
-                               kernel().simulation_manager.get_slice_origin() ),
+  {
+    B_.spikes_in_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
       e.get_weight() * e.get_multiplicity() );
+  }
 }
 
 void
 nest::iaf_psc_exp::handle( CurrentEvent& e )
 {
-  assert( e.get_delay() > 0 );
+  assert( e.get_delay_steps() > 0 );
 
   const double c = e.get_current();
   const double w = e.get_weight();
@@ -353,17 +395,11 @@ nest::iaf_psc_exp::handle( CurrentEvent& e )
   // add weighted current; HEP 2002-10-04
   if ( 0 == e.get_rport() )
   {
-    B_.currents_[ 0 ].add_value(
-      e.get_rel_delivery_steps(
-        kernel().simulation_manager.get_slice_origin() ),
-      w * c );
+    B_.currents_[ 0 ].add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), w * c );
   }
   if ( 1 == e.get_rport() )
   {
-    B_.currents_[ 1 ].add_value(
-      e.get_rel_delivery_steps(
-        kernel().simulation_manager.get_slice_origin() ),
-      w * c );
+    B_.currents_[ 1 ].add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), w * c );
   }
 }
 

@@ -141,7 +141,7 @@ namespace nest
  *
  * @ingroup Devices
  *
- * @author Sepehr Mahmoudian 2020-09-14
+ * @author Sepehr Mahmoudian 2020-10-31
  */
 
 class fast_trace_computer : public Node
