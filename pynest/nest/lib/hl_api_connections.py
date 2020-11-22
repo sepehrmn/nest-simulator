@@ -63,7 +63,7 @@ def GetConnections(source=None, target=None, synapse_model=None,
         pre-synaptic neurons are returned
     target : NodeCollection, optional
         Target node IDs, only connections to these
-        post-synaptic neurons are returned
+        postsynaptic neurons are returned
     synapse_model : str, optional
         Only connections with this synapse type are returned
     synapse_label : int, optional
@@ -225,6 +225,12 @@ def Connect(pre, post, conn_spec=None, syn_spec=None,
             raise ValueError("When connecting two arrays of node IDs, the synapse specification dictionary must "
                              "be specified and contain at least the synapse model.")
 
+        # In case of misspelling
+        if "weights" in processed_syn_spec:
+            raise ValueError("To specify weights, use 'weight' in syn_spec.")
+        if "delays" in processed_syn_spec:
+            raise ValueError("To specify delays, use 'delay' in syn_spec.")
+
         weights = numpy.array(processed_syn_spec['weight']) if 'weight' in processed_syn_spec else None
         delays = numpy.array(processed_syn_spec['delay']) if 'delay' in processed_syn_spec else None
 
@@ -290,7 +296,7 @@ def CGConnect(pre, post, cg, parameter_map=None, model="static_synapse"):
     """Connect neurons using the Connection Generator Interface.
 
     Potential pre-synaptic neurons are taken from `pre`, potential
-    post-synaptic neurons are taken from `post`. The connection
+    postsynaptic neurons are taken from `post`. The connection
     generator `cg` specifies the exact connectivity to be set up. The
     `parameter_map` can either be None or a dictionary that maps the
     keys `weight` and `delay` to their integer indices in the value

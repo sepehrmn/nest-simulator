@@ -385,11 +385,65 @@ for more information.
 
 .. _receptor-types:
 
+Connecting sparse matrices with array indexing
+----------------------------------------------
+
+One may want to generate connections from a sparse matrix of connection weights.
+Assume we have a weight matrix of the form:
+
+.. math::
+
+    W = \begin{bmatrix}
+    w_{11} & w_{21} & \cdots & w_{n1} \\
+    w_{12} & w_{22} & \cdots & w_{n2} \\
+    \vdots & \vdots & \ddots & \vdots \\
+    w_{1m} & w_{2m} & \cdots & w_{nm} \\
+    \end{bmatrix},
+
+where :math:`w_{ij}` is the weight of the connection with presynaptic node :math:`i`
+and postsynaptic node :math:`j`. We can assume that some weights are zero. Instead of
+creating connections with zero weight in these cases, we do not want to create these
+connections at all.
+
+There is currently no way to create connections from the whole matrix in one go, so we
+will iterate the presynaptic neurons and connect one column at a time. We assume
+that we have :math:`n` presynaptic and :math:`m` postsynaptic nodes in the NodeCollections
+`presynaptic` and `postsynaptic`, respectively. We also assume that we have a weight matrix
+as a two-dimensional NumPy array `W`, with :math:`n` columns and :math:`m` rows.
+
+::
+
+    W = np.array([[0.5, 0., 1.5],
+                  [1.3, 0.2, 0.],
+                  [0., 1.25, 1.3]])
+
+    presynaptic = nest.Create('iaf_psc_alpha', 3)
+    postsynaptic = nest.Create('iaf_psc_alpha', 3)
+
+    for i, pre in enumerate(presynaptic):
+        # Extract the weights column.
+        weights = W[:, i]
+
+        # To only connect pairs with a nonzero weight,
+        # we use array indexing to extract the weights and postsynaptic neurons.
+        nonzero_indices = numpy.where(weights != 0)[0]
+        weights = weights[nonzero_indices]
+        post = postsynaptic[nonzero_indices]
+
+        # Generate an array of node IDs for the column of the weight matrix, with length based on the
+        # number of nonzero elements. dtype must be an integer.
+        pre_array = numpy.ones(len(nonzero_indices), dtype=numpy.int64)*pre.get('global_id')
+
+        # nest.Connect() automatically converts post to a NumPy array because pre_array
+        # contains multiple identical node IDs. When also specifying a one_to_one connection rule,
+        # the arrays of node IDs can then be connected.
+        nest.Connect(pre_array, post, conn_spec='one_to_one', syn_spec={'weight': weights})
+
 Receptor Types
 --------------
 
 Each connection in NEST targets a specific receptor type on the
-post-synaptic node. Receptor types are identified by integer numbers,
+postsynaptic node. Receptor types are identified by integer numbers,
 the default receptor type is 0. The meaning of the receptor type depends
 on the model and is documented in the model documentation. To connect to
 a non-standard receptor type, the parameter ``receptor_type`` of the
@@ -397,7 +451,7 @@ additional argument ``params`` is used in the call to the ``Connect``
 command. To illustrate the concept of receptor types, we give an example
 using standard integrate-and-fire neurons as presynaptic nodes and a
 multi-compartment integrate-and-fire neuron (``iaf_cond_alpha_mc``) as
-post-synaptic node.
+postsynaptic node.
 
 .. image:: ../_static/img/Receptor_types.png
      :width: 200px
@@ -507,7 +561,7 @@ representing a synapse model. If GetConnections is called without
 parameters, all connections in the network are returned. If a list of
 source neurons is given, only connections from these pre-synaptic
 neurons are returned. If a list of target neurons is given, only
-connections to these post-synaptic neurons are returned. If a synapse
+connections to these postsynaptic neurons are returned. If a synapse
 model is given, only connections with this synapse type are returned.
 Any combination of source, target and model parameters is permitted.
 Each connection id is a 5-tuple or, if available, a NumPy array with the
