@@ -316,15 +316,14 @@ fast_trace_computer::finalize()
 // For keeping track of the nodes connected to this device.
 
 inline port
-fast_trace_computer::handles_test_event( SpikeEvent& e,
-  rport receptor_type )
+fast_trace_computer::handles_test_event( SpikeEvent& e, rport receptor_type )
 {
   if ( receptor_type != 0 )
   {
     throw UnknownReceptorType( receptor_type, get_name() );
   }
 
-  S_.node_gids_.push_back( e.get_sender().get_gid() );
+  S_.node_gids_.push_back( e.get_sender_node_id() );
   return S_.node_gids_.size() - 1; // -1 because we want rports to start from 0
 }
 
