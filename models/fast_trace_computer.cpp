@@ -26,13 +26,13 @@
 #include <numeric>
 
 // Includes from libnestutil:
+#include "dict_util.h"
 #include "compose.hpp"
 #include "logging.h"
 
 // Includes from nestkernel:
 #include "event_delivery_manager_impl.h"
 #include "kernel_manager.h"
-#include "sibling_container.h"
 
 // Includes from sli:
 #include "arraydatum.h"

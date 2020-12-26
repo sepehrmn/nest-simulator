@@ -20,32 +20,31 @@
  *
  */
 
-#ifndef fast_trace_computer_H
-#define fast_trace_computer_H
+#ifndef FAST_TRACE_COMPUTER_H
+#define FAST_TRACE_COMPUTER_H
 
 
 // C++ includes:
 #include <vector>
 
 // Includes from nestkernel:
+#include "device_node.h"
 #include "event.h"
 #include "exceptions.h"
 #include "nest_types.h"
-#include "node.h"
 #include "recording_device.h"
 
 /* BeginDocumentation
 
-  Name: fast_trace_computer - Device for detecting single
-  spikes and efficiently generating a continuous trace of the activity
-  for each node connected to it.
+  Name: fast_trace_computer - Device for efficiently generating a continuous 
+  trace of the spiking activity for each node connected to it.
 
   Description:
-  There are 2 parts to this device, it acts as a normal spike_detector, but it
+  There are 2 parts to this device, it acts as a normal spike_recorder, but it
   also generates a continuous trace for
   each node connected to it based on spiking activity. It can be used to record
-  spikes from a single neuron or
-  spike-generating device, or from many of them at once. Spikes and traces can
+  spikes from a single neuron or any
+  spike generating device, or from many of them at once. Spikes and traces can
   be recorded to memory or file.
   spike events can be accessed from "events". By default, GID and time of each
   spike is recorded.
@@ -141,7 +140,7 @@ namespace nest
  *
  * @ingroup Devices
  *
- * @author Sepehr Mahmoudian 2020-10-31
+ * @author Sepehr Mahmoudian 2020-12-02
  */
 
 class fast_trace_computer : public Node
@@ -151,22 +150,22 @@ public:
   fast_trace_computer();
   fast_trace_computer( const fast_trace_computer& );
 
-  void set_has_proxies( const bool hp );
   bool
   has_proxies() const
   {
     return has_proxies_;
   }
-  bool
-  potential_global_receiver() const
-  {
-    return true;
-  }
-  void set_local_receiver( const bool lr );
+
   bool
   local_receiver() const
   {
-    return local_receiver_;
+    return true;
+  }
+
+  Name
+  get_element_type() const
+  {
+    return names::other;
   }
 
   /**
@@ -176,10 +175,15 @@ public:
    */
   using Node::handle;
   using Node::handles_test_event;
+  using Node::receives_signal;
+  
 
   void handle( SpikeEvent& );
 
   port handles_test_event( SpikeEvent&, rport );
+
+  Type get_type() const;
+  SignalType receives_signal() const;
 
   void get_status( DictionaryDatum& ) const;
   void set_status( const DictionaryDatum& );
@@ -325,6 +329,14 @@ fast_trace_computer::handles_test_event( SpikeEvent& e, rport receptor_type )
 
   S_.node_gids_.push_back( e.get_sender_node_id() );
   return S_.node_gids_.size() - 1; // -1 because we want rports to start from 0
+}
+
+} // namespace
+
+inline SignalType
+spike_recorder::receives_signal() const
+{
+  return ALL;
 }
 
 } // namespace
