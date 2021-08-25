@@ -235,7 +235,7 @@ nest::gif_psc_exp_multisynapse::Parameters_::set( const DictionaryDatum& d, Node
 }
 
 void
-nest::gif_psc_exp_multisynapse::State_::get( DictionaryDatum& d, const Parameters_& p ) const
+nest::gif_psc_exp_multisynapse::State_::get( DictionaryDatum& d, const Parameters_& ) const
 {
   def< double >( d, names::V_m, V_ );     // Membrane potential
   def< double >( d, names::E_sfa, sfa_ ); // Adaptive threshold potential
@@ -243,7 +243,7 @@ nest::gif_psc_exp_multisynapse::State_::get( DictionaryDatum& d, const Parameter
 }
 
 void
-nest::gif_psc_exp_multisynapse::State_::set( const DictionaryDatum& d, const Parameters_& p, Node* node )
+nest::gif_psc_exp_multisynapse::State_::set( const DictionaryDatum& d, const Parameters_&, Node* node )
 {
   updateValueParam< double >( d, names::V_m, V_, node );
 }
@@ -263,7 +263,7 @@ nest::gif_psc_exp_multisynapse::Buffers_::Buffers_( const Buffers_&, gif_psc_exp
  * ---------------------------------------------------------------- */
 
 nest::gif_psc_exp_multisynapse::gif_psc_exp_multisynapse()
-  : Archiving_Node()
+  : ArchivingNode()
   , P_()
   , S_()
   , B_( *this )
@@ -272,7 +272,7 @@ nest::gif_psc_exp_multisynapse::gif_psc_exp_multisynapse()
 }
 
 nest::gif_psc_exp_multisynapse::gif_psc_exp_multisynapse( const gif_psc_exp_multisynapse& n )
-  : Archiving_Node( n )
+  : ArchivingNode( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
@@ -284,19 +284,12 @@ nest::gif_psc_exp_multisynapse::gif_psc_exp_multisynapse( const gif_psc_exp_mult
  * ---------------------------------------------------------------- */
 
 void
-nest::gif_psc_exp_multisynapse::init_state_( const Node& proto )
-{
-  const gif_psc_exp_multisynapse& pr = downcast< gif_psc_exp_multisynapse >( proto );
-  S_ = pr.S_;
-}
-
-void
 nest::gif_psc_exp_multisynapse::init_buffers_()
 {
   B_.spikes_.clear();   //!< includes resize
   B_.currents_.clear(); //!< includes resize
   B_.logger_.reset();   //!< includes resize
-  Archiving_Node::clear_history();
+  ArchivingNode::clear_history();
 }
 
 void
@@ -305,7 +298,7 @@ nest::gif_psc_exp_multisynapse::calibrate()
   B_.logger_.init();
 
   const double h = Time::get_resolution().get_ms();
-  V_.rng_ = kernel().rng_manager.get_rng( get_thread() );
+  V_.rng_ = get_vp_specific_rng( get_thread() );
 
   const double tau_m = P_.c_m_ / P_.g_L_;
 
@@ -314,9 +307,6 @@ nest::gif_psc_exp_multisynapse::calibrate()
   V_.P31_ = -numerics::expm1( -h / tau_m );
 
   V_.RefractoryCounts_ = Time( Time::ms( P_.t_ref_ ) ).get_steps();
-  // since t_ref_ >= 0, this can only fail in error
-  assert( V_.RefractoryCounts_ >= 0 );
-
 
   // initializing adaptation (stc/sfa) variables
   V_.P_sfa_.resize( P_.tau_sfa_.size(), 0.0 );

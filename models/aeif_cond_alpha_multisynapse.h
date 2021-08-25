@@ -59,7 +59,7 @@ constants, and synaptic conductance modeled by an alpha function.
 
 It allows an arbitrary number of synaptic time constants. Synaptic
 conductance is modeled by an alpha function, as described by A. Roth
-and M.C.W. van Rossum in Computational Modeling Methods for
+and M. C. W. van Rossum in Computational Modeling Methods for
 Neuroscientists, MIT Press 2013, Chapter 6.
 
 The time constants are supplied by an array, "tau_syn", and the pertaining
@@ -89,6 +89,9 @@ spike-adaptation current `w` is
  \tau_w * dw/dt = a(V - E_L) - w
 
 When the neuron fires a spike, the adaptation current w <- w + b.
+
+For implementation details see the
+`aeif_models_implementation <../model_details/aeif_models_implementation.ipynb>`_ notebook.
 
 Parameters
 ++++++++++
@@ -170,7 +173,7 @@ namespace nest
  */
 extern "C" int aeif_cond_alpha_multisynapse_dynamics( double, const double*, double*, void* );
 
-class aeif_cond_alpha_multisynapse : public Archiving_Node
+class aeif_cond_alpha_multisynapse : public ArchivingNode
 {
 
 public:
@@ -202,7 +205,6 @@ public:
   void set_status( const DictionaryDatum& );
 
 private:
-  void init_state_( const Node& proto );
   void init_buffers_();
   void calibrate();
   void update( Time const&, const long, const long );
@@ -259,8 +261,7 @@ private:
 
   /**
    * State variables of the model.
-   * @note Copy constructor and assignment operator required because
-   *       of C-style arrays.
+   * @note Copy constructor required because of C-style arrays.
    */
   struct State_
   {
@@ -288,8 +289,6 @@ private:
     int r_;                   //!< number of refractory steps remaining
 
     State_( const Parameters_& ); //!< Default initialization
-    State_( const State_& );
-    State_& operator=( const State_& );
 
     void get( DictionaryDatum& ) const;
     void set( const DictionaryDatum&, Node* node );
@@ -424,7 +423,7 @@ aeif_cond_alpha_multisynapse::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d );
-  Archiving_Node::get_status( d );
+  ArchivingNode::get_status( d );
 
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 }

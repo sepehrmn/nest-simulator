@@ -123,7 +123,7 @@ SpikeEvent
 See also
 ++++++++
 
-correlation_detector, correlomatrix_detector, spike_detector
+correlation_detector, correlomatrix_detector, spike_recorder
 
 EndUserDocs */
 
@@ -171,7 +171,7 @@ public:
   void calibrate_time( const TimeConverter& tc );
 
 private:
-  void init_state_( Node const& );
+  void init_state_();
   void init_buffers_();
   void calibrate();
 
@@ -221,6 +221,8 @@ private:
 
     Parameters_();                     //!< Sets default parameter values
     Parameters_( const Parameters_& ); //!< Recalibrate all times
+
+    Parameters_& operator=( const Parameters_& );
 
     void get( DictionaryDatum& ) const; //!< Store current values in dictionary
 

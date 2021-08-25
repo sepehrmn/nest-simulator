@@ -35,8 +35,7 @@
 #include "event.h"
 #include "nest_types.h"
 #include "node.h"
-#include "normal_randomdev.h"
-#include "poisson_randomdev.h"
+#include "random_generators.h"
 #include "ring_buffer.h"
 #include "recordables_map.h"
 #include "universal_data_logger.h"
@@ -102,7 +101,7 @@ lin_rate, tanh_rate, threshold_lin_rate
 EndUserDocs  */
 
 template < class TNonlinearities >
-class rate_neuron_ipn : public Archiving_Node
+class rate_neuron_ipn : public ArchivingNode
 {
 
 public:
@@ -141,7 +140,6 @@ public:
   void set_status( const DictionaryDatum& );
 
 private:
-  void init_state_( const Node& proto );
   void init_buffers_();
   void calibrate();
 
@@ -259,7 +257,6 @@ private:
    */
   struct Variables_
   {
-
     // propagators
     double P1_;
     double P2_;
@@ -267,9 +264,7 @@ private:
     // propagator for noise
     double input_noise_factor_;
 
-    librandom::RngPtr rng_;
-    librandom::PoissonRandomDev poisson_dev_; //!< random deviate generator
-    librandom::NormalRandomDev normal_dev_;   //!< random deviate generator
+    normal_distribution normal_dist_; //!< normal distribution
   };
 
   //! Read out the rate
@@ -354,7 +349,7 @@ rate_neuron_ipn< TNonlinearities >::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d );
-  Archiving_Node::get_status( d );
+  ArchivingNode::get_status( d );
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 
   nonlinearities_.get( d );
@@ -373,7 +368,7 @@ rate_neuron_ipn< TNonlinearities >::set_status( const DictionaryDatum& d )
   // write them back to (P_, S_) before we are also sure that
   // the properties to be set in the parent class are internally
   // consistent.
-  Archiving_Node::set_status( d );
+  ArchivingNode::set_status( d );
 
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;

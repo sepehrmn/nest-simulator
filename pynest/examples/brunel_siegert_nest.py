@@ -19,8 +19,9 @@
 # You should have received a copy of the GNU General Public License
 # along with NEST.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Mean-field theory for random balanced network
----------------------------------------------------
+"""
+Mean-field theory for random balanced network
+---------------------------------------------
 
 This script performs a mean-field analysis of the spiking network of
 excitatory and an inhibitory population of leaky-integrate-and-fire neurons
@@ -35,7 +36,7 @@ dynamics (eq.30), are the prediction for the population and
 time-averaged from the spiking simulation.
 
 References
-~~~~~~~~~~~~~~
+~~~~~~~~~~
 
 .. [1] Hahne J, Dahmen D, Schuecker J, Frommer A, Bolten M,
        Helias M and Diesmann M. (2017).  Integration of continuous-time
@@ -71,7 +72,7 @@ epsilon = 0.1  # connection probability
 
 ###############################################################################
 # Definition of the number of neurons and connections in the SLIFN, needed
-# for the connection strength in the siegert neuron network
+# for the connection strength in the Siegert neuron network
 
 order = 2500
 NE = 4 * order  # number of excitatory neurons
@@ -81,7 +82,7 @@ CI = int(epsilon * NI)  # number of inhibitory synapses per neuron
 C_tot = int(CI + CE)  # total number of synapses per neuron
 
 ###############################################################################
-# Initialization of the parameters of the siegert neuron and the connection
+# Initialization of the parameters of the Siegert neuron and the connection
 # strength. The parameter are equivalent to the LIF-neurons in the SLIFN.
 
 tauMem = 20.0  # time constant of membrane potential in ms
@@ -124,17 +125,12 @@ nest.SetKernelStatus({"resolution": dt, "print_time": True,
 print("Building network")
 
 ###############################################################################
-# Configuration of the model ``siegert_neuron`` using ``SetDefaults``.
-
-nest.SetDefaults("siegert_neuron", neuron_params)
-
-###############################################################################
 # Creation of the nodes using ``Create``. One rate neuron represents the
 # excitatory population of LIF-neurons in the SLIFN and one the inhibitory
 # population assuming homogeneity of the populations.
 
-siegert_ex = nest.Create("siegert_neuron", 1)
-siegert_in = nest.Create("siegert_neuron", 1)
+siegert_ex = nest.Create("siegert_neuron", params=neuron_params)
+siegert_in = nest.Create("siegert_neuron", params=neuron_params)
 
 ###############################################################################
 # The Poisson drive in the SLIFN is replaced by a driving rate neuron,
@@ -142,7 +138,7 @@ siegert_in = nest.Create("siegert_neuron", 1)
 # neuron is controlled by setting ``mean`` to the rate of the corresponding
 # poisson generator in the SLIFN.
 
-siegert_drive = nest.Create('siegert_neuron', 1, params={'mean': p_rate})
+siegert_drive = nest.Create('siegert_neuron', params={'mean': p_rate})
 
 ###############################################################################
 # To record from the rate neurons a multimeter is created and the parameter
@@ -152,7 +148,7 @@ multimeter = nest.Create(
     'multimeter', params={'record_from': ['rate'], 'interval': dt})
 
 ###############################################################################
-# Connections between ``siegert neurons`` are realized with the synapse model
+# Connections between ``Siegert neurons`` are realized with the synapse model
 # ``diffusion_connection``. These two parameters reflect the prefactors in
 # front of the rate variable in eq. 27-29 in [1].
 
@@ -189,7 +185,7 @@ nest.Connect(siegert_in, siegert_ex + siegert_in, 'all_to_all', syn_dict)
 nest.Simulate(simtime)
 
 ###################################################################################
-# Analyze the activity data. The asymptotic rate of the siegert neuron
+# Analyze the activity data. The asymptotic rate of the Siegert neuron
 # corresponds to the population- and time-averaged activity in the SLIFN.
 # For the symmetric network setup used here, the excitatory and inhibitory
 # rates are identical. For comparison execute the example ``brunel_delta_nest.py``.
@@ -198,5 +194,5 @@ data = multimeter.events
 rates_ex = data['rate'][numpy.where(data['senders'] == siegert_ex.global_id)]
 rates_in = data['rate'][numpy.where(data['senders'] == siegert_in.global_id)]
 times = data['times'][numpy.where(data['senders'] == siegert_in.global_id)]
-print("Excitatory rate   : %.2f Hz" % rates_ex[-1])
-print("Inhibitory rate   : %.2f Hz" % rates_in[-1])
+print(f"Excitatory rate   : {rates_ex[-1]:.2f} Hz")
+print(f"Inhibitory rate   : {rates_in[-1]:.2f} Hz")

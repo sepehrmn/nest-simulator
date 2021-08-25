@@ -227,40 +227,40 @@ class PlotParams(object):
             return self._left
 
         @left.setter
-        def left(self, l):
-            self._left = float(l)
+        def left(self, left):
+            self._left = float(left)
 
         @property
         def right(self):
             return self._right
 
         @right.setter
-        def right(self, r):
-            self._right = float(r)
+        def right(self, right):
+            self._right = float(right)
 
         @property
         def top(self):
             return self._top
 
         @top.setter
-        def top(self, t):
-            self._top = float(t)
+        def top(self, top):
+            self._top = float(top)
 
         @property
         def bottom(self):
             return self._bottom
 
         @bottom.setter
-        def bottom(self, b):
-            self._bottom = float(b)
+        def bottom(self, bottom):
+            self._bottom = float(bottom)
 
         @property
         def colbar(self):
             return self._colbar
 
         @colbar.setter
-        def colbar(self, b):
-            self._colbar = float(b)
+        def colbar(self, colbar):
+            self._colbar = float(colbar)
 
     def __init__(self):
         """Set default values"""
@@ -678,7 +678,7 @@ class ConnectionPattern(object):
 
             # get source and target layer
             self.slayer, self.tlayer = conninfo[:2]
-            lnames = [l.name for l in layers]
+            lnames = [layer.name for layer in layers]
 
             if self.slayer not in lnames:
                 raise Exception('Unknown source layer "%s".' % self.slayer)
@@ -688,8 +688,8 @@ class ConnectionPattern(object):
             # if target layer is singular (extent==(0,0)),
             # we do not create a full object
             self.singular = False
-            for l in layers:
-                if l.name == self.tlayer and l.singular:
+            for layer in layers:
+                if layer.name == self.tlayer and layer.singular:
                     self.singular = True
                     return
 
@@ -719,7 +719,7 @@ class ConnectionPattern(object):
             # connections by sign of weight only
             try:
                 self._mean_wght = _weighteval(sdict['weight'])
-            except:
+            except Exception:
                 raise ValueError('No or corrupt weight information.')
 
             # synapse model
@@ -736,7 +736,7 @@ class ConnectionPattern(object):
                     if self.synmodel not in synapses:
                         raise Exception('Unknown synapse model "%s".'
                                         % self.synmodel)
-                except:
+                except Exception:
                     raise Exception('Explicit synapse model info required.')
 
             # store information about connection
@@ -751,7 +751,7 @@ class ConnectionPattern(object):
                     self._tcd = tcd(self.synmodel, tgt_model, Vmem)
                 else:
                     self._tcd = None
-            except:
+            except Exception:
                 raise Exception('Corrupt connection dictionary')
 
             # prepare for lazy evaluation
@@ -850,7 +850,7 @@ class ConnectionPattern(object):
             slabel, tlabel: Values for sender/target label
             parent        : _Block to which _Patch/_Block belongs
             """
-            self.l, self.t, self.r, self.c = left, top, row, col
+            self.left, self.t, self.r, self.c = left, top, row, col
             self.w, self.h = width, height
             self.slbl, self.tlbl = slabel, tlabel
             self.ax = None
@@ -860,13 +860,13 @@ class ConnectionPattern(object):
 
         def _update_size(self, new_lr):
             """Update patch size by inspecting all children."""
-            if new_lr[0] < self.l:
+            if new_lr[0] < self.left:
                 raise ValueError(
-                    "new_lr[0] = %f < l = %f" % (new_lr[0], self.l))
+                    "new_lr[0] = %f < l = %f" % (new_lr[0], self.left))
             if new_lr[1] < self.t:
                 raise ValueError(
                     "new_lr[1] = %f < t = %f" % (new_lr[1], self.t))
-            self.w, self.h = new_lr[0] - self.l, new_lr[1] - self.t
+            self.w, self.h = new_lr[0] - self.left, new_lr[1] - self.t
             if self._parent:
                 self._parent._update_size(new_lr)
 
@@ -875,14 +875,14 @@ class ConnectionPattern(object):
         @property
         def tl(self):
             """Top left corner of the patch."""
-            return (self.l, self.t)
+            return (self.left, self.t)
 
         # --------------------------------------------------------------------
 
         @property
         def lr(self):
             """Lower right corner of the patch."""
-            return (self.l + self.w, self.t + self.h)
+            return (self.left + self.w, self.t + self.h)
 
         # --------------------------------------------------------------------
 
@@ -892,7 +892,7 @@ class ConnectionPattern(object):
             if isinstance(self, ConnectionPattern._Block):
                 return min([e.l_patches for e in _flattened(self.elements)])
             else:
-                return self.l
+                return self.left
 
         # --------------------------------------------------------------------
 
@@ -912,7 +912,7 @@ class ConnectionPattern(object):
             if isinstance(self, ConnectionPattern._Block):
                 return max([e.r_patches for e in _flattened(self.elements)])
             else:
-                return self.l + self.w
+                return self.left + self.w
 
         # --------------------------------------------------------------------
 
@@ -1073,7 +1073,7 @@ class ConnectionPattern(object):
         synsep = 0.5 / 20. * patchmax  # distance between synapse types
 
         # find maximal extents of individual patches, horizontal and vertical
-        maxext = max(_flattened([l.ext for l in self._layers]))
+        maxext = max(_flattened([layer.ext for layer in self._layers]))
 
         patchscale = patchmax / float(maxext)  # determines patch size
 
@@ -1276,7 +1276,7 @@ class ConnectionPattern(object):
         """Scaled axes rectangle for patch, reverses y-direction."""
         xsc, ysc = self._axes.lr
         return self._figscale * np.array(
-            [p.l / xsc, 1 - (p.t + p.h) / ysc, p.w / xsc, p.h / ysc])
+            [p.left / xsc, 1 - (p.t + p.h) / ysc, p.w / xsc, p.h / ysc])
 
     # ------------------------------------------------------------------------
 
@@ -1284,7 +1284,7 @@ class ConnectionPattern(object):
         """Scaled axes rectangle for patch, does not reverse y-direction."""
         xsc, ysc = self._axes.lr
         return self._figscale * np.array(
-            [p.l / xsc, p.t / ysc, p.w / xsc, p.h / ysc])
+            [p.left / xsc, p.t / ysc, p.w / xsc, p.h / ysc])
 
     # ------------------------------------------------------------------------
 
@@ -1368,10 +1368,10 @@ class ConnectionPattern(object):
                    will be sorted in diagram in order of increasing numbers.
         """
         # extract layers to dict mapping name to extent
-        self._layers = [self._LayerProps(l[0], l[3]) for l in lList]
+        self._layers = [self._LayerProps(layer[0], layer[3]) for layer in lList]
 
         # ensure layer names are unique
-        lnames = [l.name for l in self._layers]
+        lnames = [layer.name for layer in self._layers]
         if len(lnames) != len(set(lnames)):
             raise ValueError('Layer names must be unique.')
 
@@ -1484,7 +1484,7 @@ class ConnectionPattern(object):
 
         import matplotlib.pyplot as plt
 
-        # translate new to old paramter names (per v 0.5)
+        # translate new to old parameter names (per v 0.5)
         normalize = globalColors
         if colorLimits:
             normalize = True
@@ -1637,7 +1637,7 @@ class ConnectionPattern(object):
                 for sp in ax.spines.values():
                     # turn off axis lines, make room for frame edge
                     sp.set_color('none')
-            if block.l <= self._axes.l_patches and block.slbl:
+            if block.left <= self._axes.l_patches and block.slbl:
                 ax.set_ylabel(block.slbl,
                               rotation=plotParams.layer_orientation['sender'],
                               fontproperties=plotParams.layer_font)
@@ -1662,7 +1662,7 @@ class ConnectionPattern(object):
                         for sp in ax.spines.values():
                             # turn off axis lines, make room for frame edge
                             sp.set_color('none')
-                    if pb.l + pb.w >= self._axes.r_patches and pb.slbl:
+                    if pb.left + pb.w >= self._axes.r_patches and pb.slbl:
                         ax.set_ylabel(pb.slbl,
                                       rotation=plotParams.pop_orientation[
                                           'sender'],

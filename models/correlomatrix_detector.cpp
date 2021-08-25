@@ -70,6 +70,22 @@ nest::correlomatrix_detector::Parameters_::Parameters_( const Parameters_& p )
   Tstop_.calibrate();
 }
 
+nest::correlomatrix_detector::Parameters_& nest::correlomatrix_detector::Parameters_::operator=( const Parameters_& p )
+{
+  delta_tau_ = p.delta_tau_;
+  tau_max_ = p.tau_max_;
+  Tstart_ = p.Tstart_;
+  Tstop_ = p.Tstop_;
+  N_channels_ = p.N_channels_;
+
+  delta_tau_.calibrate();
+  tau_max_.calibrate();
+  Tstart_.calibrate();
+  Tstop_.calibrate();
+
+  return *this;
+}
+
 nest::correlomatrix_detector::State_::State_()
   : n_events_( 1, 0 )
   , incoming_()
@@ -179,7 +195,7 @@ nest::correlomatrix_detector::Parameters_::set( const DictionaryDatum& d, const 
 }
 
 void
-nest::correlomatrix_detector::State_::set( const DictionaryDatum&, const Parameters_&, bool, Node* node )
+nest::correlomatrix_detector::State_::set( const DictionaryDatum&, const Parameters_&, bool, Node* )
 {
 }
 
@@ -245,13 +261,9 @@ nest::correlomatrix_detector::correlomatrix_detector( const correlomatrix_detect
  * ---------------------------------------------------------------- */
 
 void
-nest::correlomatrix_detector::init_state_( const Node& proto )
+nest::correlomatrix_detector::init_state_()
 {
-  const correlomatrix_detector& pr = downcast< correlomatrix_detector >( proto );
-
-  device_.init_state( pr.device_ );
-  S_ = pr.S_;
-  set_buffers_initialized( false ); // force recreation of buffers
+  device_.init_state();
 }
 
 void

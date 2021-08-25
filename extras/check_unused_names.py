@@ -70,9 +70,7 @@ except KeyError:
 # Base names of files that contain const Name definitions
 # (i.e. filenames without filename extension)
 names_files = [
-    "librandom/librandom_names",
     "nestkernel/nest_names",
-    "topology/topology_names",
 ]
 
 
@@ -92,8 +90,8 @@ names_defined = set()
 for names_file in names_files:
     fname = os.path.join(source_dir, names_file)
 
-    names_header = get_names(fname + ".h", "extern\s+const\s+Name\s+(\w+)\s*;")
-    names_source = get_names(fname + ".cpp", "const\s+Name\s+(\w+)\(.*")
+    names_header = get_names(fname + ".h", r"extern\s+const\s+Name\s+(\w+)\s*;")
+    names_source = get_names(fname + ".cpp", r"const\s+Name\s+(\w+)\(.*")
 
     for h, s in zip(names_header, names_source):
         if h != s:

@@ -20,8 +20,8 @@
  *
  */
 
-#ifndef AEIF_PSC_delta_H
-#define AEIF_PSC_delta_H
+#ifndef AEIF_PSC_DELTA_H
+#define AEIF_PSC_DELTA_H
 
 // Generated includes:
 #include "config.h"
@@ -68,7 +68,7 @@ Description
 +++++++++++
 
 aeif_psc_delta is the adaptive exponential integrate and fire neuron
-according to Brette and Gerstner (2005), with post-synaptic currents
+according to Brette and Gerstner (2005), with postsynaptic currents
 in the form of delta spikes.
 
 This implementation uses the embedded 4th order Runge-Kutta-Fehlberg
@@ -94,6 +94,9 @@ and
 Here delta is the dirac delta function and k indexes incoming
 spikes. This is implemented such that V_m will be incremented/decremented by
 the value of J after a spike.
+
+For implementation details see the
+`aeif_models_implementation <../model_details/aeif_models_implementation.ipynb>`_ notebook.
 
 Parameters
 ++++++++++
@@ -163,7 +166,7 @@ iaf_psc_delta, aeif_cond_exp, aeif_psc_exp
 
 EndUserDocs */
 
-class aeif_psc_delta : public Archiving_Node
+class aeif_psc_delta : public ArchivingNode
 {
 
 public:
@@ -193,7 +196,6 @@ public:
   void set_status( const DictionaryDatum& );
 
 private:
-  void init_state_( const Node& proto );
   void init_buffers_();
   void calibrate();
   void update( const Time&, const long, const long );
@@ -228,7 +230,6 @@ private:
     double a;       //!< Subthreshold adaptation in nS
     double b;       //!< Spike-triggered adaptation in pA
     double V_th;    //!< Spike threshold in mV
-    double t_ref;   //!< Refractory period in ms
     double I_e;     //!< Intrinsic current in pA
 
     double gsl_error_tol;  //!< Error bound for GSL integrator
@@ -245,15 +246,15 @@ public:
 
   /**
    * State variables of the model.
-   * @note Copy constructor and assignment operator required because
-   *       of C-style array.
+   * @note Copy constructor required because of C-style array.
    */
   struct State_
   {
     /** Accumulate spikes arriving during refractory period, discounted for
-        decay until end of refractory period.
-    */
+     *  decay until end of refractory period.
+     */
     double refr_spikes_buffer_;
+
     /**
      * Enumeration identifying elements in state array State_::y_.
      * The state vector must be passed to GSL as a C array. This enum
@@ -273,6 +274,7 @@ public:
 
     State_( const Parameters_& ); //!< Default initialization
     State_( const State_& );
+
     State_& operator=( const State_& );
 
     void get( DictionaryDatum& ) const;
@@ -405,7 +407,7 @@ aeif_psc_delta::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d );
-  Archiving_Node::get_status( d );
+  ArchivingNode::get_status( d );
 
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 }
@@ -422,7 +424,7 @@ aeif_psc_delta::set_status( const DictionaryDatum& d )
   // write them back to (P_, S_) before we are also sure that
   // the properties to be set in the parent class are internally
   // consistent.
-  Archiving_Node::set_status( d );
+  ArchivingNode::set_status( d );
 
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;
@@ -432,4 +434,4 @@ aeif_psc_delta::set_status( const DictionaryDatum& d )
 } // namespace
 
 #endif // HAVE_GSL
-#endif // AEIF_PSC_delta_H
+#endif // AEIF_PSC_DELTA_H

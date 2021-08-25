@@ -31,9 +31,6 @@
 #include "numerics.h"
 #include "dict_util.h"
 
-// Includes from librandom:
-#include "exp_randomdev.h"
-
 // Includes from nestkernel:
 #include "archiving_node.h"
 #include "connection.h"
@@ -43,6 +40,7 @@
 #include "kernel_manager.h"
 #include "nest_timeconverter.h"
 #include "nest_types.h"
+#include "random_generators.h"
 #include "recordables_map.h"
 #include "ring_buffer.h"
 #include "universal_data_logger.h"
@@ -61,10 +59,25 @@ namespace nest
  * This class is a base class that needs to be instantiated with a gain
  * function.
  *
- * @see ginzburg_neuron, mccullogh_pitts_neuron
+ * @note
+ * This neuron has a special use for spike events to convey the
+ * binary state of the neuron to the target. The neuron model
+ * only sends a spike if a transition of its state occurs. If the
+ * state makes an up-transition it sends a spike with multiplicity 2,
+ * if a down-transition occurs, it sends a spike with multiplicity 1.
+ * The decoding scheme relies on the feature that spikes with multiplicity
+ * larger than 1 are delivered consecutively, also in a parallel setting.
+ * The creation of double connections between binary neurons will
+ * destroy the decoding scheme, as this effectively duplicates
+ * every event. Using random connection routines it is therefore
+ * advisable to set the property 'allow_multapses' to false.
+ * The neuron accepts several sources of currents, e.g. from a
+ * noise_generator.
+ *
+ * @see ginzburg_neuron, mccullogh_pitts_neuron, erfc_neuron
  */
 template < class TGainfunction >
-class binary_neuron : public Archiving_Node
+class binary_neuron : public ArchivingNode
 {
 
 public:
@@ -101,7 +114,6 @@ public:
 
 
 private:
-  void init_state_( const Node& proto );
   void init_buffers_();
   void calibrate();
 
@@ -176,8 +188,8 @@ private:
    */
   struct Variables_
   {
-    librandom::RngPtr rng_;           //!< random number generator of my own thread
-    librandom::ExpRandomDev exp_dev_; //!< random deviate generator
+    RngPtr rng_;                        //!< random number generator of my own thread
+    exponential_distribution exp_dist_; //!< random deviate generator
   };
 
   // Access functions for UniversalDataLogger -------------------------------
@@ -281,7 +293,7 @@ binary_neuron< TGainfunction >::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d, P_ );
-  Archiving_Node::get_status( d );
+  ArchivingNode::get_status( d );
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 
   gain_.get( d );
@@ -300,7 +312,7 @@ binary_neuron< TGainfunction >::set_status( const DictionaryDatum& d )
   // write them back to (P_, S_) before we are also sure that
   // the properties to be set in the parent class are internally
   // consistent.
-  Archiving_Node::set_status( d );
+  ArchivingNode::set_status( d );
 
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;
@@ -365,7 +377,7 @@ binary_neuron< TGainfunction >::State_::get( DictionaryDatum& d, const Parameter
 
 template < class TGainfunction >
 void
-binary_neuron< TGainfunction >::State_::set( const DictionaryDatum&, const Parameters_&, Node* node )
+binary_neuron< TGainfunction >::State_::set( const DictionaryDatum&, const Parameters_&, Node* )
 {
 }
 
@@ -388,7 +400,7 @@ binary_neuron< TGainfunction >::Buffers_::Buffers_( const Buffers_&, binary_neur
 
 template < class TGainfunction >
 binary_neuron< TGainfunction >::binary_neuron()
-  : Archiving_Node()
+  : ArchivingNode()
   , P_()
   , S_()
   , B_( *this )
@@ -397,7 +409,7 @@ binary_neuron< TGainfunction >::binary_neuron()
 
 template < class TGainfunction >
 binary_neuron< TGainfunction >::binary_neuron( const binary_neuron& n )
-  : Archiving_Node( n )
+  : ArchivingNode( n )
   , gain_( n.gain_ )
   , P_( n.P_ )
   , S_( n.S_ )
@@ -411,20 +423,12 @@ binary_neuron< TGainfunction >::binary_neuron( const binary_neuron& n )
 
 template < class TGainfunction >
 void
-binary_neuron< TGainfunction >::init_state_( const Node& proto )
-{
-  const binary_neuron& pr = downcast< binary_neuron >( proto );
-  S_ = pr.S_;
-}
-
-template < class TGainfunction >
-void
 binary_neuron< TGainfunction >::init_buffers_()
 {
   B_.spikes_.clear();   // includes resize
   B_.currents_.clear(); // includes resize
   B_.logger_.reset();
-  Archiving_Node::clear_history();
+  ArchivingNode::clear_history();
 }
 
 template < class TGainfunction >
@@ -433,13 +437,13 @@ binary_neuron< TGainfunction >::calibrate()
 {
   // ensures initialization in case mm connected after Simulate
   B_.logger_.init();
-  V_.rng_ = kernel().rng_manager.get_rng( get_thread() );
+  V_.rng_ = get_vp_specific_rng( get_thread() );
 
   // draw next time of update for the neuron from exponential distribution
   // only if not yet initialized
   if ( S_.t_next_.is_neg_inf() )
   {
-    S_.t_next_ = Time::ms( V_.exp_dev_( V_.rng_ ) * P_.tau_m_ );
+    S_.t_next_ = Time::ms( V_.exp_dist_( V_.rng_ ) * P_.tau_m_ );
   }
 }
 
@@ -491,7 +495,7 @@ binary_neuron< TGainfunction >::update( Time const& origin, const long from, con
       }
 
       // draw next update interval from exponential distribution
-      S_.t_next_ += Time::ms( V_.exp_dev_( V_.rng_ ) * P_.tau_m_ );
+      S_.t_next_ += Time::ms( V_.exp_dist_( V_.rng_ ) * P_.tau_m_ );
 
     } // of if (update now)
 
@@ -525,8 +529,8 @@ binary_neuron< TGainfunction >::handle( SpikeEvent& e )
   // correct.
 
 
-  long m = e.get_multiplicity();
-  long node_id = e.get_sender_node_id();
+  const long m = e.get_multiplicity();
+  const long node_id = e.get_sender_node_id();
   const Time& t_spike = e.get_stamp();
 
   if ( m == 1 )
@@ -547,8 +551,7 @@ binary_neuron< TGainfunction >::handle( SpikeEvent& e )
         e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), -e.get_weight() );
     }
   }
-  else // multiplicity != 1
-    if ( m == 2 )
+  else if ( m == 2 )
   {
     // count this event positively, transition 0->1
     B_.spikes_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ), e.get_weight() );

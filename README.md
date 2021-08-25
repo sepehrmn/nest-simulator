@@ -1,10 +1,23 @@
-# The Neural Simulation Tool - NEST 
+# The Neural Simulation Tool - NEST
 
-[![Build Status](https://travis-ci.org/nest/nest-simulator.svg?branch=master)](https://travis-ci.org/nest/nest-simulator)
-[![License](http://img.shields.io/:license-GPLv2+-green.svg)](http://www.gnu.org/licenses/gpl-2.0.html)
-[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.3605514.svg)](https://doi.org/10.5281/zenodo.3605514)
-[![Latest Version](https://img.shields.io/badge/latest%20version-2.20.0-brightgreen.svg)](https://github.com/nest/nest-simulator/releases/tag/v2.20.0)
+[![Documentation](https://img.shields.io/readthedocs/nest-simulator?logo=readthedocs&logo=Read%20the%20Docs&label=Documentation)](https://nest-simulator.org/documentation)
 [![CII Best Practices](https://bestpractices.coreinfrastructure.org/projects/2218/badge)](https://bestpractices.coreinfrastructure.org/projects/2218)
+[![License](http://img.shields.io/:license-GPLv2+-green.svg)](http://www.gnu.org/licenses/gpl-2.0.html)
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.4739103.svg)](https://doi.org/10.5281/zenodo.4739103)
+
+[![Latest release](https://img.shields.io/github/release/nest/nest-simulator.svg?color=brightgreen&label=latest%20release)](https://github.com/nest/nest-simulator/releases)
+[![GitHub contributors](https://img.shields.io/github/contributors/nest/nest-simulator?logo=github)](https://github.com/nest/nest-simulator)
+[![GitHub commit activity](https://img.shields.io/github/commit-activity/y/nest/nest-simulator?logo=github&color=%23ff6633)](https://github.com/nest/nest-simulator)
+
+[![Ubuntu version](https://img.shields.io/badge/ubuntu-v2.20.0%20(PPA)-blue?logo=debian)](https://nest-simulator.readthedocs.io/en/latest/installation/)
+[![Fedora package](https://img.shields.io/fedora/v/nest?logo=fedora)](https://src.fedoraproject.org/rpms/nest)
+[![Conda version](https://img.shields.io/conda/vn/conda-forge/nest-simulator.svg?logo=conda-forge&logoColor=white)](https://anaconda.org/conda-forge/nest-simulator)
+[![Homebrew version](https://img.shields.io/homebrew/v/nest.svg?logo=apple)](https://formulae.brew.sh/formula/nest)
+[![Docker Image Version](https://img.shields.io/docker/v/nestsim/nest/2.20.0?label=docker&logo=docker&logoColor=white)](https://hub.docker.com/r/nestsim/nest)
+[![Virtual applicance](https://img.shields.io/badge/VM-v2.20.0-blue?logo=CodeSandbox)](https://nest-simulator.readthedocs.io/en/latest/download.html#download-livemedia)
+
+[![YouTube Video Views](https://img.shields.io/youtube/views/K7KXmIv6ROY?style=social)](https://www.youtube.com/results?search_query=nest-simulator+neurons)
+[![Twitter Follow](https://img.shields.io/twitter/follow/nestsimulator?style=social)](https://twitter.com/nestsimulator)
 
 NEST is a simulator for spiking neural network models that focuses on the
 dynamics, size and structure of neural systems rather than on the exact
@@ -94,9 +107,8 @@ later.
 
 ## Installing NEST
 
-Generic installation instructions can be found in the
-[INSTALL](https://github.com/nest/nest-simulator/blob/master/INSTALL) file that
-you received in the NEST sources.
+Please see the online [NEST Installation Instructions](http://www.nest-simulator.org/installation)
+to find out how to install NEST.
 
 ## Getting help
 
@@ -106,12 +118,20 @@ you received in the NEST sources.
   list](https://www.nest-initiative.org/mailinglist/).
 - Information on the Python bindings to NEST can be found in
   `${prefix}/share/doc/nest/README.md`.
-- For those looking to extend NEST a [developer
-  manual](http://nest.github.io/nest-simulator/) is available.
+- For those looking to extend NEST, developer documentation on [Contributing to
+  NEST](https://nest-simulator.readthedocs.io/en/latest/contribute/index.html) is available.
 
 ## Citing NEST
 
 Please cite NEST if you use it in your work.
+
+If you use NEST 3.0, please cite it as **Hahne, Jan et al. (2021).
+NEST 3.0. Zenodo. 10.5281/zenodo.4739103**. The full citation is available
+in different formats on [Zenodo](https://doi.org/10.5281/zenodo.4739103).
+
+If you use NEST 2.20.1, please cite it as **Fardet, Tanguy et al. (2020)
+NEST 2.20.1. Zenodo. 10.5281/zenodo.4018718**. The full citation is available
+in different formats on [Zenodo](https://doi.org/10.5281/zenodo.4018718).
 
 If you use NEST 2.20.0, please cite it as **Fardet, Tanguy et al. (2020)
 NEST 2.20.0. Zenodo. 10.5281/zenodo.3605514**. The full citation is available

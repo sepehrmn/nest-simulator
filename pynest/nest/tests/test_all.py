@@ -27,7 +27,7 @@ from . import test_connect_all_patterns
 from . import test_connect_all_to_all
 from . import test_connect_array_fixed_indegree
 from . import test_connect_array_fixed_outdegree
-from . import test_connect_distributions
+from . import test_connect_conngen
 from . import test_connect_fixed_indegree
 from . import test_connect_fixed_outdegree
 from . import test_connect_fixed_total_number
@@ -36,7 +36,6 @@ from . import test_connect_pairwise_bernoulli
 from . import test_connect_parameters
 from . import test_connect_symmetric_pairwise_bernoulli
 from . import test_create
-from . import test_csa
 from . import test_current_recording_generators
 from . import test_erfc_neuron
 from . import test_errors
@@ -49,12 +48,14 @@ from . import test_helper_functions
 from . import test_json
 from . import test_labeled_synapses
 from . import test_mc_neuron
+from . import test_mpitests
 from . import test_onetooneconnect
 from . import test_parrot_neuron_ps
 from . import test_parrot_neuron
 from . import test_pp_psc_delta
 from . import test_pp_psc_delta_stdp
 from . import test_quantal_stp_synapse
+from . import test_random123
 from . import test_random_parameter
 from . import test_rate_copy_model
 from . import test_rate_instantaneous_and_delayed
@@ -83,7 +84,7 @@ def suite():
     suite.addTest(test_connect_all_to_all.suite())
     suite.addTest(test_connect_array_fixed_indegree.suite())
     suite.addTest(test_connect_array_fixed_outdegree.suite())
-    suite.addTest(test_connect_distributions.suite())
+    suite.addTest(test_connect_conngen.suite())
     suite.addTest(test_connect_fixed_indegree.suite())
     suite.addTest(test_connect_fixed_outdegree.suite())
     suite.addTest(test_connect_fixed_total_number.suite())
@@ -92,7 +93,6 @@ def suite():
     suite.addTest(test_connect_parameters.suite())
     suite.addTest(test_connect_symmetric_pairwise_bernoulli.suite())
     suite.addTest(test_create.suite())
-    suite.addTest(test_csa.suite())
     suite.addTest(test_current_recording_generators.suite())
     suite.addTest(test_erfc_neuron.suite())
     suite.addTest(test_errors.suite())
@@ -105,12 +105,14 @@ def suite():
     suite.addTest(test_json.suite())
     suite.addTest(test_labeled_synapses.suite())
     suite.addTest(test_mc_neuron.suite())
+    suite.addTest(test_mpitests.suite())
     suite.addTest(test_onetooneconnect.suite())
     suite.addTest(test_parrot_neuron_ps.suite())
     suite.addTest(test_parrot_neuron.suite())
     suite.addTest(test_pp_psc_delta.suite())
     suite.addTest(test_pp_psc_delta_stdp.suite())
     suite.addTest(test_quantal_stp_synapse.suite())
+    suite.addTest(test_random123.suite())
     suite.addTest(test_random_parameter.suite())
     suite.addTest(test_rate_copy_model.suite())
     suite.addTest(test_rate_instantaneous_and_delayed.suite())

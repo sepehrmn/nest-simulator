@@ -34,11 +34,12 @@ set( NEST_USER_EMAIL "users@nest-simulator.org" )
 # set NEST defaults
 set( tics_per_ms "1000.0" CACHE STRING "Specify elementary unit of time. [default 1000.0]" )
 set( tics_per_step "100" CACHE STRING "Specify resolution. [default 100]" )
-set( connector_cutoff "3" CACHE STRING "Specify when to truncate the recursive instantiation of the connector. [default 3]" )
-option( with-ps-arrays "Use PS array construction semantics. [default=ON]" ON )
 
 # add user modules
 set( external-modules OFF CACHE STRING "External NEST modules to be linked in, separated by ';'. [default=OFF]" )
+
+# use detailed NEST internal timers
+set( with-detailed-timers OFF CACHE STRING "Enable detailed NEST internal time measurements. Detailed timers can affect the performance. [default=OFF]" )
 
 # connect NEST with external projects
 set( with-libneurosim OFF CACHE STRING "Request the use of libneurosim. Optionally give the directory, where libneurosim is installed. [default=OFF]" )
@@ -75,9 +76,6 @@ set( with-version-suffix "" CACHE STRING "Set a user defined version suffix. [de
 set( enable-bluegene OFF CACHE STRING "Configure for BlueGene." )
 option( k-computer "Enable K computer." OFF )
 
-set( disable-timing OFF CACHE BOOL "Disable measurements via Stopwatches. [default OFF]" )
-set( disable-counts ON CACHE BOOL "Disable measurements of call counts. [default ON]" )
-
 set( target-bits-split "standard" CACHE STRING "Split of the 64-bit target neuron identifier type. 'standard' is recommended for most users. If running on more than 262144 MPI processes or more than 512 threads, change to 'hpc'. [default standard]" )
 
 ################################################################################
@@ -85,11 +83,10 @@ set( target-bits-split "standard" CACHE STRING "Split of the 64-bit target neuro
 ################################################################################
 
 # In general use the CMAKE_INSTALL_<dir> and CMAKE_INSTALL_FULL_<dir> vars from
-# GNUInstallDirs, but the CMAKE_INSTALL_DATADIR is usually just CMAKE_INSTALL_DATAROOTDIR
+# GNUInstallDirs (included after calling nest_process_with_python()), but the
+# CMAKE_INSTALL_DATADIR is usually just CMAKE_INSTALL_DATAROOTDIR
 # and we want it to be CMAKE_INSTALL_DATAROOTDIR/PROJECT_NAME
 set( CMAKE_INSTALL_DATADIR "share/${PROJECT_NAME}" CACHE STRING "Relative directory, where NEST installs its data (share/nest)" )
-
-include( GNUInstallDirs )
 
 ################################################################################
 ##################           Find utility programs            ##################
@@ -123,11 +120,17 @@ include( DefaultCompilerFlags )
 get_host_triple( NEST_HOST_TRIPLE NEST_HOST_ARCH NEST_HOST_VENDOR NEST_HOST_OS )
 get_target_triple( NEST_TARGET_TRIPLE NEST_TARGET_ARCH NEST_TARGET_VENDOR NEST_TARGET_OS )
 
-
 # set default compiler flags
 nest_set_default_compiler_flags()
 
 # Process the command line arguments
+# IMPORTANT: Do not change the order of nest_process_with_python() and include( GNUInstallDirs )!
+#            If NEST is built with Python, nest_process_with_python() defaults CMAKE_INSTALL_PREFIX
+#            to the active virtual Python environment. This effects the inclusion
+#            of GNUInstallDirs defining CMAKE_INSTALL_<dir> and CMAKE_INSTALL_FULL_<dir>.
+nest_process_with_python()
+include( GNUInstallDirs )
+nest_post_process_with_python()
 nest_process_with_optimize()
 nest_process_with_debug()
 nest_process_with_intel_compiler_flags()
@@ -141,13 +144,12 @@ nest_process_static_libraries()
 nest_process_external_modules()
 nest_process_tics_per_ms()
 nest_process_tics_per_step()
-nest_process_with_ps_array()
 nest_process_with_libltdl()
 nest_process_with_readline()
 nest_process_with_gsl()
-nest_process_with_python()
 nest_process_with_openmp()
 nest_process_with_mpi()
+nest_process_with_detailed_timers()
 nest_process_with_libneurosim()
 nest_process_with_music()
 nest_process_with_sionlib()
@@ -178,6 +180,7 @@ nest_check_have_stl_vector_capacity_doubling()
 nest_check_have_xlc_ice_on_using()
 nest_check_have_std_nan()
 nest_check_have_std_isnan()
+nest_check_random123()
 
 ################################################################################
 ##################           Create version string            ##################
@@ -191,25 +194,25 @@ message("-- NEST version: ${NEST_VERSION_STRING}")
 ##################         Enable Testing Targets             ##################
 ################################################################################
 enable_testing()
-set( TEST_LOGFILE ${PROJECT_BINARY_DIR}/reports/installcheck.log )
-file( MAKE_DIRECTORY ${PROJECT_BINARY_DIR}/reports/ )
+set( TEST_OPTS "" )
 
 if ( HAVE_PYTHON )
-  add_custom_target( installcheck
-    COMMAND ${CMAKE_COMMAND} -E env
-      PYTHON="${PYTHON}"
-      ${CMAKE_INSTALL_FULL_DATADIR}/extras/do_tests.sh --test-pynest
-    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
-    COMMENT "Execute NEST's testsuite...."
-  )
-else ()
-  add_custom_target( installcheck
-    COMMAND ${CMAKE_COMMAND} -E env
-      ${CMAKE_INSTALL_FULL_DATADIR}/extras/do_tests.sh
-    WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
-    COMMENT "Execute NEST's testsuite...."
-  )
+  set( TEST_OPTS "${TEST_OPTS};--with-python=${PYTHON}" )
 endif ()
+
+if ( HAVE_MUSIC )
+  set( TEST_OPTS "${TEST_OPTS};--with-music=${MUSIC_EXECUTABLE}" )
+endif ()
+
+add_custom_target( installcheck
+  COMMAND ${CMAKE_COMMAND} -E env
+    ${CMAKE_INSTALL_FULL_DATADIR}/extras/do_tests.sh
+	--prefix=${CMAKE_INSTALL_PREFIX}
+	--report-dir="${PROJECT_BINARY_DIR}/reports"
+	${TEST_OPTS}
+  WORKING_DIRECTORY "${PROJECT_BINARY_DIR}"
+  COMMENT "Executing NEST's testsuite..."
+)
 
 # N.B. to ensure "make install" is always run before "make installcheck", we
 # would ideally like to add:
@@ -222,22 +225,17 @@ endif ()
 ##################        Define Subdirectories here          ##################
 ################################################################################
 
-if ( HAVE_LIBNEUROSIM )
-  add_subdirectory( conngen )
-endif ()
 add_subdirectory( doc )
 add_subdirectory( examples )
 add_subdirectory( extras )
 add_subdirectory( lib )
 add_subdirectory( libnestutil )
-add_subdirectory( librandom )
 add_subdirectory( models )
 add_subdirectory( sli )
 add_subdirectory( nest )
 add_subdirectory( nestkernel )
-add_subdirectory( precise )
+add_subdirectory( thirdparty )
 add_subdirectory( testsuite )
-add_subdirectory( topology )
 if ( HAVE_PYTHON )
   add_subdirectory( pynest )
 endif ()
@@ -283,10 +281,8 @@ endforeach ()
 set( ALL_LIBS
   "-lnestutil"
   "-lnest"
-  "-lrandom"
   "-lsli"
   "-lnestkernel"
-  "-ltopology"
   "${OpenMP_CXX_FLAGS}"
   "${LTDL_LIBRARIES}"
   "${READLINE_LIBRARIES}"
@@ -320,11 +316,6 @@ foreach ( INC ${ALL_INCLUDES_tmp} ${with-includes} )
 endforeach ()
 set( ALL_INCLUDES "${ALL_INCLUDES} ${SIONLIB_INCLUDE}" )
 
-if ( HAVE_LIBNEUROSIM )
-  set( ALL_LIBS "-lconngen ${ALL_LIBS}" )
-  set( ALL_INCLUDES "-I${PROJECT_SOURCE_DIR}/conngen ${ALL_INCLUDES}" )
-endif ()
-
 ################################################################################
 ##################           File generation here             ##################
 ################################################################################
@@ -337,16 +328,6 @@ configure_file(
 configure_file(
     "${PROJECT_SOURCE_DIR}/pynest/setup.py.in"
     "${PROJECT_BINARY_DIR}/pynest/setup.py" @ONLY
-)
-
-configure_file(
-    "${PROJECT_SOURCE_DIR}/pynest/do_tests.py.in"
-    "${PROJECT_BINARY_DIR}/pynest/do_tests.py" @ONLY
-)
-
-configure_file(
-    "${PROJECT_SOURCE_DIR}/testsuite/do_tests.sh.in"
-    "${PROJECT_BINARY_DIR}/testsuite/do_tests.sh" @ONLY
 )
 
 configure_file(

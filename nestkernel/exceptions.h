@@ -669,25 +669,6 @@ public:
 };
 
 /**
- * Exception to be thrown if the wrong argument type
- * is given to a function
- * @ingroup KernelExceptions
- */
-class SimulationError : public KernelException
-{
-public:
-  SimulationError()
-    : KernelException( "SimulationError" )
-  {
-  }
-  ~SimulationError() throw()
-  {
-  }
-
-  std::string message() const;
-};
-
-/**
  * Exception to be thrown on prototype construction if Time objects
  * incompatible. This exception is to be thrown by the default constructor of
  * nodes which require that Time objects have properties wrt resolution.
@@ -1161,6 +1142,22 @@ private:
 
 #endif
 
+#ifdef HAVE_MPI
+class MPIPortsFileUnknown : public KernelException
+{
+public:
+  explicit MPIPortsFileUnknown( const index node_id )
+    : node_id_( node_id )
+  {
+  }
+
+  std::string message() const;
+
+private:
+  const index node_id_;
+};
+#endif
+
 class UnmatchedSteps : public KernelException
 {
 public:
@@ -1210,11 +1207,40 @@ public:
   {
   }
 
-
   std::string message() const;
 
 private:
   const std::string backend_;
 };
-}
+
+class LayerExpected : public KernelException
+{
+public:
+  LayerExpected()
+    : KernelException( "LayerExpected" )
+  {
+  }
+  ~LayerExpected() throw()
+  {
+  }
+
+  std::string message() const;
+};
+
+class LayerNodeExpected : public KernelException
+{
+public:
+  LayerNodeExpected()
+    : KernelException( "LayerNodeExpected" )
+  {
+  }
+  ~LayerNodeExpected() throw()
+  {
+  }
+
+  std::string message() const;
+};
+
+} // namespace nest
+
 #endif

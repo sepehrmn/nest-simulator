@@ -163,12 +163,11 @@ nest::aeif_psc_alpha::State_::State_( const State_& s )
 
 nest::aeif_psc_alpha::State_& nest::aeif_psc_alpha::State_::operator=( const State_& s )
 {
-  assert( this != &s ); // would be bad logical error in program
+  r_ = s.r_;
   for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
   {
     y_[ i ] = s.y_[ i ];
   }
-  r_ = s.r_;
   return *this;
 }
 
@@ -321,7 +320,7 @@ nest::aeif_psc_alpha::Buffers_::Buffers_( const Buffers_&, aeif_psc_alpha& n )
  * ---------------------------------------------------------------- */
 
 nest::aeif_psc_alpha::aeif_psc_alpha()
-  : Archiving_Node()
+  : ArchivingNode()
   , P_()
   , S_( P_ )
   , B_( *this )
@@ -330,7 +329,7 @@ nest::aeif_psc_alpha::aeif_psc_alpha()
 }
 
 nest::aeif_psc_alpha::aeif_psc_alpha( const aeif_psc_alpha& n )
-  : Archiving_Node( n )
+  : ArchivingNode( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
@@ -359,19 +358,12 @@ nest::aeif_psc_alpha::~aeif_psc_alpha()
  * ---------------------------------------------------------------- */
 
 void
-nest::aeif_psc_alpha::init_state_( const Node& proto )
-{
-  const aeif_psc_alpha& pr = downcast< aeif_psc_alpha >( proto );
-  S_ = pr.S_;
-}
-
-void
 nest::aeif_psc_alpha::init_buffers_()
 {
   B_.spike_exc_.clear(); // includes resize
   B_.spike_inh_.clear(); // includes resize
   B_.currents_.clear();  // includes resize
-  Archiving_Node::clear_history();
+  ArchivingNode::clear_history();
 
   B_.logger_.reset();
 
@@ -434,7 +426,6 @@ nest::aeif_psc_alpha::calibrate()
   V_.i0_ex_ = 1.0 * numerics::e / P_.tau_syn_ex;
   V_.i0_in_ = 1.0 * numerics::e / P_.tau_syn_in;
   V_.refractory_counts_ = Time( Time::ms( P_.t_ref_ ) ).get_steps();
-  assert( V_.refractory_counts_ >= 0 ); // since t_ref_ >= 0, this can only fail in error
 }
 
 /* ----------------------------------------------------------------

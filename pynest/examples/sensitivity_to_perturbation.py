@@ -24,7 +24,7 @@ Sensitivity to perturbation
 ---------------------------
 
 This script simulates a network in two successive trials, which are identical
-except for one extra input spike in the second realisation (a small
+except for one extra input spike in the second realization (a small
 perturbation). The network consists of recurrent, randomly connected excitatory
 and inhibitory neurons. Its activity is driven by an external Poisson input
 provided to all neurons independently. In order to ensure that the network is
@@ -33,8 +33,8 @@ reset appropriately between the trials, we do the following steps:
 - resetting the network
 - resetting the random network generator
 - resetting the internal clock
-- deleting all entries in the spike detector
-- introducing a hyperpolarisation phase between the trials
+- deleting all entries in the spike recorder
+- introducing a hyperpolarization phase between the trials
   (in order to avoid that spikes remaining in the NEST memory
   after the first simulation are fed into the second simulation)
 
@@ -113,7 +113,7 @@ T = 1000.                 # simulation time per trial (ms)
 fade_out = 2. * delay     # fade out time (ms)
 dt = 0.01                 # simulation time resolution (ms)
 seed_NEST = 30            # seed of random number generator in Nest
-seed_numpy = 30           # seed of random number generator in numpy
+seed_numpy = 30           # seed of random number generator in NumPy
 
 senders = []
 spiketimes = []
@@ -126,7 +126,7 @@ spiketimes = []
 for trial in [0, 1]:
 
     # Before we build the network, we reset the simulation kernel to ensure
-    # that previous NEST simulations in the python shell will not disturb this
+    # that previous NEST simulations in the Python shell will not disturb this
     # simulation and set the simulation resolution (later defined
     # synaptic delays cannot be smaller than the simulation resolution).
     nest.ResetKernel()
@@ -153,10 +153,10 @@ for trial in [0, 1]:
     # Afterwards we create a ``poisson_generator`` that provides spikes (the external
     # input) to the neurons until time ``T`` is reached.
     # Afterwards a ``dc_generator``, which is also connected to the whole population,
-    # provides a stong hyperpolarisation step for a short time period ``fade_out``.
+    # provides a strong hyperpolarization step for a short time period ``fade_out``.
     #
     # The ``fade_out`` period has to last at least twice as long as the simulation
-    # resolution to supress the neurons from firing.
+    # resolution to suppress the neurons from firing.
 
     ext = nest.Create("poisson_generator",
                       params={'rate': rate_ext, 'stop': T})
@@ -168,8 +168,8 @@ for trial in [0, 1]:
                                 'stop': T + fade_out})
     nest.Connect(suppr, allnodes)
 
-    spikedetector = nest.Create("spike_detector")
-    nest.Connect(allnodes, spikedetector)
+    spikerecorder = nest.Create("spike_recorder")
+    nest.Connect(allnodes, spikerecorder)
 
     ###############################################################################
     # We then create the ``spike_generator``, which provides the extra spike
@@ -181,10 +181,10 @@ for trial in [0, 1]:
     ###############################################################################
     # We need to reset the random number generator and the clock of
     # the simulation Kernel. In addition, we ensure that there is no spike left in
-    # the spike detector.
+    # the spike recorder.
 
-    nest.SetKernelStatus({"rng_seeds": [seed_NEST], 'time': 0.0})
-    spikedetector.n_events = 0
+    nest.SetKernelStatus({"rng_seed": seed_NEST, 'biological_time': 0.0})
+    spikerecorder.n_events = 0
 
     # We assign random initial membrane potentials to all neurons
 
@@ -212,8 +212,8 @@ for trial in [0, 1]:
 
     # Storing the data.
 
-    senders += [spikedetector.get('events', 'senders')]
-    spiketimes += [spikedetector.get('events', 'times')]
+    senders += [spikerecorder.get('events', 'senders')]
+    spiketimes += [spikerecorder.get('events', 'times')]
 
 ###############################################################################
 # We plot the spiking activity of the network (first trial in red, second trial

@@ -149,12 +149,11 @@ nest::iaf_cond_exp_sfa_rr::State_::State_( const State_& s )
 
 nest::iaf_cond_exp_sfa_rr::State_& nest::iaf_cond_exp_sfa_rr::State_::operator=( const State_& s )
 {
-  assert( this != &s ); // would be bad logical error in program
+  r_ = s.r_;
   for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
   {
     y_[ i ] = s.y_[ i ];
   }
-  r_ = s.r_;
   return *this;
 }
 
@@ -232,11 +231,11 @@ nest::iaf_cond_exp_sfa_rr::Parameters_::set( const DictionaryDatum& d, Node* nod
 void
 nest::iaf_cond_exp_sfa_rr::State_::get( DictionaryDatum& d ) const
 {
-  def< double >( d, names::V_m, y_[ V_M ] );     // Membrane potential
-  def< double >( d, names::g_ex, y_[ G_EXC ] );  // Membrane potential
-  def< double >( d, names::g_in, y_[ G_INH ] );  // Membrane potential
-  def< double >( d, names::g_sfa, y_[ G_SFA ] ); // Membrane potential
-  def< double >( d, names::g_rr, y_[ G_RR ] );   // Membrane potential
+  def< double >( d, names::V_m, y_[ V_M ] ); // Membrane potential
+  def< double >( d, names::g_ex, y_[ G_EXC ] );
+  def< double >( d, names::g_in, y_[ G_INH ] );
+  def< double >( d, names::g_sfa, y_[ G_SFA ] );
+  def< double >( d, names::g_rr, y_[ G_RR ] );
 }
 
 void
@@ -274,7 +273,7 @@ nest::iaf_cond_exp_sfa_rr::Buffers_::Buffers_( const Buffers_&, iaf_cond_exp_sfa
  * ---------------------------------------------------------------- */
 
 nest::iaf_cond_exp_sfa_rr::iaf_cond_exp_sfa_rr()
-  : Archiving_Node()
+  : ArchivingNode()
   , P_()
   , S_( P_ )
   , B_( *this )
@@ -283,7 +282,7 @@ nest::iaf_cond_exp_sfa_rr::iaf_cond_exp_sfa_rr()
 }
 
 nest::iaf_cond_exp_sfa_rr::iaf_cond_exp_sfa_rr( const iaf_cond_exp_sfa_rr& n )
-  : Archiving_Node( n )
+  : ArchivingNode( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
@@ -312,19 +311,12 @@ nest::iaf_cond_exp_sfa_rr::~iaf_cond_exp_sfa_rr()
  * ---------------------------------------------------------------- */
 
 void
-nest::iaf_cond_exp_sfa_rr::init_state_( const Node& proto )
-{
-  const iaf_cond_exp_sfa_rr& pr = downcast< iaf_cond_exp_sfa_rr >( proto );
-  S_ = pr.S_;
-}
-
-void
 nest::iaf_cond_exp_sfa_rr::init_buffers_()
 {
   B_.spike_exc_.clear(); // includes resize
   B_.spike_inh_.clear(); // includes resize
   B_.currents_.clear();  // includes resize
-  Archiving_Node::clear_history();
+  ArchivingNode::clear_history();
 
   B_.logger_.reset();
 

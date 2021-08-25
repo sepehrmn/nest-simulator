@@ -214,12 +214,11 @@ nest::hh_cond_beta_gap_traub::State_::State_( const State_& s )
 
 nest::hh_cond_beta_gap_traub::State_& nest::hh_cond_beta_gap_traub::State_::operator=( const State_& s )
 {
-  assert( this != &s ); // would be bad logical error in program
+  r_ = s.r_;
   for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
   {
     y_[ i ] = s.y_[ i ];
   }
-  r_ = s.r_;
   return *this;
 }
 
@@ -336,7 +335,7 @@ nest::hh_cond_beta_gap_traub::Buffers_::Buffers_( const Buffers_&, hh_cond_beta_
  * ---------------------------------------------------------------- */
 
 nest::hh_cond_beta_gap_traub::hh_cond_beta_gap_traub()
-  : Archiving_Node()
+  : ArchivingNode()
   , P_()
   , S_( P_ )
   , B_( *this )
@@ -346,7 +345,7 @@ nest::hh_cond_beta_gap_traub::hh_cond_beta_gap_traub()
 }
 
 nest::hh_cond_beta_gap_traub::hh_cond_beta_gap_traub( const hh_cond_beta_gap_traub& n )
-  : Archiving_Node( n )
+  : ArchivingNode( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
@@ -376,13 +375,6 @@ nest::hh_cond_beta_gap_traub::~hh_cond_beta_gap_traub()
  * ---------------------------------------------------------------- */
 
 void
-nest::hh_cond_beta_gap_traub::init_state_( const Node& proto )
-{
-  const hh_cond_beta_gap_traub& pr = downcast< hh_cond_beta_gap_traub >( proto );
-  S_ = pr.S_;
-}
-
-void
 nest::hh_cond_beta_gap_traub::init_buffers_()
 {
   B_.spike_exc_.clear(); // includes resize
@@ -408,7 +400,7 @@ nest::hh_cond_beta_gap_traub::init_buffers_()
 
   B_.sumj_g_ij_ = 0.0;
 
-  Archiving_Node::clear_history();
+  ArchivingNode::clear_history();
 
   B_.logger_.reset();
 

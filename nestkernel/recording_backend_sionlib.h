@@ -29,30 +29,38 @@
 
 #include "recording_backend.h"
 
-/* BeginUserDocs: recording backend
+/* BeginUserDocs: NOINDEX
 
-.. _sionlib_backend:
+Recording backend `sionlib` - Store data to an efficient binary format
+######################################################################
 
-Store data to an efficient binary format
-########################################
+Description
++++++++++++
+
+.. admonition:: Availability
+
+   This recording backend is only available if NEST was compiled with
+   :ref:`support for MPI and SIONlib <compile-with-mpi>`.
 
 The `sionlib` recording backend writes collected data persistently to
 a binary container file (or to a rather small set of such files). This
 is especially useful for large-scale simulations running in a
-distributed way on many MPI processes/OpenMP threads. In this usage
-scenario, writing to plain text files (see :ref:`ASCII backend
-<ascii_backend>`) would cause a large overhead because of the huge
-number of generated files and be very inefficient. For the
-implementation of writing to binary container files, NEST relies on
-the SIONlib library (http://www.fz-juelich.de/jsc/sionlib). Depending
-on the I/O architecture of the computing cluster (supercomputer) and
-the global settings of the `sionlib` recording backend (see below),
-either a single container file or a set of these files is created. In
-case of a single file, it is named according to the following pattern:
+distributed way on many MPI processes/OpenMP threads. In such usage
+scenarios, writing to plain text files (see :doc:`recording backend
+for ASCII files <recording_backend_ascii>`) would cause a large
+overhead because of the huge number of generated files and thus be
+very inefficient.
+
+The implementation of the `sionlib` backend is based on the `SIONlib
+library <http://www.fz-juelich.de/jsc/sionlib>`_. Depending on the I/O
+architecture of the compute cluster or supercomputer and the global
+settings of the `sionlib` recording backend, either a single container
+file or a set of these files is created. In case of a single file, it
+is named according to the following pattern:
 
 ::
 
-   data_path/data_prefixfilename
+   <data_path>/<data_prefix><filename>
 
 In case of multiple files, this name is extended for each file by a
 dot followed by a consecutive number. The properties ``data_path`` and
@@ -75,79 +83,103 @@ filename is composed.
 Data format
 +++++++++++
 
-The container files contain the data in a custom binary format. The
-recorder property ``label`` and all other recorder-specific metadata
-is stored with each recording device. To retrieve the data after the
-simulation, the `nestio reader API` in Python has to be used. SIONlib
-container files are sparse files: They only use up the space on disk
-which is actually filled with data.
+In contrast to other recording backends, the ``sionlib`` backend
+writes the data from all recorders using it to a single container
+file(s). The file(s) contain the data in a custom binary format, which
+is composed of a series of blocks in the following order:
+
+* The *body block* contains the actual data records; the layout of an
+  individual record depends on the type of the device and is described
+  by a corresponding entry in the *device info block*
+
+* The *file info block* keeps the file's metadata, like version
+  information and such
+
+* The *device info block* stores the properties and a data layout
+  description for each device that uses the ``sionlib`` backend
+
+* The *tail block* contains pointers to the *file info block*
+
+The data layout of the NEST SIONlib file format v2 is shown in the
+following figure.
+
+.. figure:: ../_static/img/nest_sionlib_file_format_v2.png
+   :alt: NEST SIONlib binary file format
+
+   NEST SIONlib binary file format.
+
+Reading the data
+++++++++++++++++
+
+As the binary format of the files produced by the ``sionlib`` does not
+conform to any standard, parsing them manually might be a bit
+cumbersome. To ease this task, we provide a reader module for Python
+that makes the files available in a convenient way. The source code
+and further documentation for this module can be found in its own
+`repository <https://github.com/nest/nest-sionlib-reader>`_.
 
 Recorder-specific parameters
 ++++++++++++++++++++++++++++
 
-.. glossary::
-
- label
-   A recorder-specific string (default: *""*) that serves as alias
-   name for the recording device, and which is stored in the metadata
-   section of the container files.
+label
+    A recorder-specific string (default: *""*) that serves as alias
+    name for the recording device, and which is stored in the metadata
+    section of the container files.
 
 Global parameters (to be set via ``SetKernelStatus``)
 +++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-.. glossary::
+filename
+    The filename (default: *"output.sion"*) part of the pattern
+    according to which the full filename (incl. path) is generated (see
+    above).
 
- filename
-   The filename (default: *"output.sion"*) part of the pattern
-   according to which the full filename (incl. path) is generated (see
-   above).
+sion_n_files
+    The number of container files (default: *1*) used for storing the
+    results of a single call to ``Simulate`` (or of a single
+    ``Prepare``-``Run``-``Cleanup`` cycle). The default is one
+    file. Using multiple files may have a performance advantage on
+    large computing clusters, depending on how the (parallel) file
+    system is accessed from the compute nodes.
 
- sion_n_files
-   The number of container files (default: *1*) used for storing the
-   results of a single call to ``Simulate`` (or of a single
-   ``Prepare``-``Run``-``Cleanup`` cycle). The default is one
-   file. Using multiple files may have a performance advantage on
-   large computing clusters, depending on how the (parallel) file
-   system is accessed from the compute nodes.
-
- sion_chunksize
-   In SIONlib nomenclature, a single OpenMP thread running on a single
-   MPI process is called a task. For each task, a specific number of
-   bytes is allocated in the container file(s) from the
-   beginning. This number is set by the parameter ``sion_chunksize``
-   (default: *262144*). If the number of bytes written by each task
-   during the simulation is known in advance, it is advantageous to
-   set the chunk size to this value. In this way, the size of the
-   container files has not to be adjusted by SIONlib during the
-   simulation. This yields a slight performance advantage.  Choosing a
-   value for ``sion_chunksize`` which is too large does not hurt that
-   much because SIONlib container files are sparse files (if supported
-   by the underlying file system) which only use up the disk space
-   which is actually required by the stored data.
+sion_chunksize
+    In SIONlib nomenclature, a single OpenMP thread running on a single
+    MPI process is called a task. For each task, a specific number of
+    bytes is allocated in the container file(s) from the
+    beginning. This number is set by the parameter ``sion_chunksize``
+    (default: *262144*). If the number of bytes written by each task
+    during the simulation is known in advance, it is advantageous to
+    set the chunk size to this value. In this way, the size of the
+    container files has not to be adjusted by SIONlib during the
+    simulation. This yields a slight performance advantage.  Choosing a
+    value for ``sion_chunksize`` which is too large does not hurt that
+    much because SIONlib container files are sparse files (if supported
+    by the underlying file system) which only use up the disk space
+    which is actually required by the stored data.
 
 buffer_size
-   The size of task-specific buffers (default: *1024*) within the
-   `sionlib` recording backend in bytes.  These buffers are used to
-   temporarily store data generated by the recording devices on each
-   task. As soon as a buffer is full, its contents are written to the
-   respective container file. To achieve optimum performance, the size
-   of these buffers should at least amount to the size of the file
-   system blocks.
+    The size of task-specific buffers (default: *1024*) within the
+    `sionlib` recording backend in bytes.  These buffers are used to
+    temporarily store data generated by the recording devices on each
+    task. As soon as a buffer is full, its contents are written to the
+    respective container file. To achieve optimum performance, the size
+    of these buffers should at least amount to the size of the file
+    system blocks.
 
 sion_collective
-   Flag (default: *false*) to enable the collective mode of
-   SIONlib. In collective mode, recorded data is buffered completely
-   during ``Run`` and only written at the very end of ``Run`` to the
-   container files, all tasks acting synchronously. Furthermore,
-   within SIONlib so-called collectors aggregate data from a specific
-   number of tasks, and actually only these collectors directly access
-   the container files, in this way minimizing load on the file
-   system. The number of tasks per collector is determined
-   automatically by SIONlib. However, collector size can also be set
-   explicitly by the user via the environment variable SION_COLLSIZE
-   before the start of NEST. On large simulations which also generate
-   a large amount of data, collective mode can offer a performance
-   advantage.
+    Flag (default: *false*) to enable the collective mode of
+    SIONlib. In collective mode, recorded data is buffered completely
+    during ``Run`` and only written at the very end of ``Run`` to the
+    container files, all tasks acting synchronously. Furthermore,
+    within SIONlib so-called collectors aggregate data from a specific
+    number of tasks, and actually only these collectors directly access
+    the container files, in this way minimizing load on the file
+    system. The number of tasks per collector is determined
+    automatically by SIONlib. However, collector size can also be set
+    explicitly by the user via the environment variable SION_COLLSIZE
+    before the start of NEST. On large simulations which also generate
+    a large amount of data, collective mode can offer a performance
+    advantage.
 
 EndUserDocs */
 

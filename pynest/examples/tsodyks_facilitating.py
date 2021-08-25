@@ -19,11 +19,12 @@
 # You should have received a copy of the GNU General Public License
 # along with NEST.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Tsodyks facilitating example
---------------------------------
+"""
+Tsodyks facilitating example
+----------------------------
 
 This scripts simulates two neurons. One is driven with dc-input and
-connected to the other one with a facilitating tsodyks synapse. The
+connected to the other one with a facilitating Tsodyks synapse. The
 membrane potential trace of the second neuron is recorded.
 
 This example reproduces figure 1B of [1]_
@@ -33,13 +34,13 @@ parameter ``U`` causes a slow saturation of the synaptic efficacy
 (Eq. 2.2), enabling a facilitating behavior.
 
 References
-~~~~~~~~~~~~
+~~~~~~~~~~
 
 .. [1] Tsodyks M, Pawelzik K, Markram H (1998). Neural networks with dynamic synapses. Neural
        computation, http://dx.doi.org/10.1162/089976698300017502
 
 See Also
-~~~~~~~~~~
+~~~~~~~~
 
 :doc:`tsodyks_depressing`
 """
@@ -49,6 +50,7 @@ See Also
 
 import nest
 import nest.voltage_trace
+import matplotlib.pyplot as plt
 from numpy import exp
 
 ###############################################################################
@@ -119,7 +121,7 @@ volts.set(label="voltmeter", interval=1.)
 # Sixth, the ``dc_generator`` is connected to the first neuron
 # (`neurons[0]`) and the `voltmeter` is connected to the second neuron
 # (`neurons[1]`). The command `Connect` has different variants. Plain
-# ``Connect`` just takes the handles of pre- and post-synaptic nodes and
+# ``Connect`` just takes the handles of pre- and postsynaptic nodes and
 # uses the default values for weight and delay. Note that the connection
 # direction for the ``voltmeter`` reflects the signal flow in the simulation
 # kernel, because it observes the neuron instead of receiving events from it.
@@ -144,4 +146,4 @@ nest.Connect(neurons[0], neurons[1], syn_spec="syn")
 
 nest.Simulate(Tend)
 nest.voltage_trace.from_device(volts)
-nest.voltage_trace.show()
+plt.show()

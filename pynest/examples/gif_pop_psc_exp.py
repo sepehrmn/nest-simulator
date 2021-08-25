@@ -20,8 +20,9 @@
 # along with NEST.  If not, see <http://www.gnu.org/licenses/>.
 
 
-"""Population rate model of generalized integrate-and-fire neurons
---------------------------------------------------------------------
+"""
+Population rate model of generalized integrate-and-fire neurons
+---------------------------------------------------------------
 
 This script simulates a finite network of generalized integrate-and-fire
 (GIF) neurons directly on the mesoscopic population level using the effective
@@ -35,7 +36,7 @@ description of the corresponding microscopic network based on the
 NEST model ``gif_psc_exp``.
 
 References
-~~~~~~~~~~~
+~~~~~~~~~~
 
 .. [1] Schwalger T, Degert M, Gerstner W (2017). Towards a theory of cortical columns: From spiking
        neurons to interacting neural populations of finite size. PLoS Comput Biol.
@@ -95,7 +96,7 @@ C = np.vstack((N, N)) * pconn  # numbers of input connections
 # final synaptic weights scaling as 1/C
 J_syn = np.array([[J, -g * J], [J, -g * J]]) * C0 / C
 
-taus1_ = [3., 6.]  # time constants of exc./inh. post-synaptic currents (PSC's)
+taus1_ = [3., 6.]  # time constants of exc./inh. postsynaptic currents (PSC's)
 taus1 = np.array([taus1_ for k in range(M)])
 
 
@@ -121,7 +122,7 @@ nest.ResetKernel()
 nest.SetKernelStatus({'resolution': dt,
                       'print_time': True,
                       'local_num_threads': 1})
-t0 = nest.GetKernelStatus('time')
+t0 = nest.GetKernelStatus('biological_time')
 
 nest_pops = nest.Create('gif_pop_psc_exp', M)
 
@@ -159,20 +160,19 @@ for i in range(M):
 
 ###############################################################################
 # To record the instantaneous population rate `Abar(t)` we use a multimeter,
-# and to get the population activity `A_N(t)` we use spike detector:
+# and to get the population activity `A_N(t)` we use spike recorder:
 
 # monitor the output using a multimeter, this only records with dt_rec!
 nest_mm = nest.Create('multimeter')
 nest_mm.set(record_from=['n_events', 'mean'], interval=dt_rec)
 nest.Connect(nest_mm, nest_pops)
 
-# monitor the output using a spike detector
-nest_sd = []
+# monitor the output using a spike recorder
+nest_sr = []
 for i in range(M):
-    nest_sd.append(nest.Create('spike_detector'))
-    nest_sd[i].time_in_steps = True
-    nest.SetDefaults('static_synapse', {'weight': 1., 'delay': dt})
-    nest.Connect(nest_pops[i], nest_sd[i])
+    nest_sr.append(nest.Create('spike_recorder'))
+    nest_sr[i].time_in_steps = True
+    nest.Connect(nest_pops[i], nest_sr[i], syn_spec={'weight': 1., 'delay': dt})
 
 ###############################################################################
 # All neurons in a given population will be stimulated with a step input
@@ -191,15 +191,14 @@ for i in range(M):
                             origin=t0,
                             stop=t_end)
     pop_ = nest_pops[i]
-    nest.Connect(nest_stepcurrent[i], pop_, syn_spec={'weight': 1.})
+    nest.Connect(nest_stepcurrent[i], pop_, syn_spec={'weight': 1., 'delay': dt})
 
 ###############################################################################
 # We can now start the simulation:
 
 local_num_threads = 1
 seed = 1
-msd = local_num_threads * seed + 1  # master seed
-nest.SetKernelStatus({'rng_seeds': range(msd, msd + local_num_threads)})
+nest.SetKernelStatus({'rng_seed': seed})
 
 t = np.arange(0., t_end, dt_rec)
 A_N = np.ones((t.size, M)) * np.nan
@@ -214,10 +213,10 @@ for i, nest_i in enumerate(nest_pops):
     min_len = np.min([len(a), len(Abar)])
     Abar[:min_len, i] = a[:min_len]
 
-    data_sd = nest_sd[i].get('events', 'times')
-    data_sd = data_sd * dt - t0
+    data_sr = nest_sr[i].get('events', 'times')
+    data_sr = data_sr * dt - t0
     bins = np.concatenate((t, np.array([t[-1] + dt_rec])))
-    A = np.histogram(data_sd, bins=bins)[0] / float(N[i]) / dt_rec
+    A = np.histogram(data_sr, bins=bins)[0] / float(N[i]) / dt_rec
     A_N[:, i] = A
 
 ###############################################################################
@@ -247,7 +246,7 @@ plt.xlabel('time [ms]')
 nest.ResetKernel()
 nest.SetKernelStatus(
     {'resolution': dt, 'print_time': True, 'local_num_threads': 1})
-t0 = nest.GetKernelStatus('time')
+t0 = nest.GetKernelStatus('biological_time')
 
 nest_pops = []
 for k in range(M):
@@ -289,14 +288,14 @@ for i, nest_i in enumerate(nest_pops):
 # mesoscopic population activities `A_N(t)` from the microscopic simulation.
 # We also record the membrane potentials of five example neurons:
 
-# monitor the output using a multimeter and a spike detector
-nest_sd = []
+# monitor the output using a multimeter and a spike recorder
+nest_sr = []
 for i, nest_i in enumerate(nest_pops):
-    nest_sd.append(nest.Create('spike_detector'))
-    nest_sd[i].time_in_steps = True
+    nest_sr.append(nest.Create('spike_recorder'))
+    nest_sr[i].time_in_steps = True
 
     # record all spikes from population to compute population activity
-    nest.Connect(nest_i, nest_sd[i], syn_spec={'weight': 1., 'delay': dt})
+    nest.Connect(nest_i, nest_sr[i], syn_spec={'weight': 1., 'delay': dt})
 
 Nrecord = [5, 0]    # for each population "i" the first Nrecord[i] neurons are recorded
 nest_mm_Vm = []
@@ -304,7 +303,7 @@ for i, nest_i in enumerate(nest_pops):
     nest_mm_Vm.append(nest.Create('multimeter'))
     nest_mm_Vm[i].set(record_from=['V_m'], interval=dt_rec)
     if Nrecord[i] != 0:
-        nest.Connect(nest_mm_Vm[i], nest_i[:Nrecord[i]])
+        nest.Connect(nest_mm_Vm[i], nest_i[:Nrecord[i]], syn_spec={'weight': 1., 'delay': dt})
 
 ###############################################################################
 # As before, all neurons in a given population will be stimulated with a
@@ -325,15 +324,14 @@ for i in range(M):
                             stop=t_end)
     # optionally a stopping time may be added by: 'stop': sim_T + t0
     pop_ = nest_pops[i]
-    nest.Connect(nest_stepcurrent[i], pop_, syn_spec={'weight': 1.})
+    nest.Connect(nest_stepcurrent[i], pop_, syn_spec={'weight': 1., 'delay': dt})
 
 ###############################################################################
 # We can now start the microscopic simulation:
 
 local_num_threads = 1
 seed = 1
-msd = local_num_threads * seed + 1  # master seed
-nest.SetKernelStatus({'rng_seeds': range(msd, msd + local_num_threads)})
+nest.SetKernelStatus({'rng_seed': seed})
 
 t = np.arange(0., t_end, dt_rec)
 A_N = np.ones((t.size, M)) * np.nan
@@ -342,13 +340,13 @@ A_N = np.ones((t.size, M)) * np.nan
 nest.Simulate(t_end + dt)
 
 ###############################################################################
-# Let's retrieve the data of the spike detector and plot the activity of the
+# Let's retrieve the data of the spike recorder and plot the activity of the
 # excitatory population (in Hz):
 
 for i in range(len(nest_pops)):
-    data_sd = nest_sd[i].get('events', 'times') * dt - t0
+    data_sr = nest_sr[i].get('events', 'times') * dt - t0
     bins = np.concatenate((t, np.array([t[-1] + dt_rec])))
-    A = np.histogram(data_sd, bins=bins)[0] / float(N[i]) / dt_rec
+    A = np.histogram(data_sr, bins=bins)[0] / float(N[i]) / dt_rec
     A_N[:, i] = A * 1000  # in Hz
 
 t = np.arange(dt, t_end + dt, dt_rec)

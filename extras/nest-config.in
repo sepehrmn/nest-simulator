@@ -1,6 +1,6 @@
 #! /bin/sh
 
-prefix=${NEST_INSTALL_DIR:-@CMAKE_INSTALL_PREFIX@}
+prefix="@CMAKE_INSTALL_PREFIX@"
 exec_prefix=${prefix}
 
 usage()
@@ -72,10 +72,10 @@ while test $# -gt 0; do
         echo "@CMAKE_CXX_COMPILER@"
         ;;
     --python-executable)
-        echo "@PYTHON_EXECUTABLE@"
+        echo "@Python_EXECUTABLE@"
         ;;
     --python-version)
-        echo "@PYTHON_VERSION@"
+        echo "@Python_VERSION@"
         ;;
 
     --static-libraries)

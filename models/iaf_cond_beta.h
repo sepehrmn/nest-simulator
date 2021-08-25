@@ -67,7 +67,7 @@ Description
 +++++++++++
 
 iaf_cond_beta is an implementation of a spiking neuron using IAF dynamics with
-conductance-based synapses. Incoming spike events induce a post-synaptic change
+conductance-based synapses. Incoming spike events induce a postsynaptic change
 of conductance modelled by a beta function. The beta function
 is normalized such that an event of weight 1.0 results in a peak current of
 1 nS at :math:`t = \tau_{rise\_[ex|in]}`.
@@ -146,7 +146,7 @@ iaf_cond_exp, iaf_cond_alpha, iaf_cond_alpha_mc
 
 EndUserDocs */
 
-class iaf_cond_beta : public Archiving_Node
+class iaf_cond_beta : public ArchivingNode
 {
 
   // Boilerplate function declarations --------------------------------
@@ -179,7 +179,6 @@ public:
   void set_status( const DictionaryDatum& );
 
 private:
-  void init_state_( const Node& proto );
   void init_buffers_();
   double get_normalisation_factor( double, double );
   void calibrate();
@@ -231,8 +230,7 @@ private:
    * dynamics and the refractory count. The state vector must be a
    * C-style array to be compatible with GSL ODE solvers.
    *
-   * @note Copy constructor and assignment operator are required because
-   *       of the C-style array.
+   * @note Copy constructor required because of the C-style array.
    */
 public:
   struct State_
@@ -256,6 +254,7 @@ public:
 
     State_( const Parameters_& ); //!< Default initialization
     State_( const State_& );
+
     State_& operator=( const State_& );
 
     void get( DictionaryDatum& ) const; //!< Store current values in dictionary
@@ -410,7 +409,7 @@ iaf_cond_beta::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d );
-  Archiving_Node::get_status( d );
+  ArchivingNode::get_status( d );
 
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 }
@@ -427,7 +426,7 @@ iaf_cond_beta::set_status( const DictionaryDatum& d )
   // write them back to (P_, S_) before we are also sure that
   // the properties to be set in the parent class are internally
   // consistent.
-  Archiving_Node::set_status( d );
+  ArchivingNode::set_status( d );
 
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;

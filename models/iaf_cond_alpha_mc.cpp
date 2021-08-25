@@ -279,12 +279,11 @@ nest::iaf_cond_alpha_mc::State_::State_( const State_& s )
 
 nest::iaf_cond_alpha_mc::State_& nest::iaf_cond_alpha_mc::State_::operator=( const State_& s )
 {
-  assert( this != &s ); // would be bad logical error in program
+  r_ = s.r_;
   for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
   {
     y_[ i ] = s.y_[ i ];
   }
-  r_ = s.r_;
   return *this;
 }
 
@@ -425,7 +424,7 @@ nest::iaf_cond_alpha_mc::State_::set( const DictionaryDatum& d, const Parameters
  * ---------------------------------------------------------------- */
 
 nest::iaf_cond_alpha_mc::iaf_cond_alpha_mc()
-  : Archiving_Node()
+  : ArchivingNode()
   , P_()
   , S_( P_ )
   , B_( *this )
@@ -440,7 +439,7 @@ nest::iaf_cond_alpha_mc::iaf_cond_alpha_mc()
 }
 
 nest::iaf_cond_alpha_mc::iaf_cond_alpha_mc( const iaf_cond_alpha_mc& n )
-  : Archiving_Node( n )
+  : ArchivingNode( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
@@ -469,13 +468,6 @@ nest::iaf_cond_alpha_mc::~iaf_cond_alpha_mc()
  * ---------------------------------------------------------------- */
 
 void
-nest::iaf_cond_alpha_mc::init_state_( const Node& proto )
-{
-  const iaf_cond_alpha_mc& pr = downcast< iaf_cond_alpha_mc >( proto );
-  S_ = pr.S_;
-}
-
-void
 nest::iaf_cond_alpha_mc::init_buffers_()
 {
   B_.spikes_.resize( NUM_SPIKE_RECEPTORS );
@@ -493,7 +485,7 @@ nest::iaf_cond_alpha_mc::init_buffers_()
   }
 
   B_.logger_.reset();
-  Archiving_Node::clear_history();
+  ArchivingNode::clear_history();
 
   B_.step_ = Time::get_resolution().get_ms();
   B_.IntegrationStep_ = B_.step_;

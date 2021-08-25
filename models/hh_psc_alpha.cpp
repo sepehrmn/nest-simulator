@@ -174,12 +174,11 @@ nest::hh_psc_alpha::State_::State_( const State_& s )
 
 nest::hh_psc_alpha::State_& nest::hh_psc_alpha::State_::operator=( const State_& s )
 {
-  assert( this != &s ); // would be bad logical error in program
+  r_ = s.r_;
   for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
   {
     y_[ i ] = s.y_[ i ];
   }
-  r_ = s.r_;
   return *this;
 }
 
@@ -284,7 +283,7 @@ nest::hh_psc_alpha::Buffers_::Buffers_( const Buffers_&, hh_psc_alpha& n )
  * ---------------------------------------------------------------- */
 
 nest::hh_psc_alpha::hh_psc_alpha()
-  : Archiving_Node()
+  : ArchivingNode()
   , P_()
   , S_( P_ )
   , B_( *this )
@@ -293,7 +292,7 @@ nest::hh_psc_alpha::hh_psc_alpha()
 }
 
 nest::hh_psc_alpha::hh_psc_alpha( const hh_psc_alpha& n )
-  : Archiving_Node( n )
+  : ArchivingNode( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
@@ -322,19 +321,12 @@ nest::hh_psc_alpha::~hh_psc_alpha()
  * ---------------------------------------------------------------- */
 
 void
-nest::hh_psc_alpha::init_state_( const Node& proto )
-{
-  const hh_psc_alpha& pr = downcast< hh_psc_alpha >( proto );
-  S_ = pr.S_;
-}
-
-void
 nest::hh_psc_alpha::init_buffers_()
 {
   B_.spike_exc_.clear(); // includes resize
   B_.spike_inh_.clear(); // includes resize
   B_.currents_.clear();  // includes resize
-  Archiving_Node::clear_history();
+  ArchivingNode::clear_history();
 
   B_.logger_.reset();
 

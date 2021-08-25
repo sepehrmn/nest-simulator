@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 #
 # receiver_script.py
@@ -52,6 +52,4 @@ start = dropwhile(lambda t: t < mintime, runtime)
 times = takewhile(lambda t: t < maxtime, start)
 for time in times:
     val = data
-    sys.stdout.write(
-        "t={}\treceiver {}: received {}\n".
-        format(time, rank, val))
+    sys.stdout.write(f"t={time}\treceiver {rank}: received {val}\n")

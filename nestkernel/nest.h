@@ -30,9 +30,6 @@
 #include "enum_bitfield.h"
 #include "logging.h"
 
-// Includes from librandom:
-#include "randomgen.h"
-
 // Includes from nestkernel:
 #include "nest_datums.h"
 #include "nest_time.h"
@@ -97,8 +94,9 @@ void register_secondary_connection_model( const std::string& name,
 
 void print_nodes_to_stream( std::ostream& out = std::cout );
 
-librandom::RngPtr get_vp_rng( thread tid );
-librandom::RngPtr get_global_rng();
+RngPtr get_rank_synced_rng();
+RngPtr get_vp_synced_rng( thread tid );
+RngPtr get_vp_specific_rng( thread tid );
 
 void set_kernel_status( const DictionaryDatum& dict );
 DictionaryDatum get_kernel_status();
@@ -116,7 +114,7 @@ NodeCollectionPTR get_nodes( const DictionaryDatum& dict, const bool local_only 
 void connect( NodeCollectionPTR sources,
   NodeCollectionPTR targets,
   const DictionaryDatum& connectivity,
-  const DictionaryDatum& synapse_params );
+  const std::vector< DictionaryDatum >& synapse_params );
 
 /**
  * @brief Connect arrays of node IDs one-to-one

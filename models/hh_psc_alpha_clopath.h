@@ -71,8 +71,8 @@ hh_psc_alpha_clopath is an implementation of a spiking neuron using the
 Hodgkin-Huxley formalism and that is capable of connecting to a Clopath
 synapse.
 
-(1) Post-synaptic currents
-Incoming spike events induce a post-synaptic change of current modelled
+(1) Postsynaptic currents
+Incoming spike events induce a postsynaptic change of current modelled
 by an alpha function. The alpha function is normalized such that an event of
 weight 1.0 results in a peak current of 1 pA.
 
@@ -178,7 +178,7 @@ hh_psc_alpha, clopath_synapse, aeif_psc_delta_clopath
 
 EndUserDocs */
 
-class hh_psc_alpha_clopath : public Clopath_Archiving_Node
+class hh_psc_alpha_clopath : public ClopathArchivingNode
 {
 
 public:
@@ -208,7 +208,6 @@ public:
   void set_status( const DictionaryDatum& );
 
 private:
-  void init_state_( const Node& proto );
   void init_buffers_();
   void calibrate();
   void update( Time const&, const long, const long );
@@ -256,8 +255,7 @@ public:
 
   /**
    * State variables of the model.
-   * @note Copy constructor and assignment operator required because
-   *       of C-style array.
+   * @note Copy constructor required because of C-style array.
    */
   struct State_
   {
@@ -290,6 +288,7 @@ public:
 
     State_( const Parameters_& ); //!< Default initialization
     State_( const State_& );
+
     State_& operator=( const State_& );
 
     void get( DictionaryDatum& ) const;
@@ -420,7 +419,7 @@ hh_psc_alpha_clopath::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d );
-  Clopath_Archiving_Node::get_status( d );
+  ClopathArchivingNode::get_status( d );
 
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 }
@@ -437,7 +436,7 @@ hh_psc_alpha_clopath::set_status( const DictionaryDatum& d )
   // write them back to (P_, S_) before we are also sure that
   // the properties to be set in the parent class are internally
   // consistent.
-  Clopath_Archiving_Node::set_status( d );
+  ClopathArchivingNode::set_status( d );
 
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;

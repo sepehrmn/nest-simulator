@@ -293,12 +293,11 @@ nest::pp_cond_exp_mc_urbanczik::State_::State_( const State_& s )
 
 nest::pp_cond_exp_mc_urbanczik::State_& nest::pp_cond_exp_mc_urbanczik::State_::operator=( const State_& s )
 {
-  assert( this != &s ); // would be bad logical error in program
+  r_ = s.r_;
   for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
   {
     y_[ i ] = s.y_[ i ];
   }
-  r_ = s.r_;
   return *this;
 }
 
@@ -450,7 +449,7 @@ nest::pp_cond_exp_mc_urbanczik::State_::set( const DictionaryDatum& d, const Par
  * ---------------------------------------------------------------- */
 
 nest::pp_cond_exp_mc_urbanczik::pp_cond_exp_mc_urbanczik()
-  : Urbanczik_Archiving_Node< pp_cond_exp_mc_urbanczik_parameters >()
+  : UrbanczikArchivingNode< pp_cond_exp_mc_urbanczik_parameters >()
   , P_()
   , S_( P_ )
   , B_( *this )
@@ -461,16 +460,16 @@ nest::pp_cond_exp_mc_urbanczik::pp_cond_exp_mc_urbanczik()
   // comp_names_.resize(NCOMP); --- Fixed size, see comment on definition
   comp_names_[ SOMA ] = Name( "soma" );
   comp_names_[ DEND ] = Name( "dendritic" );
-  Urbanczik_Archiving_Node< pp_cond_exp_mc_urbanczik_parameters >::urbanczik_params = &P_.urbanczik_params;
+  UrbanczikArchivingNode< pp_cond_exp_mc_urbanczik_parameters >::urbanczik_params = &P_.urbanczik_params;
 }
 
 nest::pp_cond_exp_mc_urbanczik::pp_cond_exp_mc_urbanczik( const pp_cond_exp_mc_urbanczik& n )
-  : Urbanczik_Archiving_Node< pp_cond_exp_mc_urbanczik_parameters >( n )
+  : UrbanczikArchivingNode< pp_cond_exp_mc_urbanczik_parameters >( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
 {
-  Urbanczik_Archiving_Node< pp_cond_exp_mc_urbanczik_parameters >::urbanczik_params = &P_.urbanczik_params;
+  UrbanczikArchivingNode< pp_cond_exp_mc_urbanczik_parameters >::urbanczik_params = &P_.urbanczik_params;
 }
 
 nest::pp_cond_exp_mc_urbanczik::~pp_cond_exp_mc_urbanczik()
@@ -495,13 +494,6 @@ nest::pp_cond_exp_mc_urbanczik::~pp_cond_exp_mc_urbanczik()
  * ---------------------------------------------------------------- */
 
 void
-nest::pp_cond_exp_mc_urbanczik::init_state_( const Node& proto )
-{
-  const pp_cond_exp_mc_urbanczik& pr = downcast< pp_cond_exp_mc_urbanczik >( proto );
-  S_ = pr.S_;
-}
-
-void
 nest::pp_cond_exp_mc_urbanczik::init_buffers_()
 {
   B_.spikes_.resize( NUM_SPIKE_RECEPTORS );
@@ -517,7 +509,7 @@ nest::pp_cond_exp_mc_urbanczik::init_buffers_()
   }
 
   B_.logger_.reset();
-  Archiving_Node::clear_history();
+  ArchivingNode::clear_history();
 
   B_.step_ = Time::get_resolution().get_ms();
   B_.IntegrationStep_ = B_.step_;
@@ -564,7 +556,7 @@ nest::pp_cond_exp_mc_urbanczik::calibrate()
 {
   // ensures initialization in case mm connected after Simulate
   B_.logger_.init();
-  V_.rng_ = kernel().rng_manager.get_rng( get_thread() );
+  V_.rng_ = get_vp_specific_rng( get_thread() );
 
   V_.RefractoryCounts_ = Time( Time::ms( P_.t_ref ) ).get_steps();
 
@@ -659,8 +651,8 @@ nest::pp_cond_exp_mc_urbanczik::update( Time const& origin, const long from, con
         else
         {
           // Draw Poisson random number of spikes
-          V_.poisson_dev_.set_lambda( rate * V_.h_ * 1e-3 );
-          n_spikes = V_.poisson_dev_.ldev( V_.rng_ );
+          poisson_distribution::param_type param( rate * V_.h_ * 1e-3 );
+          n_spikes = V_.poisson_dist_( V_.rng_, param );
         }
 
         if ( n_spikes > 0 ) // Is there a spike? Then set the new dead time.

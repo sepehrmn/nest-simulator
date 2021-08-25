@@ -174,21 +174,6 @@ aeif_cond_alpha_multisynapse::State_::State_( const Parameters_& p )
   y_[ 0 ] = p.E_L;
 }
 
-aeif_cond_alpha_multisynapse::State_::State_( const State_& s )
-  : r_( s.r_ )
-{
-  y_ = s.y_;
-}
-
-aeif_cond_alpha_multisynapse::State_& aeif_cond_alpha_multisynapse::State_::operator=( const State_& s )
-{
-  assert( this != &s ); // would be bad logical error in program
-
-  y_ = s.y_;
-  r_ = s.r_;
-  return *this;
-}
-
 /* ----------------------------------------------------------------
  * Parameter and state extractions and manipulation functions
  * ---------------------------------------------------------------- */
@@ -377,7 +362,7 @@ aeif_cond_alpha_multisynapse::Buffers_::Buffers_( const Buffers_& b, aeif_cond_a
  * ---------------------------------------------------------------- */
 
 aeif_cond_alpha_multisynapse::aeif_cond_alpha_multisynapse()
-  : Archiving_Node()
+  : ArchivingNode()
   , P_()
   , S_( P_ )
   , B_( *this )
@@ -386,7 +371,7 @@ aeif_cond_alpha_multisynapse::aeif_cond_alpha_multisynapse()
 }
 
 aeif_cond_alpha_multisynapse::aeif_cond_alpha_multisynapse( const aeif_cond_alpha_multisynapse& n )
-  : Archiving_Node( n )
+  : ArchivingNode( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
@@ -416,18 +401,11 @@ aeif_cond_alpha_multisynapse::~aeif_cond_alpha_multisynapse()
  * ---------------------------------------------------------------- */
 
 void
-aeif_cond_alpha_multisynapse::init_state_( const Node& proto )
-{
-  const aeif_cond_alpha_multisynapse& pr = downcast< aeif_cond_alpha_multisynapse >( proto );
-  S_ = pr.S_;
-}
-
-void
 aeif_cond_alpha_multisynapse::init_buffers_()
 {
   B_.spikes_.clear();   // includes resize
   B_.currents_.clear(); // includes resize
-  Archiving_Node::clear_history();
+  ArchivingNode::clear_history();
 
   B_.logger_.reset();
 
@@ -479,7 +457,6 @@ aeif_cond_alpha_multisynapse::calibrate()
   }
 
   V_.refractory_counts_ = Time( Time::ms( P_.t_ref_ ) ).get_steps();
-  assert( V_.refractory_counts_ >= 0 ); // since t_ref_ >= 0, this can only fail in error
 
   B_.spikes_.resize( P_.n_receptors() );
   S_.y_.resize(
@@ -650,7 +627,7 @@ aeif_cond_alpha_multisynapse::set_status( const DictionaryDatum& d )
   // write them back to (P_, S_) before we are also sure that
   // the properties to be set in the parent class are internally
   // consistent.
-  Archiving_Node::set_status( d );
+  ArchivingNode::set_status( d );
 
   /*
    * Here is where we must update the recordablesMap_ if new receptors

@@ -187,7 +187,7 @@ nest::rate_neuron_ipn< TNonlinearities >::Buffers_::Buffers_( const Buffers_&, r
 
 template < class TNonlinearities >
 nest::rate_neuron_ipn< TNonlinearities >::rate_neuron_ipn()
-  : Archiving_Node()
+  : ArchivingNode()
   , P_()
   , S_()
   , B_( *this )
@@ -198,7 +198,7 @@ nest::rate_neuron_ipn< TNonlinearities >::rate_neuron_ipn()
 
 template < class TNonlinearities >
 nest::rate_neuron_ipn< TNonlinearities >::rate_neuron_ipn( const rate_neuron_ipn& n )
-  : Archiving_Node( n )
+  : ArchivingNode( n )
   , nonlinearities_( n.nonlinearities_ )
   , P_( n.P_ )
   , S_( n.S_ )
@@ -210,14 +210,6 @@ nest::rate_neuron_ipn< TNonlinearities >::rate_neuron_ipn( const rate_neuron_ipn
 /* ----------------------------------------------------------------
  * Node initialization functions
  * ---------------------------------------------------------------- */
-
-template < class TNonlinearities >
-void
-nest::rate_neuron_ipn< TNonlinearities >::init_state_( const Node& proto )
-{
-  const rate_neuron_ipn& pr = downcast< rate_neuron_ipn >( proto );
-  S_ = pr.S_;
-}
 
 template < class TNonlinearities >
 void
@@ -236,11 +228,11 @@ nest::rate_neuron_ipn< TNonlinearities >::init_buffers_()
   // initialize random numbers
   for ( unsigned int i = 0; i < buffer_size; i++ )
   {
-    B_.random_numbers[ i ] = V_.normal_dev_( kernel().rng_manager.get_rng( get_thread() ) );
+    B_.random_numbers[ i ] = V_.normal_dist_( get_vp_specific_rng( get_thread() ) );
   }
 
   B_.logger_.reset(); // includes resize
-  Archiving_Node::clear_history();
+  ArchivingNode::clear_history();
 }
 
 template < class TNonlinearities >
@@ -386,7 +378,7 @@ nest::rate_neuron_ipn< TNonlinearities >::update_( Time const& origin,
     B_.random_numbers.resize( buffer_size, numerics::nan );
     for ( unsigned int i = 0; i < buffer_size; i++ )
     {
-      B_.random_numbers[ i ] = V_.normal_dev_( kernel().rng_manager.get_rng( get_thread() ) );
+      B_.random_numbers[ i ] = V_.normal_dist_( get_vp_specific_rng( get_thread() ) );
     }
   }
 

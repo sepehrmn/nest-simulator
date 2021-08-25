@@ -19,14 +19,15 @@
 # You should have received a copy of the GNU General Public License
 # along with NEST.  If not, see <http://www.gnu.org/licenses/>.
 
-"""Example using Hodgkin-Huxley neuron
-----------------------------------------
+"""
+Example using Hodgkin-Huxley neuron
+-----------------------------------
 
 This example produces a rate-response (FI) curve of the Hodgkin-Huxley
 neuron ``hh_psc_alpha`` in response to a range of different current (DC) stimulations.
 The result is plotted using matplotlib.
 
-Since a DC input affetcs only the neuron's channel dynamics, this routine
+Since a DC input affects only the neuron's channel dynamics, this routine
 does not yet check correctness of synaptic response.
 """
 
@@ -47,11 +48,11 @@ dcto = 2000
 h = 0.1  # simulation step size in mS
 
 neuron = nest.Create('hh_psc_alpha')
-sd = nest.Create('spike_detector')
+sr = nest.Create('spike_recorder')
 
-sd.record_to = 'memory'
+sr.record_to = 'memory'
 
-nest.Connect(neuron, sd, syn_spec={'weight': 1.0, 'delay': h})
+nest.Connect(neuron, sr, syn_spec={'weight': 1.0, 'delay': h})
 
 # Simulation loop
 n_data = int(dcto / float(dcstep))
@@ -59,12 +60,12 @@ amplitudes = np.zeros(n_data)
 event_freqs = np.zeros(n_data)
 for i, amp in enumerate(range(dcfrom, dcto, dcstep)):
     neuron.I_e = float(amp)
-    print("Simulating with current I={} pA".format(amp))
+    print(f"Simulating with current I={amp} pA")
     nest.Simulate(1000)  # one second warm-up time for equilibrium state
-    sd.n_events = 0  # then reset spike counts
+    sr.n_events = 0  # then reset spike counts
     nest.Simulate(simtime)  # another simulation call to record firing rate
 
-    n_events = sd.n_events
+    n_events = sr.n_events
     amplitudes[i] = amp
     event_freqs[i] = n_events / (simtime / 1000.)
 

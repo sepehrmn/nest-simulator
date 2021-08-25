@@ -212,7 +212,7 @@ nest::UnexpectedEvent::message() const
     return std::string(
       "Target node cannot handle input event.\n"
       "    A common cause for this is an attempt to connect recording devices incorrectly.\n"
-      "    Note that detectors such as spike detectors must be connected as\n\n"
+      "    Note that recorders such as spike recorders must be connected as\n\n"
       "        nest.Connect(neurons, spike_det)\n\n"
       "    while meters such as voltmeters must be connected as\n\n"
       "        nest.Connect(meter, neurons) " );
@@ -268,14 +268,6 @@ std::string
 nest::DistributionError::message() const
 {
   return std::string();
-}
-
-std::string
-nest::SimulationError::message() const
-{
-  return std::string(
-    "One or more nodes reported an error. Please check the output preceeding "
-    "this message." );
 }
 
 std::string
@@ -380,6 +372,17 @@ nest::MUSICChannelAlreadyMapped::message() const
 }
 #endif
 
+#ifdef HAVE_MPI
+std::string
+nest::MPIPortsFileUnknown::message() const
+{
+  std::ostringstream msg;
+  msg << "The node with ID " << node_id_ << " requires a label,"
+      << " which specifies the folder with files containing the MPI ports";
+  return msg.str();
+}
+#endif
+
 std::string
 nest::GSLSolverFailure::message() const
 {
@@ -440,4 +443,16 @@ std::string
 nest::InternalError::message() const
 {
   return msg_;
+}
+
+std::string
+nest::LayerExpected::message() const
+{
+  return std::string();
+}
+
+std::string
+nest::LayerNodeExpected::message() const
+{
+  return std::string();
 }

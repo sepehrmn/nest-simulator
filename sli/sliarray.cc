@@ -556,7 +556,7 @@ SLIArrayModule::SortFunction::execute( SLIInterpreter* i ) const
 
   try
   {
-    std::vector< double > vd;
+    std::vector< long > vd;
     td.toVector( vd );
     std::sort( vd.begin(), vd.end() );
     i->OStack.pop();
@@ -571,7 +571,7 @@ SLIArrayModule::SortFunction::execute( SLIInterpreter* i ) const
 
   try
   {
-    std::vector< long > vd;
+    std::vector< double > vd;
     td.toVector( vd );
     std::sort( vd.begin(), vd.end() );
     i->OStack.pop();
@@ -941,7 +941,7 @@ SLIArrayModule::IMapFunction::backtrace( SLIInterpreter* i, int p ) const
   assert( id != NULL );
 
   IntegerDatum* count = static_cast< IntegerDatum* >( i->EStack.pick( p + 2 ).datum() );
-  assert( count == NULL );
+  assert( count != NULL );
 
   ProcedureDatum const* pd = static_cast< ProcedureDatum* >( i->EStack.pick( p + 1 ).datum() );
   assert( pd != NULL );
@@ -1061,7 +1061,7 @@ SLIArrayModule::IMap_ivFunction::backtrace( SLIInterpreter* i, int p ) const
   assert( id != NULL );
 
   IntegerDatum* count = static_cast< IntegerDatum* >( i->EStack.pick( p + 2 ).datum() );
-  assert( count == NULL );
+  assert( count != NULL );
 
   ProcedureDatum const* pd = static_cast< ProcedureDatum* >( i->EStack.pick( p + 1 ).datum() );
   assert( pd != NULL );
@@ -1200,7 +1200,7 @@ SLIArrayModule::IMap_dvFunction::backtrace( SLIInterpreter* i, int p ) const
   assert( id != NULL );
 
   IntegerDatum* count = static_cast< IntegerDatum* >( i->EStack.pick( p + 2 ).datum() );
-  assert( count == NULL );
+  assert( count != NULL );
 
   ProcedureDatum const* pd = static_cast< ProcedureDatum* >( i->EStack.pick( p + 1 ).datum() );
   assert( pd != NULL );
@@ -4199,9 +4199,7 @@ SLIArrayModule::init( SLIInterpreter* i )
   i->createcommand( "arraystore", &arraystorefunction );
   i->createcommand( "arraycreate", &arraycreatefunction );
 
-#ifdef PS_ARRAYS
   i->createcommand( "]", &arraycreatefunction );
-#endif
 
   i->createcommand( "valid_a", &validfunction );
   i->createcommand( "area", &areafunction );

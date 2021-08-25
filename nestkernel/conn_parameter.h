@@ -27,10 +27,6 @@
 #include <limits>
 #include <vector>
 
-// Includes from librandom:
-#include "randomdev.h"
-#include "randomgen.h"
-
 // Includes from nestkernel:
 #include "exceptions.h"
 #include "parameter.h"
@@ -77,16 +73,21 @@ public:
    * @param rng   random number generator pointer
    * will be ignored except for random parameters.
    */
-  virtual double value_double( thread, librandom::RngPtr&, index, Node* ) const = 0;
-  virtual long value_int( thread, librandom::RngPtr&, index, Node* ) const = 0;
-  virtual void
-  skip( thread, size_t n_skip ) const
+  virtual double value_double( thread, RngPtr, index, Node* ) const = 0;
+  virtual long value_int( thread, RngPtr, index, Node* ) const = 0;
+  virtual void skip( thread, size_t ) const
   {
   }
   virtual bool is_array() const = 0;
 
   virtual bool
   is_scalar() const
+  {
+    return false;
+  }
+
+  virtual bool
+  provides_long() const
   {
     return false;
   }
@@ -132,13 +133,13 @@ public:
   }
 
   double
-  value_double( thread, librandom::RngPtr&, index, Node* ) const
+  value_double( thread, RngPtr, index, Node* ) const
   {
     return value_;
   }
 
   long
-  value_int( thread, librandom::RngPtr&, index, Node* ) const
+  value_int( thread, RngPtr, index, Node* ) const
   {
     throw KernelException( "ConnParameter calls value function with false return type." );
   }
@@ -160,7 +161,6 @@ public:
     return true;
   }
 
-
 private:
   double value_;
 };
@@ -179,13 +179,13 @@ public:
   }
 
   double
-  value_double( thread, librandom::RngPtr&, index, Node* ) const
+  value_double( thread, RngPtr, index, Node* ) const
   {
     return static_cast< double >( value_ );
   }
 
   long
-  value_int( thread, librandom::RngPtr&, index, Node* ) const
+  value_int( thread, RngPtr, index, Node* ) const
   {
     return value_;
   }
@@ -203,6 +203,12 @@ public:
 
   bool
   is_scalar() const
+  {
+    return true;
+  }
+
+  bool
+  provides_long() const
   {
     return true;
   }
@@ -256,7 +262,7 @@ public:
   }
 
   double
-  value_double( thread tid, librandom::RngPtr&, index, Node* ) const
+  value_double( thread tid, RngPtr, index, Node* ) const
   {
     if ( next_[ tid ] != values_->end() )
     {
@@ -269,7 +275,7 @@ public:
   }
 
   long
-  value_int( thread, librandom::RngPtr&, index, Node* ) const
+  value_int( thread, RngPtr, index, Node* ) const
   {
     throw KernelException( "ConnParameter calls value function with false return type." );
   }
@@ -338,7 +344,7 @@ public:
   }
 
   long
-  value_int( thread tid, librandom::RngPtr&, index, Node* ) const
+  value_int( thread tid, RngPtr, index, Node* ) const
   {
     if ( next_[ tid ] != values_->end() )
     {
@@ -351,7 +357,7 @@ public:
   }
 
   double
-  value_double( thread tid, librandom::RngPtr&, index, Node* ) const
+  value_double( thread tid, RngPtr, index, Node* ) const
   {
     if ( next_[ tid ] != values_->end() )
     {
@@ -365,6 +371,12 @@ public:
 
   inline bool
   is_array() const
+  {
+    return true;
+  }
+
+  bool
+  provides_long() const
   {
     return true;
   }
@@ -383,47 +395,15 @@ private:
   mutable std::vector< std::vector< long >::const_iterator > next_;
 };
 
-/**
- * Random scalar value.
- *
- * On each request, it returns a new value drawn from the given deviate.
- */
-class RandomParameter : public ConnParameter
-{
-public:
-  RandomParameter( const DictionaryDatum&, const size_t );
-
-  double
-  value_double( thread, librandom::RngPtr& rng, index, Node* ) const
-  {
-    return ( *rdv_ )( rng );
-  }
-
-  long
-  value_int( thread, librandom::RngPtr& rng, index, Node* ) const
-  {
-    return ( *rdv_ )( rng );
-  }
-
-  inline bool
-  is_array() const
-  {
-    return false;
-  }
-
-private:
-  librandom::RdvPtr rdv_;
-};
-
 class ParameterConnParameterWrapper : public ConnParameter
 {
 public:
   ParameterConnParameterWrapper( const ParameterDatum&, const size_t );
 
-  double value_double( thread target_thread, librandom::RngPtr& rng, index snode_id, Node* target ) const;
+  double value_double( thread target_thread, RngPtr rng, index snode_id, Node* target ) const;
 
   long
-  value_int( thread target_thread, librandom::RngPtr& rng, index snode_id, Node* target ) const
+  value_int( thread target_thread, RngPtr rng, index snode_id, Node* target ) const
   {
     return value_double( target_thread, rng, snode_id, target );
   }
@@ -432,6 +412,12 @@ public:
   is_array() const
   {
     return false;
+  }
+
+  bool
+  provides_long() const
+  {
+    return parameter_->returns_int_only();
   }
 
 private:

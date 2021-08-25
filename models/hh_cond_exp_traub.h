@@ -120,7 +120,7 @@ I_e          pA     External input current
 =========== ======  =========================================================
 
 References
-+++++++++++
+++++++++++
 
 .. [1] Brette R et al. (2007). Simulation of networks of spiking neurons: A
        review of tools and strategies. Journal of Computational Neuroscience
@@ -146,7 +146,7 @@ hh_psc_alpha
 
 EndUserDocs */
 
-class hh_cond_exp_traub : public Archiving_Node
+class hh_cond_exp_traub : public ArchivingNode
 {
 
 public:
@@ -176,7 +176,6 @@ public:
   void set_status( const DictionaryDatum& );
 
 private:
-  void init_state_( const Node& proto );
   void init_buffers_();
   void calibrate();
 
@@ -253,7 +252,7 @@ public:
     State_( const Parameters_& p );
     State_( const State_& s );
 
-    State_& operator=( const State_& s );
+    State_& operator=( const State_& );
 
     void get( DictionaryDatum& ) const;
     void set( const DictionaryDatum&, const Parameters_&, Node* );
@@ -375,7 +374,7 @@ hh_cond_exp_traub::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d );
-  Archiving_Node::get_status( d );
+  ArchivingNode::get_status( d );
 
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 
@@ -394,7 +393,7 @@ hh_cond_exp_traub::set_status( const DictionaryDatum& d )
   // write them back to (P_, S_) before we are also sure that
   // the properties to be set in the parent class are internally
   // consistent.
-  Archiving_Node::set_status( d );
+  ArchivingNode::set_status( d );
 
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;

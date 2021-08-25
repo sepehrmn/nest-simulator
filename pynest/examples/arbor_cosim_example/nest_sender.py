@@ -1,17 +1,17 @@
-#! /usr/bin/python3
+#!/usr/bin/env python3
 
 # This is the real nest program, which requires NESTIO + ARBOR-NESTIO
 
 from sys import argv
 argv.append('--quiet')
-import sys
+import sys                  # noqa nopep8 (order of imports matter)
 
 print("Getting comm")
-from mpi4py import MPI
+from mpi4py import MPI      # noqa nopep8 (order of imports matter)
 comm = MPI.COMM_WORLD.Split(0)  # is nest
 
 print("Getting nest")
-import nest
+import nest                 # noqa nopep8 (order of imports matter)
 
 
 STATUS_DICT = nest.ll_api.sli_func("statusdict")
@@ -30,7 +30,7 @@ pg = nest.Create('poisson_generator', params={'rate': 10.0})
 parrots = nest.Create('parrot_neuron', 100)
 nest.Connect(pg, parrots)
 
-sd2 = nest.Create('spike_detector', params={"record_to": "arbor"})
+sd2 = nest.Create('spike_recorder', params={"record_to": "arbor"})
 nest.Connect(parrots, sd2)
 
 status = nest.GetKernelStatus()

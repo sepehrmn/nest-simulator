@@ -46,7 +46,7 @@ Node::Node()
   , thread_( 0 )
   , vp_( invalid_thread_ )
   , frozen_( false )
-  , buffers_initialized_( false )
+  , initialized_( false )
   , node_uses_wfr_( false )
 {
 }
@@ -60,7 +60,7 @@ Node::Node( const Node& n )
   , vp_( n.vp_ )
   , frozen_( n.frozen_ )
   // copy must always initialized its own buffers
-  , buffers_initialized_( false )
+  , initialized_( false )
   , node_uses_wfr_( n.node_uses_wfr_ )
 {
 }
@@ -70,29 +70,22 @@ Node::~Node()
 }
 
 void
-Node::init_state()
-{
-  Model const* const model = kernel().model_manager.get_model( model_id_ );
-  assert( model );
-  init_state_( model->get_prototype() );
-}
-
-void
-Node::init_state_( Node const& )
+Node::init_state_()
 {
 }
 
 void
-Node::init_buffers()
+Node::init()
 {
-  if ( buffers_initialized_ )
+  if ( initialized_ )
   {
     return;
   }
 
+  init_state_();
   init_buffers_();
 
-  buffers_initialized_ = true;
+  initialized_ = true;
 }
 
 void
@@ -104,7 +97,6 @@ void
 Node::set_initialized()
 {
   set_initialized_();
-  initialized_ = true;
 }
 
 void
@@ -141,7 +133,7 @@ Node::get_status_dict_()
 }
 
 void
-Node::set_local_device_id( const index lsdid )
+Node::set_local_device_id( const index )
 {
   assert( false && "set_local_device_id() called on a non-device node of type" );
 }
@@ -206,13 +198,14 @@ Node::wfr_update( Time const&, const long, const long )
 }
 
 /**
- * Default implementation of check_connection just throws UnexpectedEvent
+ * Default implementation of check_connection just throws IllegalConnection
  */
 port
 Node::send_test_event( Node&, rport, synindex, bool )
 {
-  throw UnexpectedEvent(
-    "Source node does not send output. Note that detectors need to be connected as Connect(neuron, detector)." );
+  throw IllegalConnection(
+    "Source node does not send output.\n"
+    "  Note that recorders must be connected as Connect(neuron, recorder)." );
 }
 
 /**
@@ -290,9 +283,7 @@ Node::handle( DataLoggingRequest& )
 port
 Node::handles_test_event( DataLoggingRequest&, rport )
 {
-  throw IllegalConnection(
-    "Possible cause: only static synapse types may be used to connect "
-    "devices." );
+  throw IllegalConnection( "The target node or synapse model does not support data logging requests." );
 }
 
 void
@@ -322,23 +313,19 @@ Node::handle( DoubleDataEvent& )
 port
 Node::handles_test_event( DoubleDataEvent&, rport )
 {
-  throw IllegalConnection();
+  throw IllegalConnection( "The target node or synapse model does not support double data event." );
 }
 
 port
 Node::handles_test_event( DSSpikeEvent&, rport )
 {
-  throw IllegalConnection(
-    "Possible cause: only static synapse types may be used to connect "
-    "devices." );
+  throw IllegalConnection( "The target node or synapse model does not support spike input." );
 }
 
 port
 Node::handles_test_event( DSCurrentEvent&, rport )
 {
-  throw IllegalConnection(
-    "Possible cause: only static synapse types may be used to connect "
-    "devices." );
+  throw IllegalConnection( "The target node or synapse model does not support DS current input." );
 }
 
 void

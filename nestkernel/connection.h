@@ -87,11 +87,7 @@ class ConnTestDummyNodeBase : public Node
   {
   }
   void
-  init_node_( const nest::Node& )
-  {
-  }
-  void
-  init_state_( const nest::Node& )
+  init_state_()
   {
   }
   void
@@ -130,12 +126,7 @@ public:
   {
   }
 
-  Connection( const Connection< targetidentifierT >& rhs )
-    : target_( rhs.target_ )
-    , syn_id_delay_( rhs.syn_id_delay_ )
-  {
-  }
-
+  Connection( const Connection< targetidentifierT >& rhs ) = default;
 
   /**
    * Get all properties of this connection and put them into a dictionary.
@@ -374,7 +365,7 @@ Connection< targetidentifierT >::set_status( const DictionaryDatum& d, Connector
 
 template < typename targetidentifierT >
 inline void
-Connection< targetidentifierT >::check_synapse_params( const DictionaryDatum& d ) const
+Connection< targetidentifierT >::check_synapse_params( const DictionaryDatum& ) const
 {
 }
 
@@ -398,10 +389,7 @@ Connection< targetidentifierT >::trigger_update_weight( const thread,
   const double,
   const CommonSynapseProperties& )
 {
-  throw IllegalConnection(
-    "Connection::trigger_update_weight: "
-    "Connection does not support updates that are triggered by the volume "
-    "transmitter." );
+  throw IllegalConnection( "Connection does not support updates that are triggered by a volume transmitter." );
 }
 
 } // namespace nest

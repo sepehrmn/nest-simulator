@@ -153,16 +153,11 @@ nest::iaf_cond_beta::State_::State_( const State_& s )
 
 nest::iaf_cond_beta::State_& nest::iaf_cond_beta::State_::operator=( const State_& s )
 {
-  if ( this == &s ) // avoid assignment to self
-  {
-    return *this;
-  }
+  r = s.r;
   for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
   {
     y[ i ] = s.y[ i ];
   }
-
-  r = s.r;
   return *this;
 }
 
@@ -251,12 +246,20 @@ void
 nest::iaf_cond_beta::State_::get( DictionaryDatum& d ) const
 {
   def< double >( d, names::V_m, y[ V_M ] ); // Membrane potential
+  def< double >( d, names::g_ex, y[ G_EXC ] );
+  def< double >( d, names::dg_ex, y[ DG_EXC ] );
+  def< double >( d, names::g_in, y[ G_INH ] );
+  def< double >( d, names::dg_in, y[ DG_INH ] );
 }
 
 void
 nest::iaf_cond_beta::State_::set( const DictionaryDatum& d, const Parameters_&, Node* node )
 {
   updateValueParam< double >( d, names::V_m, y[ V_M ], node );
+  updateValueParam< double >( d, names::g_ex, y[ G_EXC ], node );
+  updateValueParam< double >( d, names::dg_ex, y[ DG_EXC ], node );
+  updateValueParam< double >( d, names::g_in, y[ G_INH ], node );
+  updateValueParam< double >( d, names::dg_in, y[ DG_INH ], node );
 }
 
 
@@ -265,7 +268,7 @@ nest::iaf_cond_beta::State_::set( const DictionaryDatum& d, const Parameters_&, 
  * ---------------------------------------------------------------- */
 
 nest::iaf_cond_beta::iaf_cond_beta()
-  : Archiving_Node()
+  : ArchivingNode()
   , P_()
   , S_( P_ )
   , B_( *this )
@@ -274,7 +277,7 @@ nest::iaf_cond_beta::iaf_cond_beta()
 }
 
 nest::iaf_cond_beta::iaf_cond_beta( const iaf_cond_beta& n )
-  : Archiving_Node( n )
+  : ArchivingNode( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
@@ -303,16 +306,9 @@ nest::iaf_cond_beta::~iaf_cond_beta()
  * ---------------------------------------------------------------- */
 
 void
-nest::iaf_cond_beta::init_state_( const Node& proto )
-{
-  const iaf_cond_beta& pr = downcast< iaf_cond_beta >( proto );
-  S_ = pr.S_;
-}
-
-void
 nest::iaf_cond_beta::init_buffers_()
 {
-  Archiving_Node::clear_history();
+  ArchivingNode::clear_history();
 
   B_.spike_exc_.clear(); // includes resize
   B_.spike_inh_.clear(); // includes resize
@@ -435,7 +431,7 @@ nest::iaf_cond_beta::update( Time const& origin, const long from, const long to 
       S_.r = V_.RefractoryCounts;
       S_.y[ State_::V_M ] = P_.V_reset;
 
-      // log spike with Archiving_Node
+      // log spike with ArchivingNode
       set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
 
       SpikeEvent se;

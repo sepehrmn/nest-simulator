@@ -87,6 +87,9 @@ and
 
  \tau_w * dw/dt= a(V-E_L) -W
 
+For implementation details see the
+`aeif_models_implementation <../model_details/aeif_models_implementation.ipynb>`_ notebook.
+
 Parameters
 ++++++++++
 
@@ -168,7 +171,7 @@ iaf_psc_alpha, aeif_cond_exp
 
 EndUserDocs */
 
-class aeif_psc_alpha : public Archiving_Node
+class aeif_psc_alpha : public ArchivingNode
 {
 
 public:
@@ -198,7 +201,6 @@ public:
   void set_status( const DictionaryDatum& );
 
 private:
-  void init_state_( const Node& proto );
   void init_buffers_();
   void calibrate();
   void update( Time const&, const long, const long );
@@ -232,7 +234,6 @@ private:
     double a;          //!< Subthreshold adaptation in nS
     double b;          //!< Spike-triggered adaptation in pA
     double V_th;       //!< Spike threshold in mV
-    double t_ref;      //!< Refractory period in ms
     double tau_syn_ex; //!< Excitatory synaptic rise time
     double tau_syn_in; //!< Excitatory synaptic rise time
     double I_e;        //!< Intrinsic current in pA
@@ -250,8 +251,7 @@ public:
 
   /**
    * State variables of the model.
-   * @note Copy constructor and assignment operator required because
-   *       of C-style array.
+   * @note Copy constructor required because of C-style array.
    */
   struct State_
   {
@@ -278,6 +278,7 @@ public:
 
     State_( const Parameters_& ); //!< Default initialization
     State_( const State_& );
+
     State_& operator=( const State_& );
 
     void get( DictionaryDatum& ) const;
@@ -411,7 +412,7 @@ aeif_psc_alpha::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d );
-  Archiving_Node::get_status( d );
+  ArchivingNode::get_status( d );
 
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 }
@@ -428,7 +429,7 @@ aeif_psc_alpha::set_status( const DictionaryDatum& d )
   // write them back to (P_, S_) before we are also sure that
   // the properties to be set in the parent class are internally
   // consistent.
-  Archiving_Node::set_status( d );
+  ArchivingNode::set_status( d );
 
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;

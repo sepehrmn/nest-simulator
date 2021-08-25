@@ -23,15 +23,12 @@
 #ifndef PP_PSC_DELTA_H
 #define PP_PSC_DELTA_H
 
-// Includes from librandom:
-#include "gamma_randomdev.h"
-#include "poisson_randomdev.h"
-
 // Includes from nestkernel:
 #include "archiving_node.h"
 #include "connection.h"
 #include "event.h"
 #include "nest_types.h"
+#include "random_generators.h"
 #include "ring_buffer.h"
 #include "universal_data_logger.h"
 
@@ -118,7 +115,7 @@ and exponential input filters) (see [5,6]_).
 This model has been adapted from iaf_psc_delta. The default parameters are
 set to the mean values given in [2]_, which have been matched to spike-train
 recordings. Due to the many features of pp_psc_delta and its versatility,
-parameters should be set carefully and conciously.
+parameters should be set carefully and consciously.
 
 Parameters
 ++++++++++
@@ -193,7 +190,7 @@ pp_pop_psc_delta, iaf_psc_delta, iaf_psc_alpha, iaf_psc_exp, iaf_psc_delta_ps
 
 EndUserDocs */
 
-class pp_psc_delta : public Archiving_Node
+class pp_psc_delta : public ArchivingNode
 {
 
 public:
@@ -223,7 +220,7 @@ public:
   void set_status( const DictionaryDatum& );
 
 private:
-  void init_state_( const Node& proto );
+  void init_state_();
   void init_buffers_();
   void calibrate();
 
@@ -348,9 +345,9 @@ private:
     double h_;       //!< simulation time step in ms
     double dt_rate_; //!< rate parameter of dead time distribution
 
-    librandom::RngPtr rng_;                   //!< random number generator of my own thread
-    librandom::PoissonRandomDev poisson_dev_; //!< random deviate generator
-    librandom::GammaRandomDev gamma_dev_;     //!< random deviate generator
+    RngPtr rng_;                        //!< random number generator of my own thread
+    gamma_distribution gamma_dist_;     //!< gamma distribution
+    poisson_distribution poisson_dist_; //!< poisson distribution
 
     int DeadTimeCounts_;
   };
@@ -435,7 +432,7 @@ pp_psc_delta::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d, P_ );
-  Archiving_Node::get_status( d );
+  ArchivingNode::get_status( d );
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 }
 
@@ -451,7 +448,7 @@ pp_psc_delta::set_status( const DictionaryDatum& d )
   // write them back to (P_, S_) before we are also sure that
   // the properties to be set in the parent class are internally
   // consistent.
-  Archiving_Node::set_status( d );
+  ArchivingNode::set_status( d );
 
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;

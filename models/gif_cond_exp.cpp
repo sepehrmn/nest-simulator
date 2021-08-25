@@ -31,6 +31,7 @@
 #include <cstdio>
 
 // Includes from libnestutil:
+#include "compose.hpp"
 #include "dict_util.h"
 #include "numerics.h"
 
@@ -42,12 +43,9 @@
 // Includes from sli:
 #include "dict.h"
 #include "dictutils.h"
-#include "integerdatum.h"
 #include "doubledatum.h"
+#include "integerdatum.h"
 
-#include "compose.hpp"
-#include "propagator_stability.h"
-#include "event.h"
 
 namespace nest
 {
@@ -168,11 +166,10 @@ nest::gif_cond_exp::State_::State_( const State_& s )
 
 nest::gif_cond_exp::State_& nest::gif_cond_exp::State_::operator=( const State_& s )
 {
-  assert( this != &s ); // would be bad logical error in program
-  for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
-  {
-    neuron_state_[ i ] = s.neuron_state_[ i ];
-  }
+  I_stim_ = s.I_stim_;
+  sfa_ = s.sfa_;
+  stc_ = s.stc_;
+  r_ref_ = s.r_ref_;
 
   sfa_elems_.resize( s.sfa_elems_.size(), 0.0 );
   for ( size_t i = 0; i < sfa_elems_.size(); ++i )
@@ -185,12 +182,10 @@ nest::gif_cond_exp::State_& nest::gif_cond_exp::State_::operator=( const State_&
   {
     stc_elems_[ i ] = s.stc_elems_[ i ];
   }
-
-  I_stim_ = s.I_stim_;
-  sfa_ = s.sfa_;
-  stc_ = s.stc_;
-  r_ref_ = s.r_ref_;
-
+  for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
+  {
+    neuron_state_[ i ] = s.neuron_state_[ i ];
+  }
   return *this;
 }
 
@@ -318,17 +313,21 @@ nest::gif_cond_exp::Parameters_::set( const DictionaryDatum& d, Node* node )
 }
 
 void
-nest::gif_cond_exp::State_::get( DictionaryDatum& d, const Parameters_& p ) const
+nest::gif_cond_exp::State_::get( DictionaryDatum& d, const Parameters_& ) const
 {
   def< double >( d, names::V_m, neuron_state_[ V_M ] ); // Membrane potential
-  def< double >( d, names::E_sfa, sfa_ );               // Adaptive threshold potential
-  def< double >( d, names::I_stc, stc_ );               // Spike-triggered current
+  def< double >( d, names::g_ex, neuron_state_[ G_EXC ] );
+  def< double >( d, names::g_in, neuron_state_[ G_INH ] );
+  def< double >( d, names::E_sfa, sfa_ ); // Adaptive threshold potential
+  def< double >( d, names::I_stc, stc_ ); // Spike-triggered current
 }
 
 void
-nest::gif_cond_exp::State_::set( const DictionaryDatum& d, const Parameters_& p, Node* node )
+nest::gif_cond_exp::State_::set( const DictionaryDatum& d, const Parameters_&, Node* node )
 {
   updateValueParam< double >( d, names::V_m, neuron_state_[ V_M ], node );
+  updateValueParam< double >( d, names::g_ex, neuron_state_[ G_EXC ], node );
+  updateValueParam< double >( d, names::g_in, neuron_state_[ G_INH ], node );
 }
 
 nest::gif_cond_exp::Buffers_::Buffers_( gif_cond_exp& n )
@@ -356,7 +355,7 @@ nest::gif_cond_exp::Buffers_::Buffers_( const Buffers_&, gif_cond_exp& n )
  * ---------------------------------------------------------------- */
 
 nest::gif_cond_exp::gif_cond_exp()
-  : Archiving_Node()
+  : ArchivingNode()
   , P_()
   , S_( P_ )
   , B_( *this )
@@ -365,7 +364,7 @@ nest::gif_cond_exp::gif_cond_exp()
 }
 
 nest::gif_cond_exp::gif_cond_exp( const gif_cond_exp& n )
-  : Archiving_Node( n )
+  : ArchivingNode( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
@@ -394,20 +393,13 @@ nest::gif_cond_exp::~gif_cond_exp()
  * ---------------------------------------------------------------- */
 
 void
-nest::gif_cond_exp::init_state_( const Node& proto )
-{
-  const gif_cond_exp& pr = downcast< gif_cond_exp >( proto );
-  S_ = pr.S_;
-}
-
-void
 nest::gif_cond_exp::init_buffers_()
 {
   B_.spike_exc_.clear(); // includes resize
   B_.spike_inh_.clear(); // includes resize
   B_.currents_.clear();  //!< includes resize
   B_.logger_.reset();    //!< includes resize
-  Archiving_Node::clear_history();
+  ArchivingNode::clear_history();
 
   B_.step_ = Time::get_resolution().get_ms();
   B_.IntegrationStep_ = B_.step_;
@@ -451,11 +443,9 @@ nest::gif_cond_exp::calibrate()
   B_.logger_.init();
 
   const double h = Time::get_resolution().get_ms();
-  V_.rng_ = kernel().rng_manager.get_rng( get_thread() );
+  V_.rng_ = get_vp_specific_rng( get_thread() );
 
   V_.RefractoryCounts_ = Time( Time::ms( P_.t_ref_ ) ).get_steps();
-  // since t_ref_ >= 0, this can only fail in error
-  assert( V_.RefractoryCounts_ >= 0 );
 
   // initializing adaptation (stc/sfa) variables
   V_.P_sfa_.resize( P_.tau_sfa_.size(), 0.0 );

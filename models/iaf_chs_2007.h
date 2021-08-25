@@ -23,14 +23,12 @@
 #ifndef IAF_CHS_2007_H
 #define IAF_CHS_2007_H
 
-// Includes from librandom:
-#include "normal_randomdev.h"
-
 // Includes from nestkernel:
 #include "archiving_node.h"
 #include "connection.h"
 #include "event.h"
 #include "nest_types.h"
+#include "random_generators.h"
 #include "recordables_map.h"
 #include "ring_buffer.h"
 #include "universal_data_logger.h"
@@ -61,7 +59,7 @@ potential reset and exponential decay. U_reset is the magnitude of the
 reset/after-hyperpolarization and tau_reset is the time constant of
 recovery from this hyperpolarization.
 
-The linear subthresold dynamics is integrated by the Exact
+The linear subthreshold dynamics is integrated by the Exact
 Integration scheme [1]_. The neuron dynamics is solved on the time
 grid given by the computation step size. Incoming as well as emitted
 spikes are forced to that grid.
@@ -109,7 +107,7 @@ SpikeEvent, DataLoggingRequest
 
 EndUserDocs */
 
-class iaf_chs_2007 : public Archiving_Node
+class iaf_chs_2007 : public ArchivingNode
 {
 
 public:
@@ -136,8 +134,6 @@ public:
   void set_status( const DictionaryDatum& );
 
 private:
-  void init_node_( const Node& proto );
-  void init_state_( const Node& proto );
   void init_buffers_();
   void calibrate();
 
@@ -241,7 +237,7 @@ private:
   struct Variables_
   {
     /** Amplitude of the synaptic current.
-        This value is chosen such that a post-synaptic potential with
+        This value is chosen such that a postsynaptic potential with
         weight one has an amplitude of 1 mV.
         @note mog - I assume this, not checked.
     */
@@ -254,7 +250,7 @@ private:
     double P22_;
     double P30_;
 
-    librandom::NormalRandomDev normal_dev_; //!< random deviate generator
+    normal_distribution normal_dist_; //!< random distribution
   };
 
   // Access functions for UniversalDataLogger -------------------------------
@@ -319,7 +315,7 @@ iaf_chs_2007::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
   S_.get( d );
-  Archiving_Node::get_status( d );
+  ArchivingNode::get_status( d );
 
   ( *d )[ names::recordables ] = recordablesMap_.get_list();
 }
@@ -336,7 +332,7 @@ iaf_chs_2007::set_status( const DictionaryDatum& d )
   // write them back to (P_, S_) before we are also sure that
   // the properties to be set in the parent class are internally
   // consistent.
-  Archiving_Node::set_status( d );
+  ArchivingNode::set_status( d );
 
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;

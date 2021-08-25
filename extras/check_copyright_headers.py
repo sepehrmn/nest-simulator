@@ -50,10 +50,6 @@ def eprint(*args, **kwargs):
     print(*args, file=sys.stderr, **kwargs)
 
 
-# Use encoding-aware Py3 open also in Py2
-if sys.version_info[0] < 3:
-    from io import open
-
 EXIT_SUCCESS = 0
 EXIT_BAD_HEADER = 20
 EXIT_NO_SOURCE = 126
@@ -70,28 +66,17 @@ exclude_dirs = [
     '.git',
     'CMakeFiles',
     'result',  # ignore files in $NEST_RESULT of travis-ci builds
+    'thirdparty',
 ]
 
 # match all file names against these regular expressions. if a match
 # is found the file is excluded from the check
-exclude_file_patterns = ['\.#.*', '#.*', '.*~', '.*.bak']
+exclude_file_patterns = [r'\.#.*', '#.*', '.*~', '.*.bak']
 exclude_file_regex = [re.compile(pattern) for pattern in exclude_file_patterns]
 
 exclude_files = [
     'doc/copyright_header.cpp',
     'doc/copyright_header.py',
-    'do_tests.py',
-    'libnestutil/config.h',
-    'hashtable-common.h',
-    'libc_allocator_with_realloc.h',
-    'sparseconfig.h',
-    'sparsetable.h',
-    'template_util.h',
-    'type_traits.h',
-    'knuthlfg.cpp',
-    'knuthlfg.h',
-    'mt19937.cpp',
-    'mt19937.h',
     'nestrc.sli',
     'nest/static_modules.h',
     'pynest/pynestkernel.cpp',
@@ -147,7 +132,7 @@ for dirpath, _, fnames in os.walk(source_dir):
                     total_errors += 1
                     break
                 if (extension == 'py' and
-                        line_src.strip() == '#!/usr/bin/env python'):
+                        line_src.strip() == '#!/usr/bin/env python3'):
                     line_src = source_file.readline()
                 line_exp = template_line.replace('{{file_name}}', fname)
                 if line_src != line_exp:

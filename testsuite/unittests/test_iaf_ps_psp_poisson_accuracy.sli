@@ -30,11 +30,11 @@ Description:
 The test probes the interaction of a spike generator implementing a
 poisson process in continuous time with a neuron model capable of
 handling off-grid spike times. The result is verified by comparing the
-superposition of post-synaptic potentials in the neuron model to the
+superposition of postsynaptic potentials in the neuron model to the
 the corresonding analytical solution. To achieve this, spike
 generation of the neuron mode is prevented by setting the spike
 threshold to a very high value. The test employs the parrot neuron for
-precise spike times to provide the neuron model and the spike detector
+precise spike times to provide the neuron model and the spike recorder
 with an identical sequence of spike times. The independence of the
 result from the computations step size is ensured by comparing the
 results for a range of temporal resolutions. Due to this setup the
@@ -157,15 +157,15 @@ def
  model Create /n Set
  n params SetStatus
 
- /spike_detector Create /sd Set
+ /spike_recorder Create /sr Set
 
  pg pn  Connect
- pn sd  Connect
+ pn sr  Connect
  pn n weight delay Connect 
 
  T Simulate
 
- sd [/events /times] get cva potential  /V Set % potential from closed form expression
+ sr [/events /times] get cva potential  /V Set % potential from closed form expression
  n /V_m get                             /Y Set % potential from simulation
 
 
@@ -297,49 +297,3 @@ assert_or_die
 %end
 %
 %/V Set
-
-
-
-
-
-% garbage to be removed
-% ---------------------
-%
-% [5 3 6 9]   /a Set
-% [-1 8 10 2] /b Set
-%
-%
-% %/parrot_neuron Create /pn Set
-% 
-%
-%/mean_interval rate inv def  % in ms
-
-
-%rngdict /knuthlfg get 200 CreateRNG /rng Set
-%rng rdevdict /poisson get CreateRDV /poiss Set
-%poiss << /lambda rate T mul >> SetStatus
-
-%poiss 1 RandomArray /n Set
-
-
-% method 1: draw n random numbers uniformly distributed  
-%           over the interval (0,T].
-%
-%n { pop rng drand 1.0 exch sub T mul} Table Sort /s Set 
-
-
-% method 2: draw n intervals from an exponential 
-%           distribution. The parameter of the distribution
-%           is the mean interval of the Poisson process
-
-%rng rdevdict /exponential get CreateRDV /expdist Set
-%expdist n [1] Part RandomArray /s Set
-
-%s {mean_interval mul } Map /s Set
-%0.0 s {add} FoldList Rest /s Set
-
-
-
-
-
-

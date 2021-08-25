@@ -199,7 +199,7 @@ nest::iaf_psc_exp_htum::Buffers_::Buffers_( const Buffers_&, iaf_psc_exp_htum& n
  * ---------------------------------------------------------------- */
 
 nest::iaf_psc_exp_htum::iaf_psc_exp_htum()
-  : Archiving_Node()
+  : ArchivingNode()
   , P_()
   , S_()
   , B_( *this )
@@ -208,7 +208,7 @@ nest::iaf_psc_exp_htum::iaf_psc_exp_htum()
 }
 
 nest::iaf_psc_exp_htum::iaf_psc_exp_htum( const iaf_psc_exp_htum& n )
-  : Archiving_Node( n )
+  : ArchivingNode( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
@@ -220,20 +220,13 @@ nest::iaf_psc_exp_htum::iaf_psc_exp_htum( const iaf_psc_exp_htum& n )
  * ---------------------------------------------------------------- */
 
 void
-nest::iaf_psc_exp_htum::init_state_( const Node& proto )
-{
-  const iaf_psc_exp_htum& pr = downcast< iaf_psc_exp_htum >( proto );
-  S_ = pr.S_;
-}
-
-void
 nest::iaf_psc_exp_htum::init_buffers_()
 {
   B_.spikes_ex_.clear(); // includes resize
   B_.spikes_in_.clear(); // includes resize
   B_.currents_.clear();  // includes resize
   B_.logger_.reset();    // includes resize
-  Archiving_Node::clear_history();
+  ArchivingNode::clear_history();
 }
 
 void

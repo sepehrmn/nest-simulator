@@ -240,7 +240,7 @@ iaf_psc_exp_multisynapse::Buffers_::Buffers_( const Buffers_&, iaf_psc_exp_multi
  * ---------------------------------------------------------------- */
 
 iaf_psc_exp_multisynapse::iaf_psc_exp_multisynapse()
-  : Archiving_Node()
+  : ArchivingNode()
   , P_()
   , S_()
   , B_( *this )
@@ -249,7 +249,7 @@ iaf_psc_exp_multisynapse::iaf_psc_exp_multisynapse()
 }
 
 iaf_psc_exp_multisynapse::iaf_psc_exp_multisynapse( const iaf_psc_exp_multisynapse& n )
-  : Archiving_Node( n )
+  : ArchivingNode( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
@@ -262,13 +262,6 @@ iaf_psc_exp_multisynapse::iaf_psc_exp_multisynapse( const iaf_psc_exp_multisynap
  * ---------------------------------------------------------------- */
 
 void
-iaf_psc_exp_multisynapse::init_state_( const Node& proto )
-{
-  const iaf_psc_exp_multisynapse& pr = downcast< iaf_psc_exp_multisynapse >( proto );
-  S_ = pr.S_;
-}
-
-void
 iaf_psc_exp_multisynapse::init_buffers_()
 {
   B_.spikes_.clear();   // includes resize
@@ -276,7 +269,7 @@ iaf_psc_exp_multisynapse::init_buffers_()
 
   B_.logger_.reset();
 
-  Archiving_Node::clear_history();
+  ArchivingNode::clear_history();
 }
 
 void
@@ -411,7 +404,7 @@ iaf_psc_exp_multisynapse::set_status( const DictionaryDatum& d )
   // write them back to (P_, S_) before we are also sure that
   // the properties to be set in the parent class are internally
   // consistent.
-  Archiving_Node::set_status( d );
+  ArchivingNode::set_status( d );
 
   /*
    * Here is where we must update the recordablesMap_ if new receptors

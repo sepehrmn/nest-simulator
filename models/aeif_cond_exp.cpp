@@ -168,12 +168,11 @@ nest::aeif_cond_exp::State_::State_( const State_& s )
 
 nest::aeif_cond_exp::State_& nest::aeif_cond_exp::State_::operator=( const State_& s )
 {
-  assert( this != &s ); // would be bad logical error in program
+  r_ = s.r_;
   for ( size_t i = 0; i < STATE_VEC_SIZE; ++i )
   {
     y_[ i ] = s.y_[ i ];
   }
-  r_ = s.r_;
   return *this;
 }
 
@@ -265,7 +264,7 @@ nest::aeif_cond_exp::Parameters_::set( const DictionaryDatum& d, Node* node )
 
   if ( t_ref_ < 0 )
   {
-    throw BadProperty( "Ensure that t_ref >= 0" );
+    throw BadProperty( "Refractory time cannot be negative." );
   }
 
   if ( tau_syn_ex <= 0 || tau_syn_in <= 0 || tau_w <= 0 )
@@ -326,7 +325,7 @@ nest::aeif_cond_exp::Buffers_::Buffers_( const Buffers_&, aeif_cond_exp& n )
  * ---------------------------------------------------------------- */
 
 nest::aeif_cond_exp::aeif_cond_exp()
-  : Archiving_Node()
+  : ArchivingNode()
   , P_()
   , S_( P_ )
   , B_( *this )
@@ -335,7 +334,7 @@ nest::aeif_cond_exp::aeif_cond_exp()
 }
 
 nest::aeif_cond_exp::aeif_cond_exp( const aeif_cond_exp& n )
-  : Archiving_Node( n )
+  : ArchivingNode( n )
   , P_( n.P_ )
   , S_( n.S_ )
   , B_( n.B_, *this )
@@ -364,19 +363,12 @@ nest::aeif_cond_exp::~aeif_cond_exp()
  * ---------------------------------------------------------------- */
 
 void
-nest::aeif_cond_exp::init_state_( const Node& proto )
-{
-  const aeif_cond_exp& pr = downcast< aeif_cond_exp >( proto );
-  S_ = pr.S_;
-}
-
-void
 nest::aeif_cond_exp::init_buffers_()
 {
   B_.spike_exc_.clear(); // includes resize
   B_.spike_inh_.clear(); // includes resize
   B_.currents_.clear();  // includes resize
-  Archiving_Node::clear_history();
+  ArchivingNode::clear_history();
 
   B_.logger_.reset();
 
@@ -437,8 +429,6 @@ nest::aeif_cond_exp::calibrate()
   }
 
   V_.refractory_counts_ = Time( Time::ms( P_.t_ref_ ) ).get_steps();
-  // since t_ref_ >= 0, this can only fail in error
-  assert( V_.refractory_counts_ >= 0 );
 }
 
 /* ----------------------------------------------------------------
