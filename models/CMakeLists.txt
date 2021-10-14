@@ -63,6 +63,7 @@ set( models_sources
     iaf_cond_beta.h iaf_cond_beta.cpp
     iaf_cond_exp.h iaf_cond_exp.cpp
     iaf_cond_exp_sfa_rr.h iaf_cond_exp_sfa_rr.cpp
+    iaf_matco_2018.h iaf_matco_2018.cpp
     iaf_psc_alpha.h iaf_psc_alpha.cpp
     iaf_psc_alpha_canon.cpp iaf_psc_alpha_canon.cpp
     iaf_psc_alpha_multisynapse.h iaf_psc_alpha_multisynapse.cpp
@@ -77,6 +78,7 @@ set( models_sources
     izhikevich.h izhikevich.cpp
     jonke_synapse.h
     lin_rate.h lin_rate.cpp
+    matco_synapse.h
     mat2_psc_exp.h mat2_psc_exp.cpp
     mcculloch_pitts_neuron.h mcculloch_pitts_neuron.cpp
     mip_generator.h mip_generator.cpp

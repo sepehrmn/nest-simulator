@@ -61,6 +61,7 @@
 #include "iaf_cond_beta.h"
 #include "iaf_cond_exp.h"
 #include "iaf_cond_exp_sfa_rr.h"
+#include "iaf_matco_2018.h"
 #include "iaf_psc_alpha.h"
 #include "iaf_psc_alpha_canon.h"
 #include "iaf_psc_alpha_multisynapse.h"
@@ -125,6 +126,7 @@
 #include "gap_junction.h"
 #include "ht_synapse.h"
 #include "jonke_synapse.h"
+#include "matco_synapse.h"
 #include "quantal_stp_synapse.h"
 #include "quantal_stp_synapse_impl.h"
 #include "rate_connection_delayed.h"
@@ -212,6 +214,7 @@ ModelsModule::init( SLIInterpreter* )
   kernel().model_manager.register_node_model< rate_transformer_threshold_lin >( "rate_transformer_threshold_lin" );
 
   kernel().model_manager.register_node_model< iaf_chs_2007 >( "iaf_chs_2007" );
+  kernel().model_manager.register_node_model< iaf_matco_2018 >( "iaf_matco_2018" );
   kernel().model_manager.register_node_model< iaf_psc_alpha >( "iaf_psc_alpha" );
   kernel().model_manager.register_node_model< iaf_psc_alpha_canon >(
     "iaf_psc_alpha_canon", /*private_model*/ false, /*deprecation_info*/ "a future version of NEST" );
@@ -314,6 +317,7 @@ ModelsModule::init( SLIInterpreter* )
   register_connection_model< cont_delay_synapse >( "cont_delay_synapse" );
   register_connection_model< ht_synapse >( "ht_synapse" );
   register_connection_model< jonke_synapse >( "jonke_synapse" );
+  register_connection_model< matco_synapse >( "matco_synapse" );
   register_connection_model< quantal_stp_synapse >( "quantal_stp_synapse" );
   register_connection_model< static_synapse >( "static_synapse" );
   register_connection_model< static_synapse_hom_w >( "static_synapse_hom_w" );
