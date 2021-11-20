@@ -186,36 +186,17 @@ private:
     /** Membrane time constant in ms. */
     double Tau_;
 
-    /** Membrane capacitance in pF. */
-    double C_;
-
-    /** Refractory period in ms. */
-    double t_ref_;
-
-    /** Resting potential in mV. */
-    double E_L_;
-
     /** External current in pA */
     double I_e_;
 
-    /** Threshold, RELATIVE TO RESTING POTENTAIL(!).
-        I.e. the real threshold is (E_L_+Theta_). */
+    /** Absolute threshold value **/
     double Theta_;
-
-    /** reset value of the membrane potential */
-    double V_reset_;
 
     /** Time constant of excitatory synaptic current in ms. */
     double tau_ex_;
 
     /** Time constant of inhibitory synaptic current in ms. */
     double tau_in_;
-
-    /** Stochastic firing intensity at threshold in 1/s. **/
-    double rho_;
-
-    /** Width of threshold region in mV. **/
-    double delta_;
 
     Parameters_(); //!< Sets default parameter values
 
@@ -235,15 +216,12 @@ private:
   struct State_
   {
     // state variables
-    //! synaptic stepwise constant input current, variable 0
-    double i_0_;
-    double i_1_;      //!< presynaptic stepwise constant input current
     double i_syn_ex_; //!< postsynaptic current for exc. inputs, variable 1
     double i_syn_in_; //!< postsynaptic current for inh. inputs, variable 1
     double V_m_;      //!< membrane potential, variable 2
 
-    //! absolute refractory counter (no membrane potential propagation)
-    int r_ref_;
+    /** Time constant of inhibitory synaptic current in ms. */
+    double omega_;
 
     State_(); //!< Default initialization
 
@@ -298,29 +276,22 @@ private:
     */
     //    double PSCInitialValue_;
 
-    // time evolution operator
     double P20_;
-    double P11ex_;
-    double P11in_;
-    double P21ex_;
-    double P21in_;
-    double P22_;
 
     double weighted_spikes_ex_;
     double weighted_spikes_in_;
 
-    int RefractoryCounts_;
 
     RngPtr rng_; //!< random number generator of my own thread
   };
 
   // Access functions for UniversalDataLogger -------------------------------
 
-  //! Read out the real membrane potential
+  //! Read out the membrane potential
   inline double
   get_V_m_() const
   {
-    return S_.V_m_ + P_.E_L_;
+    return S_.V_m_;
   }
 
   inline double
@@ -427,13 +398,6 @@ iaf_matco_2018::set_status( const DictionaryDatum& d )
   // if we get here, temporaries contain consistent set of properties
   P_ = ptmp;
   S_ = stmp;
-}
-
-inline double
-iaf_matco_2018::phi_() const
-{
-  assert( P_.delta_ > 0. );
-  return P_.rho_ * std::exp( 1. / P_.delta_ * ( S_.V_m_ - P_.Theta_ ) );
 }
 
 } // namespace
