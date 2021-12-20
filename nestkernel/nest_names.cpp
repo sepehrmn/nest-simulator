@@ -245,6 +245,7 @@ const Name instantiations( "instantiations" );
 const Name interval( "interval" );
 const Name is_refractory( "is_refractory" );
 
+const Name k1( "k1" );
 const Name Kplus( "Kplus" );
 const Name Kplus_triplet( "Kplus_triplet" );
 const Name keep_source_table( "keep_source_table" );
@@ -329,6 +330,7 @@ const Name p_transmit( "p_transmit" );
 const Name pairwise_bernoulli_on_source( "pairwise_bernoulli_on_source" );
 const Name pairwise_bernoulli_on_target( "pairwise_bernoulli_on_target" );
 const Name phase( "phase" );
+const Name phi( "phi" );
 const Name phi_max( "phi_max" );
 const Name polar_angle( "polar_angle" );
 const Name polar_axis( "polar_axis" );

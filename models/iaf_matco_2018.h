@@ -183,8 +183,11 @@ private:
    */
   struct Parameters_
   {
-    /** Membrane time constant in ms. */
+    /** adaptation time constant in ms. */
     double Tau_;
+
+    /** Membrane time constant in ms. */
+    double k1_;
 
     /** External current in pA */
     double I_e_;
@@ -197,6 +200,8 @@ private:
 
     /** Time constant of inhibitory synaptic current in ms. */
     double tau_in_;
+
+    double alpha_;
 
     Parameters_(); //!< Sets default parameter values
 
@@ -220,8 +225,10 @@ private:
     double i_syn_in_; //!< postsynaptic current for inh. inputs, variable 1
     double V_m_;      //!< membrane potential, variable 2
 
-    /** Time constant of inhibitory synaptic current in ms. */
+    /** Firing rate */
     double omega_;
+    double phi_;
+
 
     State_(); //!< Default initialization
 
@@ -244,6 +251,10 @@ private:
   {
     Buffers_( iaf_matco_2018& );
     Buffers_( const Buffers_&, iaf_matco_2018& );
+
+    /** buffers and sums up incoming spikes/currents */
+    RingBuffer spike_exc_;
+    RingBuffer spike_inh_;
 
     //! Indices for access to different channels of input_buffer_
     enum
@@ -288,6 +299,12 @@ private:
   // Access functions for UniversalDataLogger -------------------------------
 
   //! Read out the membrane potential
+  //inline double
+  //get_V_m_() const
+  //{
+  //  return S_.V_m_;
+  //}
+
   inline double
   get_V_m_() const
   {

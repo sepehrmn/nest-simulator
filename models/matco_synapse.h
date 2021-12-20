@@ -163,16 +163,15 @@ public:
 private:
   double weight_; //!< Synaptic weight
 
-  double theta_; //!< threshold for plasticity
-
   double t_lastspike_; //!< Time point of last spike emitted
 
-  double avg_firing_rate_;
+  double omega_E; 
 
   std::vector< double > firing_rates_;
   std::vector< double > membrane_potentials_;
   std::vector< double > deltas_;
   std::vector< double > weights_;
+  std::vector< double > plasticity_flags_;
 
 };
 
@@ -202,38 +201,50 @@ matco_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynaps
   double learning_rate = 0.0008;
   const double pre_th = 0.05;
   const double post_th = 0.15;
-  const double tau_firing = 30.;
+  const double tau_favg= 30.;
 
-  avg_firing_rate_ += (-avg_firing_rate_ + 1) / tau_firing;
 
   double V_m = ( *d )[ names::V_m ];
-  membrane_potentials_.push_back( V_m );
+  bool phi = ( *d )[ names::phi ];
+  
+  //V_m = target-> get_V_m_()
 
-   if ( avg_firing_rate_ >= pre_th &&  V_m >= post_th )
+  omega_E += (-omega_E + phi) / tau_favg;
+
+  int plasticity_type = 9;
+
+   if ( tau_favg >= pre_th &&  V_m >= post_th )
    {
       learning_rate = learning_rate;
+      plasticity_type = 0;
    } 
 
-  else if (avg_firing_rate_ >= pre_th && ((pre_th <= V_m ) && (V_m < post_th) ))
+  else if (tau_favg >= pre_th && ((pre_th <= V_m ) && (V_m < post_th) ))
   {
       learning_rate = -learning_rate;
+      plasticity_type = 1;
   }
 
-  else if (avg_firing_rate_ < pre_th && V_m >= post_th  )
+  else if (tau_favg < pre_th && V_m >= post_th  )
   {
       learning_rate = -learning_rate;
+      plasticity_type = 2;
   }
    
   else
   {
       learning_rate = 0;
+      plasticity_type = 3;
   }
 
   weight_ += weight_ * learning_rate;
   
-  firing_rates_.push_back( avg_firing_rate_ );
+  membrane_potentials_.push_back( V_m );
+  plasticity_flags_.push_back( plasticity_type );
+  firing_rates_.push_back( omega_E );
   weights_.push_back( weight_ );
   deltas_.push_back( learning_rate );
+  plasticity_flags_.push_back( plasticity_type );
 
   e.set_receiver( *get_target( t ) );
   e.set_weight( weight_);
@@ -248,7 +259,6 @@ template < typename targetidentifierT >
 matco_synapse< targetidentifierT >::matco_synapse()
   : ConnectionBase()
   , weight_( 1.0 )
-  , theta_( 20.0 )
   , t_lastspike_( 0.0 )
 {
 }
@@ -259,12 +269,12 @@ matco_synapse< targetidentifierT >::get_status( DictionaryDatum& d ) const
 {
   ConnectionBase::get_status( d );
   def< double >( d, names::weight, weight_ );
-  def< double >( d, names::theta, theta_ );
 
   ( *d )[ names::y ] = firing_rates_;
   ( *d )[ names::y1 ] = membrane_potentials_;
   ( *d )[ names::y2 ] = deltas_;
   ( *d )[ names::y_0 ] = weights_;
+  ( *d )[ names::y_1 ] = plasticity_flags_;
 
   def< long >( d, names::size_of, sizeof( *this ) );
 }
@@ -276,12 +286,6 @@ matco_synapse< targetidentifierT >::set_status( const DictionaryDatum& d, Connec
   ConnectionBase::set_status( d, cm );
 
   updateValue< double >( d, names::weight, weight_ );
-  updateValue< double >( d, names::theta, theta_ );
-
-  if ( theta_ <= 0.0 )
-  {
-    throw BadProperty( "theta > 0 required." );
-  }
 }
 
 } // namespace

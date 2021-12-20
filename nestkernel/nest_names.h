@@ -269,6 +269,7 @@ extern const Name instantiations;
 extern const Name interval;
 extern const Name is_refractory;
 
+extern const Name k1;
 extern const Name Kplus;
 extern const Name Kplus_triplet;
 extern const Name keep_source_table;
@@ -353,6 +354,7 @@ extern const Name p_transmit;
 extern const Name pairwise_bernoulli_on_source;
 extern const Name pairwise_bernoulli_on_target;
 extern const Name phase;
+extern const Name phi;
 extern const Name phi_max;
 extern const Name polar_angle;
 extern const Name polar_axis;

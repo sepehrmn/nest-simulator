@@ -44,7 +44,7 @@
 #include "integerdatum.h"
 
 /* ----------------------------------------------------------------
- * Recordables map
+ * Recordables map  e
  * ---------------------------------------------------------------- */
 
 nest::RecordablesMap< nest::iaf_matco_2018 > nest::iaf_matco_2018::recordablesMap_;
@@ -69,9 +69,13 @@ RecordablesMap< iaf_matco_2018 >::create()
  * ---------------------------------------------------------------- */
 
 nest::iaf_matco_2018::Parameters_::Parameters_()
-  : Tau_( 10.0 )             // in ms
+  : Tau_( 10.0 )             // in ms (timesteps?)
+  , k1_( 0.01 )
   , I_e_( 0.0 )              // in pA
-  , Theta_( 50)              // absolute threshold
+  , Theta_( 0.18)              // spiking threshold
+  , tau_ex_( 2.5 )
+  , tau_in_( 5.0 )
+  , alpha_( 7.0 )
 {
 }
 
@@ -79,6 +83,8 @@ nest::iaf_matco_2018::State_::State_()
   : i_syn_ex_( 0.0 )
   , i_syn_in_( 0.0 )
   , V_m_( 0.0 )
+  , omega_( 0.0 )
+  , phi_( 0.0 )
 {
 }
 
@@ -90,8 +96,8 @@ void
 nest::iaf_matco_2018::Parameters_::get( DictionaryDatum& d ) const
 {
   def< double >( d, names::I_e, I_e_ );
-  def< double >( d, names::V_th, Theta_); // threshold value
-  def< double >( d, names::tau_m, Tau_ );
+  def< double >( d, names::theta, Theta_); // threshold value
+  def< double >( d, names::tau, Tau_ );
   def< double >( d, names::tau_syn_ex, tau_ex_ );
   def< double >( d, names::tau_syn_in, tau_in_ );
 }
@@ -99,9 +105,9 @@ nest::iaf_matco_2018::Parameters_::get( DictionaryDatum& d ) const
 double
 nest::iaf_matco_2018::Parameters_::set( const DictionaryDatum& d, Node* node )
 {
-  updateValueParam< double >( d, names::V_th, Theta_, node );
+  updateValueParam< double >( d, names::theta, Theta_, node );
   updateValueParam< double >( d, names::I_e, I_e_, node );
-  updateValueParam< double >( d, names::tau_m, Tau_, node );
+  updateValueParam< double >( d, names::tau, Tau_, node );
   updateValueParam< double >( d, names::tau_syn_ex, tau_ex_, node );
   updateValueParam< double >( d, names::tau_syn_in, tau_in_, node );
 
@@ -117,6 +123,8 @@ void
 nest::iaf_matco_2018::State_::get( DictionaryDatum& d, const Parameters_& p ) const
 {
   def< double >( d, names::V_m, V_m_); // Membrane potential
+
+  def< double >( d, names::omega, omega_); //
 }
 
 void
@@ -163,6 +171,9 @@ nest::iaf_matco_2018::iaf_matco_2018( const iaf_matco_2018& n )
 void
 nest::iaf_matco_2018::init_buffers_()
 {
+  B_.spike_exc_.clear(); // includes resize
+  B_.spike_inh_.clear(); // includes resize
+
   B_.input_buffer_.clear(); // includes resize
   B_.logger_.reset();
   ArchivingNode::clear_history();
@@ -173,6 +184,10 @@ nest::iaf_matco_2018::calibrate()
 {
   // ensures initialization in case mm connected after Simulate
   B_.logger_.init();
+
+
+  //V_.PSConInit_E = 1.0 * numerics::e / P_.tau_synE;
+  //V_.PSConInit_I = 1.0 * numerics::e / P_.tau_synI;
 
   const double h = Time::get_resolution().get_ms();
 
@@ -199,11 +214,13 @@ nest::iaf_matco_2018::update( const Time& origin, const long from, const long to
     // the spikes arriving at T+1 have an immediate effect on the state of the
     // neuron
 
-    V_.weighted_spikes_ex_ = input[ Buffers_::SYN_EX ];
-    V_.weighted_spikes_in_ = input[ Buffers_::SYN_IN ];
+    // add incoming spike
+    //S_.omega_ += B_.spike_exc_.get_value( lag ) / P_.tau_ex_;
+    //S_.omega_ += B_.spike_inh_.get_value( lag ) / P_.tau_in_;
 
+    S_.V_m_ += (-S_.V_m_ + P_.k1_ * (B_.spike_exc_.get_value( lag ) + B_.spike_inh_.get_value( lag ))) / P_.tau_ex_;
 
-    if ( get_V_m_() > P_.Theta_) //  threshold crossing
+    if ( ((S_.V_m_) - P_.alpha_ * S_.omega_) > P_.Theta_) //  threshold crossing
     {
       
 
@@ -211,7 +228,15 @@ nest::iaf_matco_2018::update( const Time& origin, const long from, const long to
 
       SpikeEvent se;
       kernel().event_delivery_manager.send( *this, se, lag );
+      S_.phi_ = 1;
     }
+
+    else
+    {
+      S_.phi_ = 0;
+    }
+
+    S_.omega_ += (-S_.omega_ + S_.phi_) / P_.Tau_;
 
     // reset all values in the currently processed input-buffer slot
     B_.input_buffer_.reset_values_all_channels( input_buffer_slot );
@@ -226,13 +251,16 @@ nest::iaf_matco_2018::handle( SpikeEvent& e )
 {
   assert( e.get_delay_steps() > 0 );
 
-  const index input_buffer_slot = kernel().event_delivery_manager.get_modulo(
-    e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ) );
-
-  const double s = e.get_weight() * e.get_multiplicity();
-
-  // separate buffer channels for excitatory and inhibitory inputs
-  B_.input_buffer_.add_value( input_buffer_slot, s > 0 ? Buffers_::SYN_EX : Buffers_::SYN_IN, s );
+  if ( e.get_weight() > 0.0 )
+  {
+    B_.spike_exc_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
+      e.get_weight() * e.get_multiplicity() );
+  }
+  else
+  {
+    B_.spike_inh_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
+      -e.get_weight() * e.get_multiplicity() );
+  }
 }
 
 void
