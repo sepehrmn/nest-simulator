@@ -167,11 +167,14 @@ private:
 
   double omega_E; 
 
-  std::vector< double > firing_rates_;
+  std::vector< double > firing_rates_ = {0, 1};
   std::vector< double > membrane_potentials_;
   std::vector< double > deltas_;
   std::vector< double > weights_;
   std::vector< double > plasticity_flags_;
+
+  //std::vector< double > tmp_filter_times( 0 );
+  //S_.plasticity_flags_.swap( tmp_filter_times );
 
 };
 
@@ -189,48 +192,45 @@ matco_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynaps
   const double t_spike = e.get_stamp().get_ms();
   const double h = t_spike - t_lastspike_;
 
-  // send the spike to the target
-  Node* target = get_target( t );
-
-
-  DictionaryDatum d = new Dictionary();
-  //( *d )[ nest::names::V_m ] = 0.0;
-
-  target->get_status(d);
+  iaf_matco_2018* target = reinterpret_cast<iaf_matco_2018*>(get_target( t ));
 
   double learning_rate = 0.0008;
+
   const double pre_th = 0.05;
-  const double post_th = 0.15;
+  const double post_th_min = 0.14;
+  const double post_th_plu = 0.15;
+
   const double tau_favg= 30.;
 
-
-  double V_m = ( *d )[ names::V_m ];
-  bool phi = ( *d )[ names::phi ];
-  
-  //V_m = target-> get_V_m_()
+  bool phi = target->get_phi();
+  double V_m = target->get_V_m();
 
   omega_E += (-omega_E + phi) / tau_favg;
 
   int plasticity_type = 9;
-
-   if ( tau_favg >= pre_th &&  V_m >= post_th )
+   
+   // LTP
+   if ( omega_E >= pre_th &&  V_m >= post_th_plu )
    {
       learning_rate = learning_rate;
       plasticity_type = 0;
    } 
 
-  else if (tau_favg >= pre_th && ((pre_th <= V_m ) && (V_m < post_th) ))
+  // LTD (homosynaptic)
+  else if (omega_E >= pre_th && ((post_th_min <= V_m) && (V_m < post_th_plu)))
   {
       learning_rate = -learning_rate;
       plasticity_type = 1;
   }
 
-  else if (tau_favg < pre_th && V_m >= post_th  )
+  // LTD (heterosynaptic)
+  else if (omega_E < pre_th && V_m >= post_th_plu)
   {
       learning_rate = -learning_rate;
       plasticity_type = 2;
   }
-   
+  
+  // No plasticity
   else
   {
       learning_rate = 0;
@@ -244,11 +244,10 @@ matco_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynaps
   firing_rates_.push_back( omega_E );
   weights_.push_back( weight_ );
   deltas_.push_back( learning_rate );
-  plasticity_flags_.push_back( plasticity_type );
 
-  e.set_receiver( *get_target( t ) );
-  e.set_weight( weight_);
+  e.set_weight( weight_ );
   e.set_delay_steps( get_delay_steps() );
+  e.set_receiver( *get_target( t ) );
   e.set_rport( get_rport() );
   e();
 

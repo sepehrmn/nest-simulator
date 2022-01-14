@@ -163,6 +163,18 @@ public:
   void get_status( DictionaryDatum& ) const;
   void set_status( const DictionaryDatum& );
 
+  inline double
+  get_V_m() const
+  {
+    return S_.V_m_;
+  }
+
+  inline double
+  get_phi() const
+  {
+    return S_.phi_;
+  }
+
 private:
   void init_buffers_();
   void calibrate();
@@ -170,7 +182,7 @@ private:
   void update( const Time&, const long, const long );
 
   // intensity function
-  double phi_() const;
+  //bool phi_() const;
 
   // The next two classes need to be friends to access the State_ class/member
   friend class RecordablesMap< iaf_matco_2018 >;
@@ -227,7 +239,7 @@ private:
 
     /** Firing rate */
     double omega_;
-    double phi_;
+    bool phi_;
 
 
     State_(); //!< Default initialization
@@ -305,11 +317,7 @@ private:
   //  return S_.V_m_;
   //}
 
-  inline double
-  get_V_m_() const
-  {
-    return S_.V_m_;
-  }
+
 
   inline double
   get_I_syn_ex_() const

@@ -58,7 +58,7 @@ void
 RecordablesMap< iaf_matco_2018 >::create()
 {
   // use standard names whereever you can for consistency!
-  insert_( names::V_m, &iaf_matco_2018::get_V_m_ );
+  insert_( names::V_m, &iaf_matco_2018::get_V_m );
   insert_( names::I_syn_ex, &iaf_matco_2018::get_I_syn_ex_ );
   insert_( names::I_syn_in, &iaf_matco_2018::get_I_syn_in_ );
 }
@@ -84,7 +84,7 @@ nest::iaf_matco_2018::State_::State_()
   , i_syn_in_( 0.0 )
   , V_m_( 0.0 )
   , omega_( 0.0 )
-  , phi_( 0.0 )
+  , phi_( false )
 {
 }
 
@@ -123,8 +123,8 @@ void
 nest::iaf_matco_2018::State_::get( DictionaryDatum& d, const Parameters_& p ) const
 {
   def< double >( d, names::V_m, V_m_); // Membrane potential
-
   def< double >( d, names::omega, omega_); //
+  def< bool >( d, names::omega, phi_); 
 }
 
 void
@@ -222,18 +222,16 @@ nest::iaf_matco_2018::update( const Time& origin, const long from, const long to
 
     if ( ((S_.V_m_) - P_.alpha_ * S_.omega_) > P_.Theta_) //  threshold crossing
     {
-      
-
       set_spiketime( Time::step( origin.get_steps() + lag + 1 ) );
 
       SpikeEvent se;
       kernel().event_delivery_manager.send( *this, se, lag );
-      S_.phi_ = 1;
+      S_.phi_ = true;
     }
 
     else
     {
-      S_.phi_ = 0;
+      S_.phi_ = false;
     }
 
     S_.omega_ += (-S_.omega_ + S_.phi_) / P_.Tau_;
@@ -256,11 +254,13 @@ nest::iaf_matco_2018::handle( SpikeEvent& e )
     B_.spike_exc_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
       e.get_weight() * e.get_multiplicity() );
   }
+
   else
   {
     B_.spike_inh_.add_value( e.get_rel_delivery_steps( kernel().simulation_manager.get_slice_origin() ),
       -e.get_weight() * e.get_multiplicity() );
   }
+
 }
 
 void
