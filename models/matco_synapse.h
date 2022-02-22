@@ -165,7 +165,9 @@ private:
 
   double t_lastspike_; //!< Time point of last spike emitted
 
-  double omega_E; 
+  double omega_E_; 
+
+  double tau_;
 
   std::vector< double > firing_rates_ = {0, 1};
   std::vector< double > membrane_potentials_;
@@ -200,31 +202,29 @@ matco_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynaps
   const double post_th_min = 0.14;
   const double post_th_plu = 0.15;
 
-  const double tau_favg= 30.;
-
   bool phi = target->get_phi();
   double V_m = target->get_V_m();
 
-  omega_E += (-omega_E + phi) / tau_favg;
+  omega_E_ += (-omega_E_ + phi) / tau_;
 
   int plasticity_type = 9;
    
    // LTP
-   if ( omega_E >= pre_th &&  V_m >= post_th_plu )
+   if ( omega_E_>= pre_th &&  V_m >= post_th_plu )
    {
       learning_rate = learning_rate;
       plasticity_type = 0;
    } 
 
   // LTD (homosynaptic)
-  else if (omega_E >= pre_th && ((post_th_min <= V_m) && (V_m < post_th_plu)))
+  else if (omega_E_ >= pre_th && ((post_th_min <= V_m) && (V_m < post_th_plu)))
   {
       learning_rate = -learning_rate;
       plasticity_type = 1;
   }
 
   // LTD (heterosynaptic)
-  else if (omega_E < pre_th && V_m >= post_th_plu)
+  else if (omega_E_ < pre_th && V_m >= post_th_plu)
   {
       learning_rate = -learning_rate;
       plasticity_type = 2;
@@ -241,7 +241,7 @@ matco_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynaps
   
   membrane_potentials_.push_back( V_m );
   plasticity_flags_.push_back( plasticity_type );
-  firing_rates_.push_back( omega_E );
+  firing_rates_.push_back( omega_E_ );
   weights_.push_back( weight_ );
   deltas_.push_back( learning_rate );
 
@@ -259,6 +259,8 @@ matco_synapse< targetidentifierT >::matco_synapse()
   : ConnectionBase()
   , weight_( 1.0 )
   , t_lastspike_( 0.0 )
+  , omega_E_(0.0)
+  , tau_(30.)
 {
 }
 
@@ -275,6 +277,8 @@ matco_synapse< targetidentifierT >::get_status( DictionaryDatum& d ) const
   ( *d )[ names::y_0 ] = weights_;
   ( *d )[ names::y_1 ] = plasticity_flags_;
 
+  ( *d )[ names::tau ] = tau_;
+
   def< long >( d, names::size_of, sizeof( *this ) );
 }
 
@@ -285,6 +289,7 @@ matco_synapse< targetidentifierT >::set_status( const DictionaryDatum& d, Connec
   ConnectionBase::set_status( d, cm );
 
   updateValue< double >( d, names::weight, weight_ );
+  updateValue< double >( d, names::tau, tau_ );
 }
 
 } // namespace

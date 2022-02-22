@@ -206,7 +206,7 @@ nest::iaf_matco_2018::update( const Time& origin, const long from, const long to
   for ( long lag = from; lag < to; ++lag )
   {
    
-
+    
     // get read access to the correct input-buffer slot
     const index input_buffer_slot = kernel().event_delivery_manager.get_modulo( lag );
     auto& input = B_.input_buffer_.get_values_all_channels( input_buffer_slot );
