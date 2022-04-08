@@ -1,5 +1,5 @@
 /*
- *  volume_transmitter.h
+ *  updater_device.h
  *
  *  This file is part of NEST.
  *
@@ -97,7 +97,7 @@ SpikeEvent
 See also
 ++++++++
 
-stdp_dopamine_synapse
+matco_synapse
 
 EndUserDocs */
 
@@ -105,7 +105,7 @@ class ConnectorBase;
 
 class updater_device : public Node
 {
-
+ 
 public:
   updater_device();
   updater_device( const updater_device& );
@@ -151,8 +151,6 @@ public:
   void set_local_device_id( const index ldid );
   index get_local_device_id() const;
 
-  const std::vector< spikecounter >& deliver_spikes();
-
 private:
   void init_buffers_();
   void calibrate();
@@ -174,21 +172,13 @@ private:
 
   //-----------------------------------------------
 
-  struct Buffers_
-  {
-    RingBuffer neuromodulatory_spikes_; //!< buffer to store incoming spikes
-    //! vector to store and deliver spikes
-    std::vector< spikecounter > spikecounter_;
-  };
-
   Parameters_ P_;
-  Buffers_ B_;
 
   index local_device_id_;
 };
 
 inline port
-volume_transmitter::handles_test_event( SpikeEvent&, rport receptor_type )
+updater_device::handles_test_event( SpikeEvent&, rport receptor_type )
 {
   if ( receptor_type != 0 )
   {
@@ -198,13 +188,13 @@ volume_transmitter::handles_test_event( SpikeEvent&, rport receptor_type )
 }
 
 inline void
-volume_transmitter::get_status( DictionaryDatum& d ) const
+updater_device::get_status( DictionaryDatum& d ) const
 {
   P_.get( d );
 }
 
 inline void
-volume_transmitter::set_status( const DictionaryDatum& d )
+updater_device::set_status( const DictionaryDatum& d )
 {
   Parameters_ ptmp = P_; // temporary copy in case of errors
   ptmp.set( d, this );   // throws if BadProperty
@@ -213,24 +203,18 @@ volume_transmitter::set_status( const DictionaryDatum& d )
   P_ = ptmp;
 }
 
-inline const std::vector< nest::spikecounter >&
-volume_transmitter::deliver_spikes()
-{
-  return B_.spikecounter_;
-}
-
 inline void
-volume_transmitter::set_local_device_id( const index ldid )
+updater_device::set_local_device_id( const index ldid )
 {
   local_device_id_ = ldid;
 }
 
 inline index
-volume_transmitter::get_local_device_id() const
+updater_device::get_local_device_id() const
 {
   return local_device_id_;
 }
 
 } // namespace
 
-#endif /* #ifndef VOLUME_TRANSMITTER_H */
+#endif /* #ifndef UPDATER_DEVICE_H */

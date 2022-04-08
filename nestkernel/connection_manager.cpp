@@ -869,6 +869,23 @@ nest::ConnectionManager::disconnect( const thread tid,
 }
 
 void
+nest::ConnectionManager::force_update_weight( const long ut_id,
+  const double t_trig )
+{
+  const thread tid = kernel().vp_manager.get_thread_id();
+
+  for ( std::vector< ConnectorBase* >::iterator it = connections_[ tid ].begin(); it != connections_[ tid ].end();
+        ++it )
+  {
+    if ( *it != NULL )
+    {
+      ( *it )->force_update_weight(
+        ut_id, tid, t_trig, kernel().model_manager.get_connection_models( tid ) );
+    }
+  }
+}
+
+void
 nest::ConnectionManager::trigger_update_weight( const long vt_id,
   const std::vector< spikecounter >& dopa_spikes,
   const double t_trig )

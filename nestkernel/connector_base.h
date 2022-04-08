@@ -169,6 +169,11 @@ public:
     const double t_trig,
     const std::vector< ConnectorModel* >& cm ) = 0;
 
+  virtual void force_update_weight( const long ut_node_id,
+    const thread tid,
+    const double t_trig,
+    const std::vector< ConnectorModel* >& cm ) = 0;
+
   /**
    * Sort connections according to source node IDs.
    */
@@ -432,6 +437,26 @@ public:
           dopa_spikes,
           t_trig,
           static_cast< GenericConnectorModel< ConnectionT >* >( cm[ syn_id_ ] )->get_common_properties() );
+      }
+    }
+  }
+
+  void
+  force_update_weight( const long ut_node_id,
+    const thread tid,
+    const double t_trig,
+    const std::vector< ConnectorModel* >& cm )
+  {
+    for ( size_t i = 0; i < C_.size(); ++i )
+    {
+      if ( static_cast< GenericConnectorModel< ConnectionT >* >( cm[ syn_id_ ] )
+             ->get_common_properties()
+             .get_ut_node_id()
+        == ut_node_id )
+      {
+         C_[ i ].force_update_weight( tid,
+           t_trig,
+           static_cast< GenericConnectorModel< ConnectionT >* >( cm[ syn_id_ ] )->get_common_properties() );
       }
     }
   }

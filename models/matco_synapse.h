@@ -23,8 +23,12 @@
 #ifndef MATCO_SYNAPSE_H
 #define MATCO_SYNAPSE_H
 
+// Includes from models:
+#include "updater_device.h"
+
 // Includes from nestkernel:
 #include "connection.h"
+#include "iaf_matco_2018.h"
 
 namespace nest
 {
@@ -81,11 +85,50 @@ iaf_matco_2018
 
 EndUserDocs */
 
+class matcoCommonProperties : public CommonSynapseProperties
+{
+public:
+  /**
+   * Default constructor.
+   * Sets all property values to defaults.
+   */
+  matcoCommonProperties();
+
+  /**
+   * Get all properties and put them into a dictionary.
+   */
+  void get_status( DictionaryDatum& d ) const;
+
+  /**
+   * Set properties from the values given in dictionary.
+   */
+  void set_status( const DictionaryDatum& d, ConnectorModel& cm );
+
+  Node* get_node();
+
+  long get_ut_node_id() const;
+
+  updater_device* ut_;
+};
+
+inline long
+matcoCommonProperties::get_ut_node_id() const
+{
+  if ( ut_ != 0 )
+  {
+    return ut_->get_node_id();
+  }
+  else
+  {
+    return -1;
+  }
+}
+
 template < typename targetidentifierT >
 class matco_synapse : public Connection< targetidentifierT >
 {
 public:
-  typedef CommonSynapseProperties CommonPropertiesType;
+  typedef matcoCommonProperties CommonPropertiesType;
   typedef Connection< targetidentifierT > ConnectionBase;
 
   /**
@@ -159,6 +202,10 @@ public:
   {
     weight_ = w;
   }
+
+  void force_update_weight( thread t,
+    double t_trig,
+    const matcoCommonProperties& cp );
 
 private:
   double weight_; //!< Synaptic weight
@@ -254,6 +301,8 @@ matco_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynaps
   t_lastspike_ = t_spike;
 }
 
+
+
 template < typename targetidentifierT >
 matco_synapse< targetidentifierT >::matco_synapse()
   : ConnectionBase()
@@ -282,6 +331,20 @@ matco_synapse< targetidentifierT >::get_status( DictionaryDatum& d ) const
   def< long >( d, names::size_of, sizeof( *this ) );
 }
 
+
+  class ConnTestDummyNode : public ConnTestDummyNodeBase
+  {
+  public:
+    // Ensure proper overriding of overloaded virtual functions.
+    // Return values from functions are ignored.
+    using ConnTestDummyNodeBase::handles_test_event;
+    port
+    handles_test_event( SpikeEvent&, rport )
+    {
+      return invalid_port_;
+    }
+  };
+
 template < typename targetidentifierT >
 void
 matco_synapse< targetidentifierT >::set_status( const DictionaryDatum& d, ConnectorModel& cm )
@@ -290,6 +353,15 @@ matco_synapse< targetidentifierT >::set_status( const DictionaryDatum& d, Connec
 
   updateValue< double >( d, names::weight, weight_ );
   updateValue< double >( d, names::tau, tau_ );
+}
+
+template < typename targetidentifierT >
+inline void
+matco_synapse< targetidentifierT >::force_update_weight( thread t,
+  const double t_trig,
+  const matcoCommonProperties& cp )
+{
+  // Here goes update
 }
 
 } // namespace

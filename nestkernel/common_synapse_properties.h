@@ -89,6 +89,11 @@ public:
   long get_vt_node_id() const;
 
   /**
+   * get node ID of updater
+   */
+  long get_ut_node_id() const;
+
+  /**
    * get node ID of weight_recorder
    */
   index get_wr_node_id() const;
@@ -106,6 +111,12 @@ private:
 
 inline long
 CommonSynapseProperties::get_vt_node_id() const
+{
+  return -1;
+}
+
+inline long
+CommonSynapseProperties::get_ut_node_id() const
 {
   return -1;
 }

@@ -36,6 +36,7 @@ set( models_sources
     correlomatrix_detector.h correlomatrix_detector.cpp
     correlospinmatrix_detector.h correlospinmatrix_detector.cpp
     dc_generator.h dc_generator.cpp
+    updater_device.h updater_device.cpp
     diffusion_connection.h
     erfc_neuron.h erfc_neuron.cpp
     gamma_sup_generator.h gamma_sup_generator.cpp
@@ -78,7 +79,7 @@ set( models_sources
     izhikevich.h izhikevich.cpp
     jonke_synapse.h
     lin_rate.h lin_rate.cpp
-    matco_synapse.h
+    matco_synapse.h matco_synapse.cpp
     mat2_psc_exp.h mat2_psc_exp.cpp
     mcculloch_pitts_neuron.h mcculloch_pitts_neuron.cpp
     mip_generator.h mip_generator.cpp

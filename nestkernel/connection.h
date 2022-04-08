@@ -222,6 +222,11 @@ public:
    * triggers an update of a synaptic weight
    * this function is needed for neuromodulated synaptic plasticity
    */
+
+  void force_update_weight( const thread,
+    const double,
+    const CommonSynapseProperties& );
+
   void trigger_update_weight( const thread,
     const std::vector< spikecounter >&,
     const double,
@@ -380,6 +385,15 @@ Connection< targetidentifierT >::calibrate( const TimeConverter& tc )
   {
     syn_id_delay_.delay = 1;
   }
+}
+
+template < typename targetidentifierT >
+inline void
+Connection< targetidentifierT >::force_update_weight( const thread,
+  const double,
+  const CommonSynapseProperties&)
+{
+  throw IllegalConnection( "Connection does not support updates that are triggered by an updater device." );
 }
 
 template < typename targetidentifierT >
