@@ -241,57 +241,6 @@ matco_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynaps
   const double t_spike = e.get_stamp().get_ms();
   const double h = t_spike - t_lastspike_;
 
-  iaf_matco_2018* target = reinterpret_cast<iaf_matco_2018*>(get_target( t ));
-
-  double learning_rate = 0.0008;
-
-  const double pre_th = 0.05;
-  const double post_th_min = 0.14;
-  const double post_th_plu = 0.15;
-
-  bool phi = target->get_phi();
-  double V_m = target->get_V_m();
-
-  omega_E_ += (-omega_E_ + phi) / tau_;
-
-  int plasticity_type = 9;
-   
-   // LTP
-   if ( omega_E_>= pre_th &&  V_m >= post_th_plu )
-   {
-      learning_rate = learning_rate;
-      plasticity_type = 0;
-   } 
-
-  // LTD (homosynaptic)
-  else if (omega_E_ >= pre_th && ((post_th_min <= V_m) && (V_m < post_th_plu)))
-  {
-      learning_rate = -learning_rate;
-      plasticity_type = 1;
-  }
-
-  // LTD (heterosynaptic)
-  else if (omega_E_ < pre_th && V_m >= post_th_plu)
-  {
-      learning_rate = -learning_rate;
-      plasticity_type = 2;
-  }
-  
-  // No plasticity
-  else
-  {
-      learning_rate = 0;
-      plasticity_type = 3;
-  }
-
-  weight_ += weight_ * learning_rate;
-  
-  membrane_potentials_.push_back( V_m );
-  plasticity_flags_.push_back( plasticity_type );
-  firing_rates_.push_back( omega_E_ );
-  weights_.push_back( weight_ );
-  deltas_.push_back( learning_rate );
-
   e.set_weight( weight_ );
   e.set_delay_steps( get_delay_steps() );
   e.set_receiver( *get_target( t ) );
@@ -361,7 +310,59 @@ matco_synapse< targetidentifierT >::force_update_weight( thread t,
   const double t_trig,
   const matcoCommonProperties& cp )
 {
-  // Here goes update
+  
+
+  iaf_matco_2018* target = reinterpret_cast<iaf_matco_2018*>(get_target( t ));
+
+  double learning_rate = 0.0008;
+
+  const double pre_th = 0.05;
+  const double post_th_min = 0.14;
+  const double post_th_plu = 0.15;
+
+  bool phi = target->get_phi();
+  double V_m = target->get_V_m();
+
+  omega_E_ += (-omega_E_ + phi) / tau_;
+
+  int plasticity_type = 9;
+   
+   // LTP
+   if ( omega_E_>= pre_th &&  V_m >= post_th_plu )
+   {
+      learning_rate = learning_rate;
+      plasticity_type = 0;
+   } 
+
+  // LTD (homosynaptic)
+  else if (omega_E_ >= pre_th && ((post_th_min <= V_m) && (V_m < post_th_plu)))
+  {
+      learning_rate = -learning_rate;
+      plasticity_type = 1;
+  }
+
+  // LTD (heterosynaptic)
+  else if (omega_E_ < pre_th && V_m >= post_th_plu)
+  {
+      learning_rate = -learning_rate;
+      plasticity_type = 2;
+  }
+  
+  // No plasticity
+  else
+  {
+      learning_rate = 0;
+      plasticity_type = 3;
+  }
+
+  weight_ += weight_ * learning_rate;
+  
+  membrane_potentials_.push_back( V_m );
+  plasticity_flags_.push_back( plasticity_type );
+  firing_rates_.push_back( omega_E_ );
+  weights_.push_back( weight_ );
+  deltas_.push_back( learning_rate );
+
 }
 
 } // namespace

@@ -102,9 +102,7 @@ nest::updater_device::update( const Time&, const long from, const long to )
   for ( long lag = from; lag < to; ++lag )
   {
   // all spikes stored in spikecounter_ are delivered to the target synapses
-  if ( ( kernel().simulation_manager.get_slice_origin().get_steps() + to )
-      % ( P_.deliver_interval_ * kernel().connection_manager.get_min_delay() )
-    == 0 )
+  if (( kernel().simulation_manager.get_slice_origin().get_steps() + to ) % 1 == 0 )
    {
       double t_trig = Time( Time::step( kernel().simulation_manager.get_slice_origin().get_steps() + to ) ).get_ms();
       kernel().connection_manager.force_update_weight( get_node_id(), t_trig );

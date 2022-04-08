@@ -202,10 +202,13 @@ nest::iaf_matco_2018::update( const Time& origin, const long from, const long to
 
   const double h = Time::get_resolution().get_ms();
 
+
   // evolve from timestep 'from' to timestep 'to' with steps of h each
   for ( long lag = from; lag < to; ++lag )
   {
    
+    //double t_trig = Time( Time::step( kernel().simulation_manager.get_slice_origin().get_steps() + to ) ).get_ms();
+    //kernel().connection_manager.force_update_weight( get_node_id(), lag );
     
     // get read access to the correct input-buffer slot
     const index input_buffer_slot = kernel().event_delivery_manager.get_modulo( lag );
