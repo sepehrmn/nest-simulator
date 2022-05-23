@@ -124,7 +124,7 @@ nest::iaf_matco_2018::State_::get( DictionaryDatum& d, const Parameters_& p ) co
 {
   def< double >( d, names::V_m, V_m_); // Membrane potential
   def< double >( d, names::omega, omega_); //
-  def< bool >( d, names::omega, phi_); 
+  def< bool >( d, names::phi, phi_); 
 }
 
 void

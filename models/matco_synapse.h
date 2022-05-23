@@ -216,7 +216,13 @@ private:
 
   double tau_;
 
-  std::vector< double > firing_rates_ = {0, 1};
+  bool phi_;
+
+  double theta_;
+  double theta_minus_;
+  double theta_plus_;
+
+  std::vector< double > firing_rates_;
   std::vector< double > membrane_potentials_;
   std::vector< double > deltas_;
   std::vector< double > weights_;
@@ -237,6 +243,7 @@ template < typename targetidentifierT >
 inline void
 matco_synapse< targetidentifierT >::send( Event& e, thread t, const CommonSynapseProperties& )
 {
+  phi_ = 1;
   // propagation t_lastspike -> t_spike, t_lastspike_ = 0 initially, p_ = 1
   const double t_spike = e.get_stamp().get_ms();
   const double h = t_spike - t_lastspike_;
@@ -259,6 +266,10 @@ matco_synapse< targetidentifierT >::matco_synapse()
   , t_lastspike_( 0.0 )
   , omega_E_(0.0)
   , tau_(30.)
+  , phi_(0)
+  , theta_(0.05)
+  , theta_minus_(0.14)
+  , theta_plus_(0.15)
 {
 }
 
@@ -302,6 +313,9 @@ matco_synapse< targetidentifierT >::set_status( const DictionaryDatum& d, Connec
 
   updateValue< double >( d, names::weight, weight_ );
   updateValue< double >( d, names::tau, tau_ );
+  updateValue< double >( d, names::theta, theta_ );
+  updateValue< double >( d, names::theta_minus, theta_minus_ );
+  updateValue< double >( d, names::theta_plus, theta_plus_ );
 }
 
 template < typename targetidentifierT >
@@ -315,34 +329,34 @@ matco_synapse< targetidentifierT >::force_update_weight( thread t,
   iaf_matco_2018* target = reinterpret_cast<iaf_matco_2018*>(get_target( t ));
 
   double learning_rate = 0.0008;
-
-  const double pre_th = 0.05;
-  const double post_th_min = 0.14;
-  const double post_th_plu = 0.15;
-
-  bool phi = target->get_phi();
+  
   double V_m = target->get_V_m();
 
-  omega_E_ += (-omega_E_ + phi) / tau_;
+  omega_E_ += (-omega_E_ + phi_) / tau_;
+  if (phi_ == 1)
+  {
+    phi_ = 0;
+  }
+  
 
   int plasticity_type = 9;
    
    // LTP
-   if ( omega_E_>= pre_th &&  V_m >= post_th_plu )
+   if ( omega_E_>= theta_ &&  V_m >= theta_plus_ )
    {
       learning_rate = learning_rate;
       plasticity_type = 0;
    } 
 
   // LTD (homosynaptic)
-  else if (omega_E_ >= pre_th && ((post_th_min <= V_m) && (V_m < post_th_plu)))
+  else if (omega_E_ >= theta_ && ((theta_minus_ <= V_m) && (V_m < theta_plus_)))
   {
       learning_rate = -learning_rate;
       plasticity_type = 1;
   }
 
   // LTD (heterosynaptic)
-  else if (omega_E_ < pre_th && V_m >= post_th_plu)
+  else if (omega_E_ < theta_ && V_m >= theta_plus_)
   {
       learning_rate = -learning_rate;
       plasticity_type = 2;
