@@ -254,7 +254,7 @@ public:
    * for spike handling or updating the node.
    *
    */
-  virtual void calibrate() = 0;
+  virtual void pre_run_hook() = 0;
 
   /**
    * Re-calculate time-based properties of the node.
@@ -1005,7 +1005,7 @@ Node::set_model_id( int i )
 inline bool
 Node::is_model_prototype() const
 {
-  return vp_ == invalid_thread_;
+  return vp_ == invalid_thread;
 }
 
 inline void
