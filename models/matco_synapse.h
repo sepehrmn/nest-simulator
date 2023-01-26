@@ -185,7 +185,7 @@ public:
     port
     handles_test_event( SpikeEvent&, rport )
     {
-      return invalid_port_;
+      return invalid_port;
     }
   };
 
@@ -280,11 +280,11 @@ matco_synapse< targetidentifierT >::get_status( DictionaryDatum& d ) const
   ConnectionBase::get_status( d );
   def< double >( d, names::weight, weight_ );
 
-  ( *d )[ names::y ] = firing_rates_;
-  ( *d )[ names::y1 ] = membrane_potentials_;
-  ( *d )[ names::y2 ] = deltas_;
-  ( *d )[ names::y_0 ] = weights_;
-  ( *d )[ names::y_1 ] = plasticity_flags_;
+  ( *d )[ names::rate ] = firing_rates_;
+  ( *d )[ names::V_m ] = membrane_potentials_;
+  ( *d )[ names::delta ] = deltas_;
+  ( *d )[ names::weight ] = weights_;
+  ( *d )[ names::type_id ] = plasticity_flags_;
 
   ( *d )[ names::tau ] = tau_;
 
@@ -301,7 +301,7 @@ matco_synapse< targetidentifierT >::get_status( DictionaryDatum& d ) const
     port
     handles_test_event( SpikeEvent&, rport )
     {
-      return invalid_port_;
+      return invalid_port;
     }
   };
 

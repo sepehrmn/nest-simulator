@@ -89,7 +89,7 @@ nest::updater_device::init_buffers_()
 }
 
 void
-nest::updater_device::calibrate()
+nest::updater_device::pre_run_hook()
 {
 }
 

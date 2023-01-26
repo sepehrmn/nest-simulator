@@ -28,7 +28,6 @@
 // Includes from libnestutil:
 #include "dict_util.h"
 #include "numerics.h"
-#include "propagator_stability.h"
 
 // Includes from nestkernel:
 #include "event_delivery_manager_impl.h"
@@ -180,7 +179,7 @@ nest::iaf_matco_2018::init_buffers_()
 }
 
 void
-nest::iaf_matco_2018::calibrate()
+nest::iaf_matco_2018::pre_run_hook()
 {
   // ensures initialization in case mm connected after Simulate
   B_.logger_.init();

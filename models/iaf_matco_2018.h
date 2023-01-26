@@ -176,8 +176,8 @@ public:
   }
 
 private:
-  void init_buffers_();
-  void calibrate();
+  void init_buffers_() override;
+  void pre_run_hook() override;
 
   void update( const Time&, const long, const long );
 
