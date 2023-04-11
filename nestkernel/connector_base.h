@@ -446,7 +446,7 @@ public:
   force_update_weight( const long ut_node_id,
     const thread tid,
     const double t_trig,
-    const std::vector< ConnectorModel* >& cm )
+    const std::vector< ConnectorModel* >& cm ) override
   {
     for ( size_t i = 0; i < C_.size(); ++i )
     {

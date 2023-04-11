@@ -131,6 +131,12 @@ public:
   typedef matcoCommonProperties CommonPropertiesType;
   typedef Connection< targetidentifierT > ConnectionBase;
 
+  //SecondaryEvent* get_secondary_event();
+
+  static constexpr ConnectionModelProperties properties = ConnectionModelProperties::HAS_DELAY
+  | ConnectionModelProperties::IS_PRIMARY | ConnectionModelProperties::SUPPORTS_HPC
+  | ConnectionModelProperties::SUPPORTS_LBL;
+
   /**
    * Default Constructor.
    * Sets default values for all parameters. Needed by GenericConnectorModel.
@@ -274,6 +280,9 @@ matco_synapse< targetidentifierT >::matco_synapse()
 }
 
 template < typename targetidentifierT >
+constexpr ConnectionModelProperties matco_synapse< targetidentifierT >::properties;
+
+template < typename targetidentifierT >
 void
 matco_synapse< targetidentifierT >::get_status( DictionaryDatum& d ) const
 {
@@ -379,6 +388,13 @@ matco_synapse< targetidentifierT >::force_update_weight( thread t,
 
 }
 
-} // namespace
+// template < typename targetidentifierT >
+// SecondaryEvent*
+// matco_synapse< targetidentifierT >::get_secondary_event()
+// {
+//   return new matco_synapse();
+// }
+
+ } // namespace
 
 #endif // MATCO_SYNAPSE_H

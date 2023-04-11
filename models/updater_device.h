@@ -47,27 +47,7 @@ Support node for neuromodulated synaptic plasticity
 Description
 +++++++++++
 
-The volume transmitter is used in combination with neuromodulated
-synaptic plasticity, plasticity that depends not only on the activity
-of the pre- and the postsynaptic neuron but also on a non-local
-neuromodulatory third signal. It collects the spikes from all neurons
-connected to the volume transmitter and delivers the spikes to a
-subset of synapses in the network. The user specifies this subset by
-passing the volume transmitter as a parameter when a neuromodulatory
-synapse is defined.
-
-It is assumed that the neuromodulatory signal is a function of the
-spike times of all spikes emitted by the population of neurons
-connected to the volume transmitter. The neuromodulatory dynamics is
-calculated in the synapses itself.
-
-The volume transmitter interacts in a hybrid structure with the
-neuromodulated synapses: In addition to the delivery of the
-neuromodulatory spikes triggered by every pre-synaptic spike, the
-neuromodulatory spike history is delivered at regular time
-intervals. The interval is equal to ``deliver_interval * d_min``,
-where ``deliver_interval`` is an (integer) entry in the parameter
-dictionary and ``d_min`` is the minimal synaptic delay.
+The updater_device
 
 The implementation is based on the framework presented in [1]_.
 
@@ -83,11 +63,7 @@ References
 ++++++++++
 
 
-.. [1] Potjans W, Morrison A, Diesmann M (2010). Enabling functional
-       neural circuit simulations with distributed computing of
-       neuromodulated plasticity. Frontiers in Computattional Neuroscience,
-       4:141. DOI: https://doi.org/10.3389/fncom.2010.00141
-
+.. [1] 
 
 Receives
 ++++++++
@@ -111,19 +87,19 @@ public:
   updater_device( const updater_device& );
 
   bool
-  has_proxies() const
+  has_proxies() const override
   {
     return false;
   }
 
   bool
-  local_receiver() const
+  local_receiver() const override
   {
     return false;
   }
 
   Name
-  get_element_type() const
+  get_element_type() const override
   {
     return names::other;
   }
@@ -136,26 +112,26 @@ public:
   using Node::handle;
   using Node::handles_test_event;
 
-  void handle( SpikeEvent& );
+  void handle( SpikeEvent& ) override;
 
-  port handles_test_event( SpikeEvent&, rport );
+  port handles_test_event( SpikeEvent&, rport ) override;
 
-  void get_status( DictionaryDatum& d ) const;
-  void set_status( const DictionaryDatum& d );
+  void get_status( DictionaryDatum& d ) const override;
+  void set_status( const DictionaryDatum& d ) override;
 
   /**
    * Since volume transmitters are duplicated on each thread, and are
    * hence treated just as devices during node creation, we need to
    * define the corresponding setter and getter for local_device_id.
    **/
-  void set_local_device_id( const index ldid );
-  index get_local_device_id() const;
+  void set_local_device_id( const index ldid ) override;
+  index get_local_device_id() const override;
 
 private:
   void init_buffers_() override;
   void pre_run_hook() override;
 
-  void update( const Time&, const long, const long );
+  void update( const Time&, const long, const long ) override;
 
   // --------------------------------------------
 
