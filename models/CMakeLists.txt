@@ -144,12 +144,12 @@ set(models_sources
     spike_dilutor.h spike_dilutor.cpp
 )
 
-add_library(models ${models_sources})
+add_library(models STATIC ${models_sources})
 set_target_properties(models
     PROPERTIES
-    VERSION ${NEST_VERSION}
-    SOVERSION 3
+    POSITION_INDEPENDENT_CODE ON
 )
+
 target_link_libraries(models nestutil sli_lib nestkernel)
 
 target_include_directories(models PRIVATE
@@ -158,12 +158,6 @@ target_include_directories(models PRIVATE
     ${PROJECT_BINARY_DIR}/libnestutil
     ${PROJECT_SOURCE_DIR}/sli
     ${PROJECT_SOURCE_DIR}/nestkernel
-)
-
-install(TARGETS models
-    LIBRARY DESTINATION ${CMAKE_INSTALL_LIBDIR}/nest
-    ARCHIVE DESTINATION ${CMAKE_INSTALL_LIBDIR}/nest
-    RUNTIME DESTINATION ${CMAKE_INSTALL_BINDIR}
 )
 
 FILTER_HEADERS("${models_sources}" install_headers)
