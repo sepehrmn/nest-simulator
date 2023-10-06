@@ -220,8 +220,9 @@ nest::iaf_matco_2018::update( const Time& origin, const long from, const long to
     //S_.omega_ += B_.spike_exc_.get_value( lag ) / P_.tau_ex_;
     //S_.omega_ += B_.spike_inh_.get_value( lag ) / P_.tau_in_;
 
-    //TODO: fix for inhibitory
-    S_.V_m_ += (-S_.V_m_ + P_.k1_ * (B_.spike_exc_.get_value( lag ) + B_.spike_inh_.get_value( lag ))) / P_.tau_ex_;
+    //TODO: double check taus
+    S_.V_m_ += (-S_.V_m_ + P_.k1_ * (B_.spike_exc_.get_value( lag )/P_.tau_ex_
+                                   + B_.spike_inh_.get_value( lag )/P_.tau_inh_));
 
     if ( ((S_.V_m_) - P_.alpha_ * S_.omega_) > P_.Theta_) //  threshold crossing
     {
